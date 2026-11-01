@@ -1,0 +1,4 @@
+python-pptx>=1.0.0
+PyYAML>=6.0
+openai>=1.30.0
+pytest>=8.0.0

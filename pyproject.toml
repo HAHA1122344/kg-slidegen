@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kgslide"
+version = "0.1.0"
+description = "Knowledge-graph-constrained slide generation for vocational courseware"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Liu Suxing" }]
+keywords = ["knowledge-graph", "slide-generation", "education", "llm", "python-pptx"]
+dependencies = [
+    "python-pptx>=1.0.0",
+    "PyYAML>=6.0",
+    "openai>=1.30.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+
+[project.scripts]
+kgslide = "kgslide.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
