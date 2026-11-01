@@ -115,9 +115,9 @@ kgslide generate --unit all --out outputs --summary outputs/summary.json
 
 ## 图谱结构
 
-`data/kg_pyds_m4.json` 是 M4「队列」模块的完整图谱（33 节点 / 72 边），格式遵循 `schema.yaml`。
+`data/kg_pyds_m4.json` 是 M4「队列」模块的完整图谱（34 节点 / 75 边），格式遵循 `schema.yaml`。
 
-**7 类节点**：`Course` · `Module` · `Unit` · `Concept` · `Skill` · `Lab` · `Exercise` · `Misconception`
+**8 类节点**：`Course` · `Module` · `Unit` · `Concept` · `Skill` · `Lab` · `Exercise`（以上 7 类沿用 K12-KGraph）· `Misconception`（本文扩展）
 
 Schema 沿用 [K12-KGraph](https://github.com/haolpku/K12-KGraph)（NeurIPS 2026 Evaluations & Datasets Track），并扩展三处：
 
@@ -209,19 +209,30 @@ kg-slidegen/
 │   └── cli.py                # 命令行入口
 ├── docs/experiment.md        # 实验方案与指标口径（改代码前先看这份）
 ├── paper/
-│   ├── draft-zh.md           # 论文草稿
+│   ├── draft-zh.md           # 论文中文稿（投稿用英文稿见 draft-en.md）
+│   ├── draft-en.md           # 论文英文稿（KBS 模板结构，含 Highlights）
 │   ├── tables.py             # 从 results.csv 生成论文表格
-│   └── figures/              # 框架图（make_fig1.py 生成 pdf/png）
+│   └── figures/              # framework（框架图）、graph_contract（子图→契约）
 ├── tests/                    # 24 项测试
 ├── config/default.yaml
 └── schema.yaml               # 形式化 schema 定义（见 kg-design/）
 ```
 
+重新生成两张图：
+
+```bash
+python paper/figures/make_fig1.py    # → framework.pdf / framework.png
+python paper/figures/make_fig2.py    # → graph_contract.pdf / graph_contract.png
+```
+
 ## 测试
 
 ```bash
-pytest -q
+pytest -q --basetemp="$(mktemp -d)"
 ```
+
+`--basetemp` 不是必需的，但如果你在沙箱或受限环境里跑过 pytest、留下了残留的临时目录，
+默认的 `/tmp/pytest-of-*` 可能因 EEXIST 报错——换一个干净目录即可，与测试本身无关。
 
 覆盖：图谱结构合法性、环检测、拓扑序、约束切分、mock 渲染、指标边界、顺序违例与漏讲检测，
 以及**七项防回归守门**——分别锁住 `docs/experiment.md` 里那七处会让指标偏袒约束方法的缺陷
@@ -230,7 +241,7 @@ pytest -q
 ## 路线图
 
 - [ ] 补齐 M1–M8 全部模块（当前只有 M4）
-- [ ] 支持从教材 PDF 半自动建图（参考 SCI-MKG 的反向管线）
+- [ ] 支持从教材 PDF 半自动建图（参考 SciMKG 的抽取—校验—整合管线）
 - [ ] 加入渲染回看闭环：截图 → VLM 检查溢出与重叠 → 自动修正
 - [ ] 发布中文职教课件评测集，供同类工作横向对比
 
