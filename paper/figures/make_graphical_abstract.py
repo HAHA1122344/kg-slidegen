@@ -63,12 +63,12 @@ RULE_Y, VAL_Y, LBL_Y, NOTE_Y = 2.72, 2.28, 1.84, 1.50
 TAKE_Y = 0.72
 
 BOXES = {                          # x0, width
-    "kg": (0.28, 2.44),
-    "contract": (3.48, 3.14),
-    "llm": (7.38, 2.14),
-    "deck": (10.28, 2.72),
+    "kg": (0.26, 2.30),
+    "contract": (3.48, 3.10),
+    "llm": (7.50, 2.10),
+    "deck": (10.52, 2.52),
 }
-GAP = 0.76
+GAP = 0.92                         # wide on purpose: the arrows are the story
 
 
 def centre(key: str) -> float:
@@ -87,6 +87,19 @@ def card(ax, key, fill, *, accent=False):
             facecolor=fill, zorder=2,
         )
     )
+
+
+def badge(ax, key, n):
+    """Step number pinned on the top-left corner: turns four cards into a sequence.
+
+    It sits astride the border rather than inside the card, because the card
+    interiors are already full of text at the sizes this figure needs.
+    """
+    x0, _ = BOXES[key]
+    cx, cy = x0 + 0.05, ROW_Y + ROW_H - 0.05
+    ax.add_patch(plt.Circle((cx, cy), 0.155, facecolor=PAPER,
+                            edgecolor=EDGE, linewidth=1.0, zorder=7))
+    label(ax, cx, cy - 0.005, str(n), 12, MUTED, weight="bold", zorder=8)
 
 
 def label(ax, x, y, s, size, color=INK, *, weight="normal", style="normal",
@@ -195,20 +208,27 @@ def build() -> None:
                               ("llm", "deck", "render")):
         x1 = BOXES[left][0] + BOXES[left][1]
         x2 = BOXES[right][0]
-        arrow(ax, (x1 + 0.04, ROW_C), (x2 - 0.04, ROW_C))
-        label(ax, (x1 + x2) / 2, ROW_C + 0.27, verb, 13, MUTED, style="italic")
+        arrow(ax, (x1 + 0.03, ROW_C), (x2 - 0.03, ROW_C),
+              color=MUTED, lw=1.8, scale=19)
+        label(ax, (x1 + x2) / 2, ROW_C + 0.30, verb, 13.5, MUTED, style="italic")
 
-    # ------------------------------------------------- feedback: grading
-    # The validator reads the same compiled contract, not the prompt text.
+    for n, key in enumerate(("kg", "contract", "llm", "deck"), start=1):
+        badge(ax, key, n)
+
+    # ------------------------------- second role: the same contract grades
+    # One source, two roles. The solid path feeds the prompt; this bypass feeds
+    # the acceptance check, routed below the model so it does not imply that
+    # grading happens before generation.
     dx = centre("deck")
     cx = centre("contract")
-    ax.plot([dx, dx], [ROW_Y, LOOP_Y], color=ACCENT, linewidth=1.3,
-            linestyle=(0, (3.2, 2.2)), zorder=1)
-    ax.plot([cx, dx], [LOOP_Y, LOOP_Y], color=ACCENT, linewidth=1.3,
-            linestyle=(0, (3.2, 2.2)), zorder=1)
-    arrow(ax, (cx, LOOP_Y), (cx, ROW_Y - 0.02), dashed=True, color=ACCENT, lw=1.3)
-    label(ax, (cx + dx) / 2, LOOP_Y, "the same contract grades the deck", 12.5,
-          ACCENT, bbox=dict(facecolor=PAPER, edgecolor="none", pad=3.0))
+    ax.plot([cx, cx], [ROW_Y, LOOP_Y], color=ACCENT, linewidth=1.4,
+            linestyle=(0, (3.4, 2.4)), zorder=1)
+    ax.plot([cx, dx], [LOOP_Y, LOOP_Y], color=ACCENT, linewidth=1.4,
+            linestyle=(0, (3.4, 2.4)), zorder=1)
+    arrow(ax, (dx, LOOP_Y), (dx, ROW_Y - 0.02), dashed=True, color=ACCENT,
+          lw=1.4, scale=17)
+    label(ax, (cx + dx) / 2, LOOP_Y, "the deck is graded against the same contract",
+          12.5, ACCENT, bbox=dict(facecolor=PAPER, edgecolor="none", pad=3.0))
 
     # ------------------------------------------------------------ results
     # One hairline separates "what we built" from "what it bought"; three short
