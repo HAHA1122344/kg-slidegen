@@ -131,7 +131,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_gen.add_argument("--out", default=str(DEFAULT_OUT), help="输出目录")
     p_gen.add_argument("--mock", action="store_true", help="离线演示，不调用 API")
     p_gen.add_argument("--provider", default="deepseek", choices=["deepseek", "mock"])
-    p_gen.add_argument("--model", default="deepseek-chat")
+    p_gen.add_argument("--model", default="deepseek-v4-flash")
     p_gen.add_argument("--temperature", type=float, default=0.3)
     p_gen.add_argument("--dump-json", action="store_true", help="同时保存模型原始输出")
     p_gen.add_argument("--summary", default="", help="将各讲次指标写入 JSON")

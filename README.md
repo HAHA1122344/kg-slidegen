@@ -72,7 +72,23 @@ export DEEPSEEK_API_KEY=sk-xxxxxxxx
 kgslide generate --unit all --out outputs --summary outputs/summary.json
 ```
 
-默认走 DeepSeek 的 OpenAI 兼容接口。换模型只需改 `--model` 或 `config/default.yaml` 里的 `base_url`。
+默认走 DeepSeek 的 OpenAI 兼容接口。
+
+**模型选择**
+
+| 模型 ID | 说明 | 适用场景 |
+| --- | --- | --- |
+| `deepseek-v4-flash` | 默认，非思考模式，速度快 | 批量生成、日常迭代 |
+| `deepseek-v4-pro` | 推理更强，单价约为 flash 的 3 倍 | 复杂讲次、终稿 |
+
+> `deepseek-chat` 与 `deepseek-reasoner` 已于 2026-07-24 废弃，现仅作为 v4-flash 非思考 / 思考模式的兼容别名保留。旧代码里写这两个名字仍能跑，但新项目建议直接用 v4 系列。
+
+成本估算：一次 8 页课件的输入约 2K tokens、输出约 3K tokens，按 v4-flash 当前价折算每套不足 1 分钱，全课程 34 讲约三毛。具体价格以[官方定价页](https://api-docs.deepseek.com/quick_start/pricing)为准。
+
+**JSON 模式的两个坑**（代码里已处理）
+
+1. DeepSeek 的 JSON 模式要求提示词中出现 `json` 字样并给出样例，否则可能返回空内容。
+2. 输出无法解析为 JSON 时，接口会把非法片段替换成空格，`content` 可能只有空白且 `finish_reason` 仍是 `stop`。`llm.py` 检测到空内容会自动重试并追加格式提醒，重试两次仍失败才抛错。
 
 ## 图谱结构
 

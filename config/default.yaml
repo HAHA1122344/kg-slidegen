@@ -3,11 +3,15 @@
 
 llm:
   provider: deepseek            # deepseek | mock
-  model: deepseek-chat          # 或 deepseek-reasoner
+  # 官方模型 ID（2026-11）：deepseek-v4-flash / deepseek-v4-pro
+  # 旧的 deepseek-chat 与 deepseek-reasoner 已于 2026-07-24 废弃，
+  # 现仅作为 v4-flash 非思考/思考模式的兼容别名保留。
+  model: deepseek-v4-flash
   base_url: https://api.deepseek.com
   api_key_env: DEEPSEEK_API_KEY  # 从环境变量读取，不写死在文件里
   temperature: 0.3
-  max_tokens: 8000
+  max_tokens: 16000
+  max_retries: 2
 
 generation:
   # 页面预算由图谱中的 Unit.slide_budget 决定，这里是全局兜底

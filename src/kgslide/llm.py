@@ -26,7 +26,7 @@ USER_TEMPLATE = """请根据以下约束生成课件。
 
 {constraints}
 
-## 输出格式
+## 输出格式（Output a single valid JSON object）
 {{
   "unit_id": "{unit_id}",
   "slides": [
@@ -50,17 +50,22 @@ USER_TEMPLATE = """请根据以下约束生成课件。
 4. 每页 bullets 不超过 4 条，单条不超过 40 字，避免整段文字。
 5. 若存在「必须纠正的典型误区」，必须有至少一页 layout 为 misconception 的页面专门处理。
 6. 不要引入「禁止引入的概念」；确需提及时把 background 设为 true。
-"""
+
+只返回 JSON 对象本身，不要 Markdown 代码块、不要前后解释。"""
 
 
 @dataclass
 class LLMConfig:
     provider: str = "deepseek"
-    model: str = "deepseek-chat"
+    # Official DeepSeek API model ids (as of 2026-11).
+    # deepseek-chat / deepseek-reasoner were deprecated on 2026-07-24 and now
+    # only survive as compatibility aliases for v4-flash thinking modes.
+    model: str = "deepseek-v4-flash"
     base_url: str = "https://api.deepseek.com"
     api_key_env: str = "DEEPSEEK_API_KEY"
     temperature: float = 0.3
-    max_tokens: int = 8000
+    max_tokens: int = 16000
+    max_retries: int = 2
 
 
 class LLMError(RuntimeError):
@@ -111,18 +116,42 @@ class LLMClient:
 
     # ------------------------------------------------------------ private
     def _chat(self, messages: list[dict[str, str]]) -> str:
+        """Call the model, retrying when JSON mode returns empty content.
+
+        DeepSeek's JSON mode replaces non-JSON fragments with spaces, so a
+        malformed generation can come back as whitespace with ``finish_reason
+        == "stop"``.  Retrying with an explicit reminder is the documented
+        workaround.
+        """
         assert self._client is not None
-        response = self._client.chat.completions.create(
-            model=self.config.model,
-            messages=messages,
-            temperature=self.config.temperature,
-            max_tokens=self.config.max_tokens,
-            response_format={"type": "json_object"},
-        )
-        content = response.choices[0].message.content or ""
-        if not content.strip():
-            raise LLMError("模型返回空内容")
-        return content
+        history = list(messages)
+        last_error = "模型返回空内容"
+
+        for attempt in range(self.config.max_retries + 1):
+            response = self._client.chat.completions.create(
+                model=self.config.model,
+                messages=history,
+                temperature=self.config.temperature,
+                max_tokens=self.config.max_tokens,
+                response_format={"type": "json_object"},
+            )
+            content = response.choices[0].message.content or ""
+            if content.strip():
+                return content
+
+            last_error = (
+                f"模型返回空内容（第 {attempt + 1} 次尝试）。"
+                "JSON 模式下非法输出会被替换为空格，通常是提示词约束不足。"
+            )
+            history = list(messages) + [
+                {
+                    "role": "user",
+                    "content": "上一次输出为空。请只返回一个合法的 JSON 对象，"
+                    "以 { 开头、以 } 结尾，不要任何解释文字或代码块标记。",
+                }
+            ]
+
+        raise LLMError(last_error)
 
     def _parse(self, raw: str) -> dict[str, Any]:
         try:
