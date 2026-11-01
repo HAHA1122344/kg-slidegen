@@ -1,7 +1,7 @@
 # 大模型知道教材，但不知道你的班：面向职业教育的课程知识图谱约束课件生成
 
 > **投稿目标**：Knowledge-Based Systems（中科院一区 Top）
-> **状态**：草稿 v0.1 —— 结果表待全量实验回填；文献 `[待补]` 处需人工核实
+> **状态**：草稿 v0.2 —— 结果表已回填真实实验；第 2 节文献已逐条核实（见文末参考文献）
 
 ---
 
@@ -104,6 +104,13 @@
 本文的对象不是「一个更好的课件生成器」，而是**知识如何表示才能被机器施用**：
 什么样的知识结构足以约束生成、如何编译、如何验证、以及在哪些维度上知识库确实不可替代。
 这与 KBS 关心的「知识表示—推理—系统评估」闭环一致。
+
+KBS 近期的三条工作线正好构成本文的直接语境：Dai 等 [1] 系统比较了知识图谱以不同格式
+（线性三元组、自然语言、邻域展开）进入提示词时大模型的理解差异，说明**呈现格式本身影响效果**；
+Huang 等 [2] 在长尾事实问答上发现图谱三元组提示普遍优于段落提示，且二者并用可显著抑制幻觉，
+说明**结构与文本不是等价物**；Ma 等 [3] 则把知识增强的 LLM 用于教育场景（课程推荐）。
+本文延续这一脉络，但把问题从「知识怎么放进去」推进到「放进去的那份知识能否同时充当验收真值」。
+
 我们特别强调**负结果**：知识图谱并非在所有维度都优于强模型，
 识别「哪些知识必须外置」比笼统宣称「知识增强有效」更有价值。
 
@@ -111,38 +118,90 @@
 
 ## 2. 相关工作
 
-> ⚠️ 本节所有引用需在投稿前逐条核实。标 `[待补]` 的条目我尚未确认原文，
-> 请勿直接使用。
-
 ### 2.1 自动幻灯片生成
 
-早期工作把幻灯片生成视为文档摘要 + 版式排版的两阶段问题 `[待补：Doc2Slides 类工作]`。
-近期工作转向用 LLM 直接生成结构化中间表示再渲染 `[待补]`，
-并出现了针对「生成质量」的评测基准 `[待补：PPT-Eval 类工作]`。
-这一脉的共同取向是**保真于输入文档**：给定一份论文或报告，产出对应幻灯片。
+这一脉可以分成三条支流，各自解决的问题不同。
 
-本文的设定不同：输入不是一份待压缩的文档，而是**一份课程规格**（讲什么、按什么顺序、
-纠正什么、不引入什么）。因此评价标准也不同——不是「像不像原文」，而是「符不符合大纲」。
+**（1）文档到幻灯片：保真于输入。** DOC2PPT [4] 首次把该任务形式化，
+指出它同时要求文档摘要、图文检索与版面排布，提出层级序列到序列模型，
+并发布 5,873 对文档—幻灯片数据（源自 CV/ACL/ICML 等会议论文），
+配套 Slide-Level ROUGE、LC-FS、TFR、mIoU 四类指标。
+Mondal 等 [5] 进一步引入「终端用户规格」：同一份论文，面向不同受众或不同时长应产出不同 deck。
+他们在 SciDuet 上构造四种 persona 配置，用目标受众反馈微调 LLM，
+把备课时长从约 1 小时压到 30 分钟以内；值得注意的是，作者在局限中明确声明
+**不处理幻灯片版面设计**——只做内容与逻辑对齐。
+
+**（2）指令到幻灯片：保真于可编辑性。** AutoPresent [6] 发布 SlidesBench
+（7k 训练 / 585 测试，取自 310 份真实 deck、覆盖 10 个领域），
+系统比较「生成图片」与「生成程序」两条路线，结论是**程序化生成质量更高**，
+因为产物是可交互、可二次编辑的原生对象；并训练了 8B 的 AutoPresent 模型追平 GPT-4o。
+PPTAgent [8] 采用两阶段编辑式方法：先分析参考 deck 抽取版面功能类型与内容 schema，
+再起草大纲并迭代生成编辑动作，同时提出 PPTEval 从内容、设计、连贯性三个维度评测。
+本文的渲染决策（原生形状、强制 JSON 中间表示）与这一支流的结论一致。
+
+**（3）评测：从「像不像」到「做完没做完」。** PPTC [7] 换了一个角度：
+不问幻灯片好不好看，而问模型能否按多轮指令把 PPT 改对。
+它包含 279 个多轮会话，并提出 PPTX-Match——直接比对产出的 `.pptx` 文件状态而非 API 序列，
+因而允许多种正确解法。结果是 GPT-4 单轮准确率 75.1%，但整段会话仅 6%，
+误差主要来自多轮累积、长模板处理与多模态感知。
+
+**本文的差异。** 上述工作的输入是一份**待压缩的文档**或**一句指令**，
+评价标准是「像不像原文」「好不好看」「改没改对」。本文的输入是一份**课程规格**
+（讲什么、按什么顺序讲、纠正什么、不引入什么），评价标准是「符不符合大纲」。
+这一差别不是任务换皮：`SlidesBench` 的 reference-based / reference-free 两种口径
+都无法表达「漏掉了本讲必须让学生动手实现的那个技能点」，
+而后者恰恰是教学场景里最要命的一类失败。
 
 ### 2.2 教育知识图谱
 
-K12-KGraph 提出了面向基础教育的图谱 schema，含 Book/Chapter/Section/Concept/Skill/
-Experiment/Exercise 七类节点与九类关系，并配套发布数据集（NeurIPS 2026 Evaluations &
-Datasets Track，代码开源）。SciMKG 与 CourseGraph 则分别从科研文献与 MOOC 场景构建图谱 `[待补：核实]`。
+K12-KGraph [9] 是目前与本文最接近的知识侧工作。它从人教版教材抽取，
+定义 7 类节点（Book / Chapter / Section / Concept / Skill / Experiment / Exercise）
+与 9 类关系（`is_a`、`prerequisites_for`、`relates_to`、`verifies`、
+`tests_concept`、`tests_skill`、`appears_in`、`leads_to`、`is_part_of`），
+覆盖数学、物理、化学、生物共 48 册，产出 10,685 节点 / 23,278 边；
+并由此派生 K12-Bench（23,640 道多选题，分 Ground / Prereq / Neighbor / Evidence / Locate 五类任务）
+与 K12-Train（图谱引导的 SFT 语料）。其最有说服力的数字不是总分，
+而是**最强的闭源模型在 Prereq 与 Neighbor 两类任务上仍有超过 40% 的题未解**——
+这说明「结构性课程认知」是一个独立于事实记忆的能力维度，也正是本文试图用外部知识补上的那块。
 
-这些工作的重心是**建图**（如何从语料中抽取实体与关系），而本文的重心是**用图**
-（如何把图编译成生成约束并据此验收）。二者互补：本文的方法可以直接消费上述工作产出的图谱。
+SciMKG [10] 走向多模态：用 LLM 驱动的「抽取—校验—整合—增强」管线，
+从开放课程资源中构建覆盖文本、图像、视频、音频的图谱，
+得到 1,356 个知识点、34,630 个多模态概念、403,400 条三元组，
+概念抽取 F1 较基线提升 9%。在教育应用侧，Ma 等 [3] 把知识增强的 LLM 用于课程推荐，
+说明 KBS 社区对「知识结构 + 教育场景」这一组合持续关注。
+
+这些工作的重心是**建图**（如何从语料中抽取实体与关系、如何保证一致性），
+而本文的重心是**用图**（如何把图编译成生成约束，并据此验收）。
+二者互补而非竞争：本文的方法可以直接消费上述工作产出的图谱——
+我们确实沿用了 K12-KGraph 的节点与关系骨架，只做加法（§4.1）。
 
 在职业教育场景，图谱还需要表达两件普通学科图谱不强调的事：
-**能力层级**（了解/理解/掌握/熟练，决定某概念是必讲还是可选）
-与**典型误区**（决定纠错内容）。这也是我们对 schema 做扩展的动因。
+**能力层级**（了解 / 理解 / 掌握 / 熟练，决定某概念是必讲还是可选）
+与**典型误区**（决定纠错内容该由哪一讲负责）。前者 K12-KGraph 的 `Concept.importance`
+已有字段但未用于生成约束，后者则完全缺失。这是我们做 schema 扩展的直接动因。
 
-### 2.3 受约束的文本生成
+### 2.3 受约束的生成
 
-结构化约束下的生成在数据到文本（data-to-text）领域有长期积累 `[待补]`，
-常见做法是把约束编码为解码时的过滤或后验重排。
-本文不修改解码过程，而是把约束**前移到提示词并保留为可执行对象**——
-这与「约束即数据」的思路一致，好处是不依赖特定模型接口，可迁移到任意 OpenAI 兼容端点。
+经典 NLG 把生成拆成「说什么、按什么顺序说」（内容规划）与「怎么说」（表层实现）两步 [11]。
+Wiseman 等 [12] 用 RotoWire 证明：端到端模型能写出流畅的战报，
+却在内容选择与篇章顺序上系统性出错，甚至被模板基线在部分指标上超过。
+Puduppully 等 [13] 因此显式建模内容规划——先预测要提及哪些记录、以何种顺序，
+再据此生成文档。这一支的共同点是把结构约束放进**训练目标或解码过程**。
+
+大模型时代，结构改由提示注入，问题随之变成「以什么形式注入」。
+Dai 等 [1] 对此做了迄今最系统的实证：同一份图谱，用线性三元组、自然语言段落、
+邻域展开等不同格式放进提示词，模型的理解效果差异显著，且这种差异可以从注意力分布上解释。
+Huang 等 [2] 在长尾事实问答上给出互补结论：图谱三元组提示在多数情况下优于段落提示，
+两者并用虽不总能提升覆盖，但能显著降低幻觉。
+换句话说，**结构化知识不是「另一种写法的文本」**。
+
+本文与上述两条线都不同，也有意保持不同：
+我们不训练、不改解码、不做重排，而是把约束**编译成一份可执行的数据对象**，
+生成前用它构造提示，生成后用同一份对象做验收。
+与 [1][2] 相比，问题从「图谱怎么放进提示词效果更好」推进到
+「同一份图谱能否同时充当验收真值」——若可以，则「要求」与「检查」就不会漂移（§1.3）。
+代价是我们放弃了对解码过程的控制，因此必须承担模型不遵守约束的风险；
+§5.6 报告了一次真实的违约，§7.1 报告了由这种宽松性引出的七处指标陷阱。
 
 ---
 
@@ -182,6 +241,15 @@ $$C(u)=\langle S_u,\ \prec_u,\ M_u,\ F_u,\ B_u,\ k_u\rangle$$
 **关键点**：$B_u$ 与 $F_u$ 的区分。前者是「学过、可以一句带过」，后者是「本课程根本不讲」。
 两者混用会让指标互相打架（同一个词既算背景回顾又算跑题），实现上以互斥断言强制。
 
+**编译是无损的、机械的**：图 2 给出 U11 的真实子图与它编译出的契约。
+(a) 中每一条边都能在 (b) 里找到对应字段，(b) 中没有任何一项是手写的。
+
+![图 2](figures/graph_contract.png)
+
+**图 2　从子图到契约。**（a）`data/kg_pyds_m4.json` 中 U11 的实际子图：6 个概念 + 1 个技能、
+7 条讲次内先修边、1 条来自 U10 的跨讲次先修边、1 条 `implements` 边、1 条 `addresses_misconception` 边。
+（b）`build_constraints` 由该子图产出的契约 $C(u)$，同一份对象随后被验证器读取。
+
 ### 3.3 生成与验收
 
 生成是一个映射 $D = f_\theta(C(u))$，$D$ 为幻灯片序列。
@@ -191,6 +259,16 @@ $$m(D, C(u), G) = \langle \text{cov},\ \text{oog},\ \text{bg},\ \text{pre},\ \te
 
 其定义见 §5.3。注意 $C(u)$ 同时出现在两侧——这正是「要求与验收同源」的形式化表述。
 
+整条流水线见图 1：图谱 → 契约编译 → 生成 → 渲染 → 用同一份契约验收。
+图中有一条回环：未通过校验的页会被送回重新生成。这条回环的边界是刻意画死的——
+**回环只改页面，不改图谱、也不改契约**；而且是否重生成由教师决定，不是自动优化。
+若让校验结果反过来调整契约，验收就退化成一个优化目标，指标随即失去意义（§7.1）。
+
+![图 1](figures/framework.png)
+
+**图 1　框架总览。** 契约 $C(u)$ 在生成前被读一次（构造提示），在生成后被读一次（计算六项指标），
+两次读取的是同一个对象——这是「要求与验收同源」在实现层面的含义。
+
 ---
 
 ## 4. 方法
@@ -199,7 +277,7 @@ $$m(D, C(u), G) = \langle \text{cov},\ \text{oog},\ \text{bg},\ \text{pre},\ \te
 
 #### 4.1.1 节点与边
 
-沿用 K12-KGraph 的七类节点，扩展 `Misconception`：
+沿用 K12-KGraph [9] 的七类节点（`Lab` 对应其 `Experiment`），扩展 `Misconception` 为第八类：
 
 ```yaml
 Misconception:
@@ -591,6 +669,65 @@ U10 的第三次重采样里，覆盖率是 0.833，缺的是「队列」这个�
 
 ---
 
+## 参考文献
+
+> 以下 13 条均已逐条核对到出版方页面（ACL Anthology / AAAI / CVPR / NeurIPS / Elsevier），
+> 页码、DOI、卷期以出版方记录为准。中文稿用编号制；转英文稿时按 KBS 模板（Elsevier numbered）沿用同一编号。
+
+[1] X. Dai, Y. Hua, T. Wu, Y. Sheng, Q. Ji, G. Qi. Large language models can better understand
+knowledge graphs than we thought. *Knowledge-Based Systems*, 312 (2025) 113060.
+https://doi.org/10.1016/j.knosys.2025.113060
+
+[2] W. Huang, G. Zhou, M. Lapata, P. Vougiouklis, S. Montella, J.Z. Pan. Prompting large language
+models with knowledge graphs for question answering involving long-tail facts.
+*Knowledge-Based Systems*, 324 (2025) 113648. https://doi.org/10.1016/j.knosys.2025.113648
+
+[3] J. Ma, Z. Zhao, Z. Xie, Y. Zhang, G. Zhou. LE-DLCM: Decoupled learner and course modeling with
+large language models for enhanced course recommendation. *Knowledge-Based Systems*,
+334 (2026) 115135. https://doi.org/10.1016/j.knosys.2025.115135
+
+[4] T.-J. Fu, W.Y. Wang, D. McDuff, Y. Song. DOC2PPT: Automatic presentation slides generation from
+scientific documents. *Proceedings of the AAAI Conference on Artificial Intelligence*, 36(1) (2022).
+https://doi.org/10.1609/aaai.v36i1.19943
+
+[5] I. Mondal, S. Shwetha, A. Natarajan, A. Garimella, S. Bandyopadhyay, J. Boyd-Graber.
+Presentations by the humans and for the humans: Harnessing LLMs for generating persona-aware slides
+from documents. *Proceedings of EACL 2024 (Volume 1: Long Papers)*, pp. 2664–2684.
+https://doi.org/10.18653/v1/2024.eacl-long.163
+
+[6] J. Ge, Z.Z. Wang, X. Zhou, Y.-H. Peng, S. Subramanian, Q. Tan, M. Sap, A. Suhr, D. Fried,
+G. Neubig, T. Darrell. AutoPresent: Designing structured visuals from scratch.
+*Proceedings of CVPR 2025*, pp. 2902–2911.
+
+[7] Y. Guo, Z. Zhang, Y. Liang, D. Zhao, N. Duan. PPTC benchmark: Evaluating large language models
+for PowerPoint task completion. *Findings of ACL 2024*, pp. 8682–8701.
+https://doi.org/10.18653/v1/2024.findings-acl.514
+
+[8] H. Zheng, X. Guan, H. Kong, W. Zhang, J. Zheng, W. Zhou, H. Lin, Y. Lu, X. Han, L. Sun.
+PPTAgent: Generating and evaluating presentations beyond text-to-slides.
+*Proceedings of EMNLP 2025*, pp. 14402–14418. https://doi.org/10.18653/v1/2025.emnlp-main.728
+
+[9] H. Liang, Q. Lin, Z. Han, X. Ma, Z.H. Wong, M. Qiang, L. Sun, W. Zhang. K12-KGraph: A
+curriculum-aligned knowledge graph for benchmarking and training educational LLMs.
+*NeurIPS 2026 Datasets and Benchmarks Track*. arXiv:2605.09635.
+代码：https://github.com/haolpku/K12-Dataset
+
+[10] T. Lu, Z. Wang, Y. Zhou, Y. Guan, Z. Bai, J. Du. SciMKG: A multimodal knowledge graph for
+science education with text, image, video and audio. *Proceedings of the AAAI Conference on
+Artificial Intelligence*, 40(18) (2026) 15466–15474. https://doi.org/10.1609/aaai.v40i18.38574
+
+[11] A. Gatt, E. Krahmer. Survey of the state of the art in natural language generation: Core tasks,
+applications and evaluation. *Journal of Artificial Intelligence Research*, 61 (2018) 65–170.
+
+[12] S. Wiseman, S. Shieber, A. Rush. Challenges in data-to-document generation.
+*Proceedings of EMNLP 2017*, pp. 2253–2263. https://doi.org/10.18653/v1/D17-1239
+
+[13] R. Puduppully, L. Dong, M. Lapata. Data-to-text generation with content selection and planning.
+*Proceedings of the AAAI Conference on Artificial Intelligence*, 33(01) (2019) 6908–6915.
+https://doi.org/10.1609/aaai.v33i01.33016908
+
+---
+
 ## 附录 A：复现材料
 
 代码、图谱、实验协议与全部原始输出见仓库 `kg-slidegen`。
@@ -599,9 +736,11 @@ U10 的第三次重采样里，覆盖率是 0.833，缺的是「队列」这个�
 
 ## 附录 B：待办清单（投稿前必须完成）
 
-- [ ] 第 2 节全部 `[待补]` 文献核实并补全
-- [ ] §5.4–5.6 结果回填
+- [x] 第 2 节全部 `[待补]` 文献核实并补全（13 条，已核到出版方页面）
+- [x] §5.4–5.6 结果回填（真实实验，n = 9 / n = 6）
 - [ ] 教师盲评（建议 3 人 × 15 份，报告 ICC）
-- [ ] 至少扩展到 6–8 个讲次
-- [ ] 英文翻译与母语润色
-- [ ] 图表：框架图（Fig.1）、图谱片段图（Fig.2）、结果表（Table 1–3）
+- [ ] 至少扩展到 6–8 个讲次（当前 3 个）
+- [ ] 英文翻译与母语润色（KBS 只收英文）
+- [ ] 图表：框架图（Fig.1 ✅）、图谱片段图（Fig.2）、结果表（Table 1–3 按 KBS 模板编号）
+- [ ] 按 KBS 模板重排：Highlights（3–5 条，≤85 字符/条）、Graphical Abstract、Declaration 段
+- [ ] 补一段「与 KBS 已发表工作的关系」——见 §1.5，已引 [1][2][3]
