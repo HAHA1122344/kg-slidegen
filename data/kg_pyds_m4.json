@@ -24,7 +24,6 @@
       "hours": 12,
       "objective": "掌握队列的先进先出特性，能区分顺序队列、循环队列与链队列的实现差异，并能用队列解决广度优先搜索等实际问题"
     },
-
     {
       "id": "U10",
       "type": "Unit",
@@ -32,7 +31,14 @@
       "order": 10,
       "hours": 4,
       "slide_budget": 6,
-      "objective": "理解队列先进先出的特性与 front、rear 的含义，能说明顺序队列假溢出的成因"
+      "objective": "理解队列先进先出的特性与 front、rear 的含义，能说明顺序队列假溢出的成因",
+      "forbidden_terms": [
+        "优先队列",
+        "单调队列",
+        "消息队列",
+        "最短路径",
+        "拓扑排序"
+      ]
     },
     {
       "id": "U11",
@@ -41,7 +47,14 @@
       "order": 11,
       "hours": 4,
       "slide_budget": 7,
-      "objective": "理解循环队列如何用取模实现空间复用，能正确区分队空与队满条件，并独立写出循环队列的实现代码"
+      "objective": "理解循环队列如何用取模实现空间复用，能正确区分队空与队满条件，并独立写出循环队列的实现代码",
+      "forbidden_terms": [
+        "优先队列",
+        "单调队列",
+        "消息队列",
+        "最短路径",
+        "拓扑排序"
+      ]
     },
     {
       "id": "U12",
@@ -50,23 +63,39 @@
       "order": 12,
       "hours": 4,
       "slide_budget": 6,
-      "objective": "掌握链队列的结构与队空判断，能根据场景在循环队列与链队列之间选型，并理解队列在广度优先搜索中的作用"
+      "objective": "掌握链队列的结构与队空判断，能根据场景在循环队列与链队列之间选型，并理解队列在广度优先搜索中的作用",
+      "forbidden_terms": [
+        "优先队列",
+        "单调队列",
+        "消息队列",
+        "最短路径"
+      ]
     },
-
     {
       "id": "C1001",
       "type": "Concept",
       "name": "队列",
       "definition": "只允许在一端插入、另一端删除的线性表，遵循先进先出（FIFO）原则",
       "importance": "掌握",
-      "aliases": ["Queue", "FIFO 表"]
+      "aliases": [
+        "队列",
+        "FIFO",
+        "先进先出"
+      ]
     },
     {
       "id": "C1002",
       "type": "Concept",
       "name": "队头与队尾",
       "definition": "允许删除的一端称队头（front），允许插入的一端称队尾（rear）",
-      "importance": "掌握"
+      "importance": "掌握",
+      "aliases": [
+        "队头",
+        "队尾",
+        "front",
+        "rear",
+        "队首"
+      ]
     },
     {
       "id": "C1003",
@@ -74,7 +103,12 @@
       "name": "顺序队列",
       "definition": "用一段连续存储单元存放队列元素，并用 front、rear 两个指针指示队头与队尾位置",
       "importance": "掌握",
-      "complexity": "入队 O(1)，出队 O(1)"
+      "complexity": "入队 O(1)，出队 O(1)",
+      "aliases": [
+        "顺序队列",
+        "顺序存储",
+        "数组实现"
+      ]
     },
     {
       "id": "C1004",
@@ -82,7 +116,12 @@
       "name": "假溢出",
       "definition": "顺序队列中 rear 已到达数组末端但数组前端仍有空闲单元，导致无法继续入队的现象",
       "importance": "熟练",
-      "note": "顺序队列的核心缺陷，是引入循环队列的直接动因"
+      "note": "顺序队列的核心缺陷，是引入循环队列的直接动因",
+      "aliases": [
+        "假溢出",
+        "假满",
+        "伪溢出"
+      ]
     },
     {
       "id": "C1005",
@@ -90,16 +129,28 @@
       "name": "入队与出队操作",
       "definition": "入队在队尾追加元素并后移 rear，出队取走队头元素并后移 front；两者均需先判断队满或队空",
       "importance": "熟练",
-      "pseudocode": "def enqueue(q, x):\n    if is_full(q): raise OverflowError\n    q.data[q.rear] = x\n    q.rear += 1\n\ndef dequeue(q):\n    if is_empty(q): raise IndexError\n    x = q.data[q.front]\n    q.front += 1\n    return x"
+      "pseudocode": "def enqueue(q, x):\n    if is_full(q): raise OverflowError\n    q.data[q.rear] = x\n    q.rear += 1\n\ndef dequeue(q):\n    if is_empty(q): raise IndexError\n    x = q.data[q.front]\n    q.front += 1\n    return x",
+      "aliases": [
+        "入队",
+        "出队",
+        "enqueue",
+        "dequeue",
+        "入队与出队",
+        "进队"
+      ]
     },
-
     {
       "id": "C1101",
       "type": "Concept",
       "name": "循环队列",
       "definition": "把顺序队列的存储空间首尾相连，用取模运算让 rear 和 front 在到达末端后回到起点，从而复用空闲单元",
       "importance": "掌握",
-      "complexity": "入队 O(1)，出队 O(1)"
+      "complexity": "入队 O(1)，出队 O(1)",
+      "aliases": [
+        "循环队列",
+        "环形队列",
+        "循环队"
+      ]
     },
     {
       "id": "C1102",
@@ -107,14 +158,25 @@
       "name": "取模运算",
       "definition": "指针前移时使用 (index + 1) % maxsize，使下标在 [0, maxsize-1] 内循环，是循环队列实现的关键",
       "importance": "掌握",
-      "pseudocode": "rear = (rear + 1) % maxsize\nfront = (front + 1) % maxsize"
+      "pseudocode": "rear = (rear + 1) % maxsize\nfront = (front + 1) % maxsize",
+      "aliases": [
+        "取模",
+        "模运算",
+        "% maxsize",
+        "%maxsize"
+      ]
     },
     {
       "id": "C1103",
       "type": "Concept",
       "name": "队空条件",
       "definition": "循环队列中 front == rear 表示队列为空",
-      "importance": "熟练"
+      "importance": "熟练",
+      "aliases": [
+        "队空",
+        "空队列",
+        "判空"
+      ]
     },
     {
       "id": "C1104",
@@ -122,7 +184,12 @@
       "name": "队满条件",
       "definition": "为区分队空与队满，通常牺牲一个存储单元，队列满的条件是 (rear + 1) % maxsize == front",
       "importance": "熟练",
-      "note": "与队空条件的区别是本讲次最大的易错点"
+      "note": "与队空条件的区别是本讲次最大的易错点",
+      "aliases": [
+        "队满",
+        "满队列",
+        "判满"
+      ]
     },
     {
       "id": "C1105",
@@ -130,7 +197,12 @@
       "name": "队列长度计算",
       "definition": "循环队列元素个数为 (rear - front + maxsize) % maxsize",
       "importance": "掌握",
-      "complexity": "O(1)"
+      "complexity": "O(1)",
+      "aliases": [
+        "队列长度",
+        "元素个数",
+        "长度计算"
+      ]
     },
     {
       "id": "C1106",
@@ -138,23 +210,37 @@
       "name": "循环队列的实现",
       "definition": "用 Python 列表模拟定长数组，维护 front、rear、maxsize 三个状态，所有指针移动均需取模",
       "importance": "熟练",
-      "pseudocode": "class CircularQueue:\n    def __init__(self, maxsize):\n        self.data = [None] * maxsize\n        self.maxsize = maxsize\n        self.front = 0\n        self.rear = 0\n\n    def is_empty(self):\n        return self.front == self.rear\n\n    def is_full(self):\n        return (self.rear + 1) % self.maxsize == self.front\n\n    def enqueue(self, x):\n        if self.is_full():\n            raise OverflowError('queue is full')\n        self.data[self.rear] = x\n        self.rear = (self.rear + 1) % self.maxsize\n\n    def dequeue(self):\n        if self.is_empty():\n            raise IndexError('queue is empty')\n        x = self.data[self.front]\n        self.front = (self.front + 1) % self.maxsize\n        return x\n\n    def __len__(self):\n        return (self.rear - self.front + self.maxsize) % self.maxsize"
+      "pseudocode": "class CircularQueue:\n    def __init__(self, maxsize):\n        self.data = [None] * maxsize\n        self.maxsize = maxsize\n        self.front = 0\n        self.rear = 0\n\n    def is_empty(self):\n        return self.front == self.rear\n\n    def is_full(self):\n        return (self.rear + 1) % self.maxsize == self.front\n\n    def enqueue(self, x):\n        if self.is_full():\n            raise OverflowError('queue is full')\n        self.data[self.rear] = x\n        self.rear = (self.rear + 1) % self.maxsize\n\n    def dequeue(self):\n        if self.is_empty():\n            raise IndexError('queue is empty')\n        x = self.data[self.front]\n        self.front = (self.front + 1) % self.maxsize\n        return x\n\n    def __len__(self):\n        return (self.rear - self.front + self.maxsize) % self.maxsize",
+      "aliases": [
+        "循环队列的实现",
+        "循环队列实现",
+        "circular queue"
+      ]
     },
-
     {
       "id": "C1201",
       "type": "Concept",
       "name": "链队列",
       "definition": "用带头结点的单链表实现队列，队头在链表头部出队，队尾在链表尾部入队",
       "importance": "掌握",
-      "complexity": "入队 O(1)，出队 O(1)"
+      "complexity": "入队 O(1)，出队 O(1)",
+      "aliases": [
+        "链队列",
+        "链表实现队列",
+        "linked queue"
+      ]
     },
     {
       "id": "C1202",
       "type": "Concept",
       "name": "链队列的队空判断",
       "definition": "链队列队空的条件是 front 与 rear 同时指向头结点，而非单纯的指针相等",
-      "importance": "掌握"
+      "importance": "掌握",
+      "aliases": [
+        "链队列的队空判断",
+        "链队列判空",
+        "head 为 None"
+      ]
     },
     {
       "id": "C1203",
@@ -162,14 +248,24 @@
       "name": "双端队列",
       "definition": "允许在两端进行插入和删除操作的队列，可退化为栈或普通队列",
       "importance": "理解",
-      "complexity": "两端操作均 O(1)"
+      "complexity": "两端操作均 O(1)",
+      "aliases": [
+        "双端队列",
+        "deque",
+        "两端队列"
+      ]
     },
     {
       "id": "C1204",
       "type": "Concept",
       "name": "队列的应用场景",
       "definition": "适用于需要按到达顺序处理的任务，如打印任务调度、缓冲区管理、消息队列、广度优先搜索",
-      "importance": "理解"
+      "importance": "掌握",
+      "aliases": [
+        "应用场景",
+        "选型",
+        "适用场景"
+      ]
     },
     {
       "id": "C1205",
@@ -177,16 +273,26 @@
       "name": "广度优先搜索",
       "definition": "从起点出发按层向外扩展的遍历策略，依赖队列保存待访问的邻居结点，保证按距离递增的顺序访问",
       "importance": "理解",
-      "complexity": "O(V + E)"
+      "complexity": "O(V + E)",
+      "aliases": [
+        "广度优先搜索",
+        "BFS",
+        "层序"
+      ]
     },
-
     {
       "id": "S1001",
       "type": "Skill",
       "name": "用 Python 列表实现队列",
       "description": "能基于 list 与两个下标变量手写出队、入队、判空、判满四个方法，并通过边界用例测试",
       "importance": "熟练",
-      "verifiable": true
+      "verifiable": true,
+      "aliases": [
+        "Python 列表实现队列",
+        "list 实现",
+        "pop(0)",
+        "下标前移"
+      ]
     },
     {
       "id": "S1002",
@@ -194,15 +300,21 @@
       "name": "循环队列的取模计算",
       "description": "能正确写出指针前移与长度计算的取模表达式，并解释为何需要加 maxsize",
       "importance": "熟练",
-      "verifiable": true
+      "verifiable": true,
+      "aliases": [
+        "取模计算",
+        "(rear + 1) %"
+      ]
     },
-
     {
       "id": "L04",
       "type": "Lab",
       "name": "循环队列上机实验",
       "objective": "实现一个容量为 8 的循环队列，完成 20 次入队与 15 次出队，验证取模复用与判满逻辑",
-      "instruments": ["Python 3.11+", "pytest"],
+      "instruments": [
+        "Python 3.11+",
+        "pytest"
+      ],
       "steps": [
         "实现 CircularQueue 类，含 is_empty / is_full / enqueue / dequeue / __len__",
         "编写 pytest 用例覆盖队空出队、队满入队、跨边界回绕三种情况",
@@ -211,7 +323,6 @@
       "expected_output": "20 次入队中第 8 次触发 OverflowError，出队后队列可继续入队且 front 回绕到 0",
       "difficulty": 2
     },
-
     {
       "id": "EX01",
       "type": "Exercise",
@@ -266,7 +377,6 @@
       "answer": "BFS 模板，队列存结点，出队时压入左右孩子",
       "source": "综合实训"
     },
-
     {
       "id": "MC03",
       "type": "Misconception",
@@ -290,90 +400,487 @@
       "correction": "循环队列与链队列的入队出队确为 O(1)，但用 list 的 pop(0) 实现出队是 O(n)，因需整体前移",
       "frequency": "常见",
       "evidence": "上机实验中的性能对比环节"
+    },
+    {
+      "id": "MC13",
+      "type": "Misconception",
+      "statement": "广度优先搜索用栈实现也能得到相同的层序结果",
+      "correction": "BFS 依赖先进先出才能保证按层扩展；用栈会退化为深度优先，得到的是另一条遍历路径。判断依据是取出结点的顺序，而非代码行数",
+      "frequency": "高频",
+      "evidence": "上机实验中学生常用 stack.pop() 代替 deque.popleft()"
     }
   ],
   "edges": [
-    { "type": "is_part_of", "source": "M4", "target": "COURSE-PYDS" },
-    { "type": "is_part_of", "source": "U10", "target": "M4" },
-    { "type": "is_part_of", "source": "U11", "target": "M4" },
-    { "type": "is_part_of", "source": "U12", "target": "M4" },
-
-    { "type": "appears_in", "source": "C1001", "target": "U10", "sequence": 1 },
-    { "type": "appears_in", "source": "C1002", "target": "U10", "sequence": 2 },
-    { "type": "appears_in", "source": "C1003", "target": "U10", "sequence": 3 },
-    { "type": "appears_in", "source": "C1005", "target": "U10", "sequence": 4 },
-    { "type": "appears_in", "source": "C1004", "target": "U10", "sequence": 5 },
-    { "type": "appears_in", "source": "S1001", "target": "U10", "sequence": 6 },
-    { "type": "appears_in", "source": "MC01", "target": "U10" },
-    { "type": "appears_in", "source": "MC12", "target": "U10" },
-    { "type": "appears_in", "source": "EX04", "target": "U10" },
-
-    { "type": "appears_in", "source": "C1101", "target": "U11", "sequence": 1 },
-    { "type": "appears_in", "source": "C1102", "target": "U11", "sequence": 2 },
-    { "type": "appears_in", "source": "C1103", "target": "U11", "sequence": 3 },
-    { "type": "appears_in", "source": "C1104", "target": "U11", "sequence": 4 },
-    { "type": "appears_in", "source": "C1105", "target": "U11", "sequence": 5 },
-    { "type": "appears_in", "source": "C1106", "target": "U11", "sequence": 6 },
-    { "type": "appears_in", "source": "S1002", "target": "U11", "sequence": 7 },
-    { "type": "appears_in", "source": "L04", "target": "U11" },
-    { "type": "appears_in", "source": "MC03", "target": "U11" },
-    { "type": "appears_in", "source": "EX01", "target": "U11" },
-    { "type": "appears_in", "source": "EX02", "target": "U11" },
-    { "type": "appears_in", "source": "EX03", "target": "U11" },
-
-    { "type": "appears_in", "source": "C1201", "target": "U12", "sequence": 1 },
-    { "type": "appears_in", "source": "C1202", "target": "U12", "sequence": 2 },
-    { "type": "appears_in", "source": "C1203", "target": "U12", "sequence": 3 },
-    { "type": "appears_in", "source": "C1204", "target": "U12", "sequence": 4 },
-    { "type": "appears_in", "source": "C1205", "target": "U12", "sequence": 5 },
-    { "type": "appears_in", "source": "EX05", "target": "U12" },
-    { "type": "appears_in", "source": "EX06", "target": "U12" },
-
-    { "type": "prerequisites_for", "source": "C1001", "target": "C1003", "strength": "强依赖", "evidence": "讲义 §4.2：顺序队列是队列的数组实现，先理解 FIFO 才能理解指针含义" },
-    { "type": "prerequisites_for", "source": "C1002", "target": "C1003", "strength": "强依赖", "evidence": "讲义 §4.2：front 与 rear 的定义" },
-    { "type": "prerequisites_for", "source": "C1003", "target": "C1004", "strength": "强依赖", "evidence": "讲义 §4.2：假溢出是顺序队列的结构性缺陷" },
-    { "type": "prerequisites_for", "source": "C1005", "target": "C1004", "strength": "强依赖", "evidence": "讲义 §4.2：只有演示入队出队过程才能观察到假溢出" },
-    { "type": "prerequisites_for", "source": "C1004", "target": "C1101", "strength": "强依赖", "evidence": "讲义 §4.3：循环队列正是为解决假溢出而设计" },
-    { "type": "prerequisites_for", "source": "C1101", "target": "C1102", "strength": "强依赖", "evidence": "讲义 §4.3：首尾相连的数学表达即取模" },
-    { "type": "prerequisites_for", "source": "C1102", "target": "C1103", "strength": "强依赖", "evidence": "讲义 §4.3：指针回绕后才能讨论相等意味着空" },
-    { "type": "prerequisites_for", "source": "C1102", "target": "C1104", "strength": "强依赖", "evidence": "讲义 §4.3：判满条件依赖取模" },
-    { "type": "prerequisites_for", "source": "C1103", "target": "C1104", "strength": "强依赖", "evidence": "讲义 §4.3：先明确队空才能解释为何要牺牲一个单元区分队满" },
-    { "type": "prerequisites_for", "source": "C1102", "target": "C1105", "strength": "强依赖", "evidence": "讲义 §4.3：长度公式含取模" },
-    { "type": "prerequisites_for", "source": "C1104", "target": "C1106", "strength": "强依赖", "evidence": "讲义 §4.3：实现必须先定义判满逻辑" },
-    { "type": "prerequisites_for", "source": "C1105", "target": "C1106", "strength": "强依赖", "evidence": "讲义 §4.3：__len__ 方法依赖长度公式" },
-    { "type": "prerequisites_for", "source": "C1101", "target": "C1201", "strength": "弱依赖", "evidence": "讲义 §4.4：对比两种实现的前提是理解循环队列" },
-    { "type": "prerequisites_for", "source": "C1001", "target": "C1201", "strength": "强依赖", "evidence": "讲义 §4.4：链队列同为 FIFO 实现" },
-    { "type": "prerequisites_for", "source": "C1201", "target": "C1202", "strength": "强依赖", "evidence": "讲义 §4.4：先有链表结构才能讨论队空判断" },
-    { "type": "prerequisites_for", "source": "C1001", "target": "C1203", "strength": "弱依赖", "evidence": "讲义 §4.5：双端队列是队列的推广" },
-    { "type": "prerequisites_for", "source": "C1001", "target": "C1204", "strength": "弱依赖", "evidence": "讲义 §4.6：应用场景基于 FIFO 特性" },
-    { "type": "prerequisites_for", "source": "C1204", "target": "C1205", "strength": "强依赖", "evidence": "讲义 §4.6：BFS 是队列最典型应用" },
-    { "type": "prerequisites_for", "source": "C1001", "target": "C1205", "strength": "强依赖", "evidence": "讲义 §4.6：BFS 的正确性直接依赖 FIFO" },
-
-    { "type": "is_a", "source": "C1101", "target": "C1001", "evidence": "讲义 §4.3：循环队列是队列的顺序存储变体" },
-    { "type": "is_a", "source": "C1201", "target": "C1001", "evidence": "讲义 §4.4：链队列是队列的链式存储" },
-    { "type": "is_a", "source": "C1203", "target": "C1001", "evidence": "讲义 §4.5：双端队列是队列的推广形式" },
-
-    { "type": "relates_to", "source": "C1103", "target": "C1104", "relation": "对照", "evidence": "讲义 §4.3：队空与队满的判别是循环队列最容易混淆的一对概念" },
-    { "type": "relates_to", "source": "C1101", "target": "C1201", "relation": "对照", "evidence": "讲义 §4.4：定长与变长两种设计取舍" },
-    { "type": "relates_to", "source": "C1205", "target": "C1101", "relation": "互补", "evidence": "BFS 的典型实现依赖循环队列或链队列" },
-
-    { "type": "implements", "source": "C1106", "target": "C1101", "language": "Python", "api": ["list", "%"], "evidence": "讲义 §4.3 代码清单" },
-    { "type": "implements", "source": "S1001", "target": "C1005", "language": "Python", "api": ["list.append", "list.pop"], "evidence": "讲义 §4.2 示例代码" },
-    { "type": "implements", "source": "S1002", "target": "C1102", "language": "Python", "api": ["%"], "evidence": "讲义 §4.3 取模示例" },
-
-    { "type": "verified_by", "source": "C1106", "target": "L04", "evidence": "实验指导书 L04 任务一" },
-    { "type": "verified_by", "source": "S1002", "target": "L04", "evidence": "实验指导书 L04 任务三" },
-
-    { "type": "assessed_by", "source": "C1104", "target": "EX01", "weight": 0.05 },
-    { "type": "assessed_by", "source": "C1105", "target": "EX02", "weight": 0.05 },
-    { "type": "assessed_by", "source": "C1106", "target": "EX03", "weight": 0.15 },
-    { "type": "assessed_by", "source": "C1004", "target": "EX04", "weight": 0.05 },
-    { "type": "assessed_by", "source": "C1201", "target": "EX05", "weight": 0.05 },
-    { "type": "assessed_by", "source": "C1205", "target": "EX06", "weight": 0.10 },
-
-    { "type": "addresses_misconception", "source": "U11", "target": "MC03", "strategy": "反例对比" },
-    { "type": "addresses_misconception", "source": "C1104", "target": "MC03", "strategy": "代码演示" },
-    { "type": "addresses_misconception", "source": "U10", "target": "MC01", "strategy": "边界测试" },
-    { "type": "addresses_misconception", "source": "U10", "target": "MC12", "strategy": "代码演示" }
+    {
+      "type": "is_part_of",
+      "source": "M4",
+      "target": "COURSE-PYDS"
+    },
+    {
+      "type": "is_part_of",
+      "source": "U10",
+      "target": "M4"
+    },
+    {
+      "type": "is_part_of",
+      "source": "U11",
+      "target": "M4"
+    },
+    {
+      "type": "is_part_of",
+      "source": "U12",
+      "target": "M4"
+    },
+    {
+      "type": "appears_in",
+      "source": "C1001",
+      "target": "U10",
+      "sequence": 1
+    },
+    {
+      "type": "appears_in",
+      "source": "C1002",
+      "target": "U10",
+      "sequence": 2
+    },
+    {
+      "type": "appears_in",
+      "source": "C1003",
+      "target": "U10",
+      "sequence": 3
+    },
+    {
+      "type": "appears_in",
+      "source": "C1005",
+      "target": "U10",
+      "sequence": 4
+    },
+    {
+      "type": "appears_in",
+      "source": "C1004",
+      "target": "U10",
+      "sequence": 5
+    },
+    {
+      "type": "appears_in",
+      "source": "S1001",
+      "target": "U10",
+      "sequence": 6
+    },
+    {
+      "type": "appears_in",
+      "source": "MC01",
+      "target": "U10"
+    },
+    {
+      "type": "appears_in",
+      "source": "MC12",
+      "target": "U10"
+    },
+    {
+      "type": "appears_in",
+      "source": "EX04",
+      "target": "U10"
+    },
+    {
+      "type": "appears_in",
+      "source": "C1101",
+      "target": "U11",
+      "sequence": 1
+    },
+    {
+      "type": "appears_in",
+      "source": "C1102",
+      "target": "U11",
+      "sequence": 2
+    },
+    {
+      "type": "appears_in",
+      "source": "C1103",
+      "target": "U11",
+      "sequence": 3
+    },
+    {
+      "type": "appears_in",
+      "source": "C1104",
+      "target": "U11",
+      "sequence": 4
+    },
+    {
+      "type": "appears_in",
+      "source": "C1105",
+      "target": "U11",
+      "sequence": 5
+    },
+    {
+      "type": "appears_in",
+      "source": "C1106",
+      "target": "U11",
+      "sequence": 6
+    },
+    {
+      "type": "appears_in",
+      "source": "S1002",
+      "target": "U11",
+      "sequence": 7
+    },
+    {
+      "type": "appears_in",
+      "source": "L04",
+      "target": "U11"
+    },
+    {
+      "type": "appears_in",
+      "source": "MC03",
+      "target": "U11"
+    },
+    {
+      "type": "appears_in",
+      "source": "EX01",
+      "target": "U11"
+    },
+    {
+      "type": "appears_in",
+      "source": "EX02",
+      "target": "U11"
+    },
+    {
+      "type": "appears_in",
+      "source": "EX03",
+      "target": "U11"
+    },
+    {
+      "type": "appears_in",
+      "source": "C1201",
+      "target": "U12",
+      "sequence": 1
+    },
+    {
+      "type": "appears_in",
+      "source": "C1202",
+      "target": "U12",
+      "sequence": 2
+    },
+    {
+      "type": "appears_in",
+      "source": "C1203",
+      "target": "U12",
+      "sequence": 3
+    },
+    {
+      "type": "appears_in",
+      "source": "C1204",
+      "target": "U12",
+      "sequence": 4
+    },
+    {
+      "type": "appears_in",
+      "source": "C1205",
+      "target": "U12",
+      "sequence": 5
+    },
+    {
+      "type": "appears_in",
+      "source": "EX05",
+      "target": "U12"
+    },
+    {
+      "type": "appears_in",
+      "source": "EX06",
+      "target": "U12"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1001",
+      "target": "C1003",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.2：顺序队列是队列的数组实现，先理解 FIFO 才能理解指针含义"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1002",
+      "target": "C1003",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.2：front 与 rear 的定义"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1003",
+      "target": "C1004",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.2：假溢出是顺序队列的结构性缺陷"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1005",
+      "target": "C1004",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.2：只有演示入队出队过程才能观察到假溢出"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1004",
+      "target": "C1101",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.3：循环队列正是为解决假溢出而设计"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1101",
+      "target": "C1102",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.3：首尾相连的数学表达即取模"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1102",
+      "target": "C1103",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.3：指针回绕后才能讨论相等意味着空"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1102",
+      "target": "C1104",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.3：判满条件依赖取模"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1103",
+      "target": "C1104",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.3：先明确队空才能解释为何要牺牲一个单元区分队满"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1102",
+      "target": "C1105",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.3：长度公式含取模"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1104",
+      "target": "C1106",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.3：实现必须先定义判满逻辑"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1105",
+      "target": "C1106",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.3：__len__ 方法依赖长度公式"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1101",
+      "target": "C1201",
+      "strength": "弱依赖",
+      "evidence": "讲义 §4.4：对比两种实现的前提是理解循环队列"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1001",
+      "target": "C1201",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.4：链队列同为 FIFO 实现"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1201",
+      "target": "C1202",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.4：先有链表结构才能讨论队空判断"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1001",
+      "target": "C1203",
+      "strength": "弱依赖",
+      "evidence": "讲义 §4.5：双端队列是队列的推广"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1001",
+      "target": "C1204",
+      "strength": "弱依赖",
+      "evidence": "讲义 §4.6：应用场景基于 FIFO 特性"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1204",
+      "target": "C1205",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.6：BFS 是队列最典型应用"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C1001",
+      "target": "C1205",
+      "strength": "强依赖",
+      "evidence": "讲义 §4.6：BFS 的正确性直接依赖 FIFO"
+    },
+    {
+      "type": "is_a",
+      "source": "C1101",
+      "target": "C1001",
+      "evidence": "讲义 §4.3：循环队列是队列的顺序存储变体"
+    },
+    {
+      "type": "is_a",
+      "source": "C1201",
+      "target": "C1001",
+      "evidence": "讲义 §4.4：链队列是队列的链式存储"
+    },
+    {
+      "type": "is_a",
+      "source": "C1203",
+      "target": "C1001",
+      "evidence": "讲义 §4.5：双端队列是队列的推广形式"
+    },
+    {
+      "type": "relates_to",
+      "source": "C1103",
+      "target": "C1104",
+      "relation": "对照",
+      "evidence": "讲义 §4.3：队空与队满的判别是循环队列最容易混淆的一对概念"
+    },
+    {
+      "type": "relates_to",
+      "source": "C1101",
+      "target": "C1201",
+      "relation": "对照",
+      "evidence": "讲义 §4.4：定长与变长两种设计取舍"
+    },
+    {
+      "type": "relates_to",
+      "source": "C1205",
+      "target": "C1101",
+      "relation": "互补",
+      "evidence": "BFS 的典型实现依赖循环队列或链队列"
+    },
+    {
+      "type": "implements",
+      "source": "C1106",
+      "target": "C1101",
+      "language": "Python",
+      "api": [
+        "list",
+        "%"
+      ],
+      "evidence": "讲义 §4.3 代码清单"
+    },
+    {
+      "type": "implements",
+      "source": "S1001",
+      "target": "C1005",
+      "language": "Python",
+      "api": [
+        "list.append",
+        "list.pop"
+      ],
+      "evidence": "讲义 §4.2 示例代码"
+    },
+    {
+      "type": "implements",
+      "source": "S1002",
+      "target": "C1102",
+      "language": "Python",
+      "api": [
+        "%"
+      ],
+      "evidence": "讲义 §4.3 取模示例"
+    },
+    {
+      "type": "verified_by",
+      "source": "C1106",
+      "target": "L04",
+      "evidence": "实验指导书 L04 任务一"
+    },
+    {
+      "type": "verified_by",
+      "source": "S1002",
+      "target": "L04",
+      "evidence": "实验指导书 L04 任务三"
+    },
+    {
+      "type": "assessed_by",
+      "source": "C1104",
+      "target": "EX01",
+      "weight": 0.05
+    },
+    {
+      "type": "assessed_by",
+      "source": "C1105",
+      "target": "EX02",
+      "weight": 0.05
+    },
+    {
+      "type": "assessed_by",
+      "source": "C1106",
+      "target": "EX03",
+      "weight": 0.15
+    },
+    {
+      "type": "assessed_by",
+      "source": "C1004",
+      "target": "EX04",
+      "weight": 0.05
+    },
+    {
+      "type": "assessed_by",
+      "source": "C1201",
+      "target": "EX05",
+      "weight": 0.05
+    },
+    {
+      "type": "assessed_by",
+      "source": "C1205",
+      "target": "EX06",
+      "weight": 0.1
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "U11",
+      "target": "MC03",
+      "strategy": "反例对比"
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "C1104",
+      "target": "MC03",
+      "strategy": "代码演示"
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "U10",
+      "target": "MC01",
+      "strategy": "边界测试"
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "U10",
+      "target": "MC12",
+      "strategy": "代码演示"
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "U12",
+      "target": "MC13",
+      "strategy": "反例对比"
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "C1205",
+      "target": "MC13",
+      "strategy": "代码演示"
+    },
+    {
+      "type": "appears_in",
+      "source": "MC13",
+      "target": "U12"
+    }
   ]
 }

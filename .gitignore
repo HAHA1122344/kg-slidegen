@@ -18,9 +18,11 @@ env/
 .env
 config/local.yaml
 
-# 生成产物
-outputs/*.pptx
-outputs/*.json
+# 生成产物：课件本身不入库，但实验结果（表格）要留档以便复现
+outputs/**
+!outputs/.gitkeep
+!outputs/*/results.csv
+!outputs/*/results.md
 
 # 系统文件
 .DS_Store

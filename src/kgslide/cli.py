@@ -18,7 +18,7 @@ from typing import Any
 
 from .constraints import build_constraints
 from .graph import Graph
-from .llm import LLMClient, LLMConfig, LLMError
+from .llm import MODES, LLMClient, LLMConfig, LLMError
 from .renderer import render
 from .validator import evaluate
 
@@ -83,8 +83,9 @@ def cmd_generate(args: argparse.Namespace) -> int:
         constraints = build_constraints(graph, unit_id)
         print(f"[{unit_id}] 生成 {constraints.unit_name} ...", flush=True)
 
-        payload = client.generate_slides(constraints)
-        output = Path(args.out) / f"{unit_id}.pptx"
+        payload = client.generate_slides(constraints, mode=args.mode)
+        suffix = "" if args.mode == "full" else f"__{args.mode}"
+        output = Path(args.out) / f"{unit_id}{suffix}.pptx"
         result = render(payload, output, unit_name=constraints.unit_name)
 
         report = evaluate(payload, constraints, graph, native_ratio=result.native_ratio)
@@ -93,7 +94,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
         print()
 
         if args.dump_json:
-            dump = Path(args.out) / f"{unit_id}.json"
+            dump = Path(args.out) / f"{unit_id}{suffix}.json"
             dump.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
         summary.append(
@@ -130,6 +131,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_gen.add_argument("--unit", default="all", help="讲次 ID，或 all")
     p_gen.add_argument("--out", default=str(DEFAULT_OUT), help="输出目录")
     p_gen.add_argument("--mock", action="store_true", help="离线演示，不调用 API")
+    p_gen.add_argument(
+        "--mode",
+        default="full",
+        choices=list(MODES),
+        help="full=本方法；zero_shot / rag / cot 为对照组",
+    )
     p_gen.add_argument("--provider", default="deepseek", choices=["deepseek", "mock"])
     p_gen.add_argument("--model", default="deepseek-v4-flash")
     p_gen.add_argument("--temperature", type=float, default=0.3)

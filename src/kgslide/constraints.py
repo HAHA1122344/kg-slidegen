@@ -38,6 +38,8 @@ class UnitConstraints:
     unit_name: str
     objective: str
     slide_budget: int
+    course_name: str = ""
+    unit_order: int = 0
     required: list[dict[str, Any]] = field(default_factory=list)
     optional: list[dict[str, Any]] = field(default_factory=list)
     order: list[str] = field(default_factory=list)
@@ -67,8 +69,20 @@ class UnitConstraints:
         return node_id
 
     # -------------------------------------------------------------- prompt
-    def to_prompt_block(self) -> str:
-        """Render the contract as a deterministic prompt fragment."""
+    def to_prompt_block(
+        self,
+        *,
+        include_order: bool = True,
+        include_misconceptions: bool = True,
+        include_forbidden: bool = True,
+        include_siblings: bool = True,
+    ) -> str:
+        """Render the contract as a deterministic prompt fragment.
+
+        The flags exist for the ablation study: dropping exactly one block lets
+        a metric be attributed to a specific part of the graph instead of to
+        "the prompt" as a whole.
+        """
         lines: list[str] = []
         lines.append(f"## 讲次\n{self.unit_id} {self.unit_name}（{self.slide_budget} 页）")
         lines.append(f"\n## 教学目标\n{self.objective}")
@@ -86,10 +100,11 @@ class UnitConstraints:
             for concept in self.optional:
                 lines.append(f"- {concept['id']} {concept['name']}（{concept['importance']}）")
 
-        lines.append("\n## 讲解顺序（必须遵守，这是先修关系决定的拓扑序）")
-        lines.append(" → ".join(f"{nid} {self.name_of(nid)}" for nid in self.order))
+        if include_order:
+            lines.append("\n## 讲解顺序（必须遵守，这是先修关系决定的拓扑序）")
+            lines.append(" → ".join(f"{nid} {self.name_of(nid)}" for nid in self.order))
 
-        if self.misconceptions:
+        if include_misconceptions and self.misconceptions:
             lines.append("\n## 必须纠正的典型误区")
             for mc in self.misconceptions:
                 lines.append(f"- {mc['id']} 错误说法：{mc['statement']}")
@@ -103,7 +118,7 @@ class UnitConstraints:
             for node_id, text in self.evidence.items():
                 lines.append(f"- {node_id}: {text}")
 
-        if self.siblings:
+        if include_siblings and self.siblings:
             preview = "、".join(self.siblings)
             lines.append(
                 f"\n## 可简要回顾、但不要展开的先前概念\n{preview}"
@@ -111,7 +126,7 @@ class UnitConstraints:
                 f"篇幅不得超过全文的 {self.allowed_background_ratio:.0%}。"
             )
 
-        if self.forbidden:
+        if include_forbidden and self.forbidden:
             lines.append(f"\n## 严禁引入的概念\n{'、'.join(self.forbidden)}")
         return "\n".join(lines)
 
@@ -193,6 +208,8 @@ def build_constraints(graph: Graph, unit_id: str) -> UnitConstraints:
         unit_name=unit.get("name", unit_id),
         objective=unit.get("objective", ""),
         slide_budget=int(unit.get("slide_budget", 6)),
+        course_name=str(graph.meta.get("course_name", "")),
+        unit_order=int(unit.get("order", 0)),
         required=required,
         optional=optional,
         order=order,
