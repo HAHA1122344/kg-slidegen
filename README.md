@@ -211,19 +211,20 @@ kg-slidegen/
 ├── paper/
 │   ├── draft-zh.md           # 论文中文稿（投稿用英文稿见 draft-en.md）
 │   ├── draft-en.md           # 论文英文稿（Markdown 版）
-│   ├── latex/                # KBS 投稿用 LaTeX（elsarticle）+ 三个成品 PDF
+│   ├── latex/                # KBS 投稿用 LaTeX（elsarticle）+ 四个成品 PDF
 │   ├── tables.py             # 从 results.csv 生成论文表格
-│   └── figures/              # framework（框架图）、graph_contract（子图→契约）
+│   └── figures/              # framework、graph_contract、graphical_abstract
 ├── tests/                    # 24 项测试
 ├── config/default.yaml
 └── schema.yaml               # 形式化 schema 定义（见 kg-design/）
 ```
 
-重新生成两张图（默认出中文版；`--lang en` 出英文版，`--lang both` 两套都出）：
+重新生成插图（默认出中文版；`--lang en` 出英文版，`--lang both` 两套都出）：
 
 ```bash
 python paper/figures/make_fig1.py --lang both
 python paper/figures/make_fig2.py --lang both
+python paper/figures/make_graphical_abstract.py   # 图形摘要（仅英文，投稿用）
 ```
 
 ## 编译论文 PDF
@@ -240,10 +241,25 @@ cd paper/latex && ./build.sh
 | `manuscript.pdf` | 审稿版：`[review,12pt]`，双倍行距 + 行号，38 页 |
 | `manuscript-preprint.pdf` | 预印本版：`[preprint,12pt]`，单倍行距无行号，27 页 |
 | `highlights.pdf` | Highlights 独立页，5 条、每条 ≤85 字符（Elsevier 硬性要求） |
+| `graphical_abstract.pdf` | 图形摘要，由 `paper/figures/make_graphical_abstract.py` 生成后自动复制进来 |
 
 依赖：TeX Live / TinyTeX，需含 `elsarticle`、`elsarticle-num.bst`、`tabularx`、
 `ragged2e`、`lineno`、`booktabs`、`caption`。参考文献用 BibTeX（`refs.bib`），
 编号制；构建脚本会顺带报告 overfull hbox 数量，当前两个版本均无 >4pt 溢出。
+
+## 图形摘要
+
+Elsevier 把图形摘要缩到 **500 × 200 px**（2.5:1）显示，所以这张图不是 Figure 1
+的缩略版，而是重画：四段流程 + 三组结果 + 一句结论，正文字号全部 ≥12 pt，
+缩到缩略图仍可辨认主干。
+
+产出 `paper/figures/graphical_abstract.pdf`（矢量）与 `.png`（3990 × 1596 px，
+即 300 dpi 下 13.3 × 5.32 英寸，为下限 1328 × 531 的 3 倍）。合规项：
+
+- 比例 2.5:1，PDF 页面 33.78 × 13.51 cm；
+- 只用 Arial，TrueType（`pdf.fonttype=42`）嵌入，不是出版社不收的 Type 3；
+- 图内不含 “Graphical Abstract” 标题、不含图外文字；
+- 脚本自带排版审计：任何文字越界或相互重叠都会直接报错。
 
 
 ## 测试
