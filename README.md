@@ -238,14 +238,19 @@ cd paper/latex && ./build.sh
 
 | 文件 | 用途 |
 | --- | --- |
-| `manuscript.pdf` | 审稿版：`[review,12pt]`，双倍行距 + 行号，38 页 |
-| `manuscript-preprint.pdf` | 预印本版：`[preprint,12pt]`，单倍行距无行号，27 页 |
+| `manuscript.pdf` | 审稿版：`[review,12pt]`，双倍行距 + 行号，40 页（含 2 页前置） |
+| `manuscript-preprint.pdf` | 预印本版：`[preprint,12pt]`，单倍行距无行号，29 页（含 2 页前置） |
 | `highlights.pdf` | Highlights 独立页，5 条、每条 ≤85 字符（Elsevier 硬性要求） |
 | `graphical_abstract.pdf` | 图形摘要，由 `paper/figures/make_graphical_abstract.py` 生成后自动复制进来 |
 
 依赖：TeX Live / TinyTeX，需含 `elsarticle`、`elsarticle-num.bst`、`tabularx`、
 `ragged2e`、`lineno`、`booktabs`、`caption`。参考文献用 BibTeX（`refs.bib`），
 编号制；构建脚本会顺带报告 overfull hbox 数量，当前两个版本均无 >4pt 溢出。
+
+正文里用 `elsarticle` 自带的 `highlights` 与 `graphicalabstract` 环境，
+`\maketitle` 会把它们排成两页前置页（图形摘要 → Highlights），然后由类文件把
+页码重置为 1，所以正文仍从第 1 页开始。这两个环境的内容与独立文件
+`highlights.pdf`、`graphical_abstract.pdf` 一致，改一处记得同步另一处。
 
 ## 图形摘要
 
