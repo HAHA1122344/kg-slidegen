@@ -100,13 +100,15 @@ misconception handling rises from 0.56 to 1.00, but the more informative change
 is in dispersion: the standard deviation falls from 0.53 to 0.00. A condition
 given the same misconception text without structure succeeds in roughly half of
 its generations. What the graph changes is therefore not average quality but
-\emph{reliability}. On prerequisite ordering, by contrast, a strong model
-already performs well zero-shot, and ablation shows that the constraint
-contributes no reliable gain; we do not defend this negative result. We further
-document seven measurement defects discovered and corrected during the study,
-each of which silently favours the constraint-based condition and none of which
-raises an error---a general trap for text-level automatic metrics in educational
-generation.
+\emph{reliability}. Ordering constraints, by contrast, show no reliable gain
+under a strong model, and we do not defend that negative result. A blind review
+by three teachers, who scored ten decks on five five-point items, reproduces the
+automatic ordering: agreement over the overall score is ICC(2,3)~=~0.92, and the
+rescaled misconception ratings track the automatic metric to within 0.09 on every
+condition. We further document seven measurement defects discovered and corrected
+during the study, each of which silently favours the constraint-based condition
+and none of which raises an error---a general trap for text-level automatic
+metrics in educational generation.
 \end{abstract}
 
 \begin{keyword}
@@ -262,6 +264,13 @@ programs both before and after generation.
   placebo; and ordering constraints show no reliable contribution under a strong
   model. We also document \textbf{seven} measurement defects that systematically
   favour constraint-based methods, together with their fixes (\S\ref{sec:defects}).
+
+  \item \textbf{A blind teacher review that independently reproduces the automatic
+  ordering.} Three teachers scored ten decks on five five-point items and an
+  overall score, yielding ICC(2,3)~=~0.92 for the overall rating. Rescaled to
+  $[0,1]$, their misconception ratings fall within 0.09 of the automatic metric on
+  all four conditions, and they place the difference between conditions on the
+  same axis: misconception handling and coverage, not factual accuracy.
 \end{enumerate}
 
 \subsection{Why this belongs in \emph{Knowledge-Based Systems}}
@@ -941,6 +950,78 @@ count is fixed by \id{slide\_budget} and met in every run---but to fuller
 speaker notes on each slide. This is a benefit for teachers, since speaker notes
 are the bulk of lesson preparation.
 
+\subsection{Teacher blind review}
+\label{sec:human-review}
+
+The six metrics measure conformance to the contract, not teaching quality
+(\S\ref{sec:threats}). To check that the two agree, ten decks---three from each
+of \id{full}, \id{rag\_mc} and \id{rag}, one from \id{placebo}---were scored
+independently by three teachers who did not know which condition had produced a
+deck. Each deck was rated on five five-point items and on an overall score,
+defined as the unweighted mean of the five; Table~\ref{tab:human} reports the
+result, and the raw ratings are released with the repository.
+
+\begin{table}[htbp]
+\caption{Teacher blind review on a five-point scale, mean (standard deviation)
+over ratings. Three decks per condition except \id{placebo} ($n=1$ deck,
+descriptive only). ICC(2,3) is the agreement of the average of three raters.
+Content accuracy has no between-deck variance to model ($F(9,18)=1.00$), so its
+ICC is zero by construction rather than by disagreement.}
+\label{tab:human}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{@{}L{4.35cm}*{4}{>{\centering\arraybackslash}X}c@{}}
+\toprule
+Item & \textbf{\id{full}} & \id{rag\_mc} & \id{rag} & \id{placebo} & ICC(2,3) \\
+\midrule
+Syllabus coverage       & 4.78 (0.44) & 3.56 (0.53) & 3.33 (0.50) & 3.67 (0.58) & 0.80 \\
+Misconception correction& 4.89 (0.33) & 3.22 (1.48) & 2.11 (0.60) & 2.67 (0.58) & 0.91 \\
+Pedagogical logic       & 4.56 (0.53) & 3.78 (0.44) & 3.67 (0.50) & 3.67 (0.58) & 0.53 \\
+Content accuracy        & 4.56 (0.53) & 4.22 (0.44) & 4.11 (0.33) & 4.00 (0.00) & 0.00 \\
+Classroom readiness     & 4.67 (0.50) & 3.33 (0.50) & 3.11 (0.33) & 3.00 (0.00) & 0.91 \\
+\midrule
+\textbf{Overall}        & 4.69 (0.28) & 3.62 (0.47) & 3.27 (0.24) & 3.40 (0.20) & \textbf{0.92} \\
+\midrule
+Decks                   & 3 & 3 & 3 & 1 & \\
+Ratings                 & 9 & 9 & 9 & 3 & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Agreement is high where it matters. Averaging three raters yields an overall
+ICC(2,3) of 0.92 (95\% CI $[0.69, 0.96]$, bootstrap over decks), and agreement
+is strongest on precisely the two items the manipulation targets---misconception
+correction (0.91) and classroom readiness (0.91)---with coverage next at 0.80.
+The two low values are informative rather than embarrassing. Content accuracy has
+no between-deck variance to model: every condition averages at least 4.0 and
+$F(9,18)=1.00$, so its ICC is zero by construction, not because the raters
+disagreed about which deck was better. Pedagogical logic (0.53) is where they
+diverge most, which is plausible---judging sequencing from slides alone requires
+knowing what the course has already covered, and the raters were not told.
+
+The ordering itself is unambiguous. \id{full} averages 4.69 (0.28) against 3.62
+(0.47) for \id{rag\_mc}, 3.40 (0.20) for \id{placebo} and 3.27 (0.24) for
+\id{rag}, and every \id{full} deck (4.53--4.80) outscores every \id{rag\_mc} deck
+(3.27--4.00). Complete separation of three decks against three gives a two-sided
+permutation $p=0.10$, the smallest value attainable at this sample size; we
+therefore read the human data as \emph{consistent with} the automatic results,
+not as independent confirmation at conventional significance.
+
+The agreement is more specific than a shared ranking. Rescaling the misconception
+item from 1--5 to $[0,1]$ gives 0.97, 0.56, 0.42 and 0.28 for \id{full},
+\id{rag\_mc}, \id{placebo} and \id{rag}, against automatic values of 1.000,
+0.556, 0.333 and 0.222 on the same four conditions: identical rank order, and a
+gap of at most 0.09. Content accuracy, by contrast, stays at or above 4.0 in every
+condition with a spread of 0.56 points, echoing the automatic finding that the
+baselines are accurate but incomplete. Teachers localise the difference where the
+metrics do---not in whether the slides are right, but in whether they teach what
+this class needs.
+
+Three limits apply and are not argued away. The raters form one cohort of
+colleagues at one institution; three decks per condition permit description but
+not inference; and the \id{placebo} arm contributes a single deck, so its column
+is reported for completeness and carries no weight in the argument.
+
 \subsection{Qualitative observations}
 \label{sec:qualitative}
 
@@ -1082,6 +1163,7 @@ but a problem of information provenance.
 
 % ===============================================================
 \section{Threats to validity}
+\label{sec:threats}
 % ===============================================================
 
 \subsection{Text-level metrics systematically favour constraint-based methods}
@@ -1165,11 +1247,23 @@ Statistically this supports descriptive reporting only; it does not license
 significance claims. Generalisation across courses (especially non-programming
 ones) and across models (including open-weight ones) is untested.
 
-\subsection{Absence of human grading}
+\subsection{What the human review can and cannot support}
 
-The six metrics measure \emph{conformance to the contract}, not teaching quality.
-Whether examples are apt, pacing sensible, or board work clear is entirely beyond
-them. Blind teacher evaluation is a necessary complement and is not yet complete.
+The blind review of \S\ref{sec:human-review} narrows this gap without closing it.
+Ten decks, three raters, one institution and a single \id{placebo} deck support a
+consistency check, not a validation study, and the agreement between human and
+automatic scores is measured at condition level on four points---enough to say the
+two orderings coincide, not enough to estimate a correlation. Nor do the items
+exhaust teaching quality: clarity of board work, appropriateness of examples for
+a particular cohort, and the fit between slides and the teacher's own voice all
+remain outside both the metrics and the rubric.
+
+What the review does establish is narrower and, we think, more useful. When
+teachers look at the same decks, they order the conditions as the metrics do, and
+they locate the difference on the same axis---misconception handling and
+coverage---while rating all four conditions as factually accurate. A larger
+review, with raters drawn from other institutions and courses, is the obvious
+next step and is the one place where our evidence is thinnest.
 
 \subsection{The constructedness of the misconception result}
 
@@ -1193,7 +1287,8 @@ the syllabus} and \emph{the cohort-specific misconceptions}, neither of which
 exists in any pretraining corpus.
 
 Future work proceeds along four lines: (i) extend to all sessions of the course
-and introduce blind teacher evaluation; (ii) build graphs semi-automatically from
+and widen the blind review to raters from other institutions, courses and
+vocational disciplines; (ii) build graphs semi-automatically from
 textbook PDFs to reduce authoring cost; (iii) add a render-and-review loop
 (screenshot, detect overflow and overlap, repair automatically); and (iv) release
 a Chinese vocational slide-generation benchmark so that comparable work can be
@@ -1233,6 +1328,8 @@ Code, graph, experimental protocol and all raw outputs are available in the
 \id{kg-slidegen} repository. The accompanying protocol document records how every
 number in this paper was produced, and each experimental cell retains three
 artefacts: the presentation file, the raw model output and a per-item validation
-report.
+report. The teacher ratings are released as \id{paper/human\_eval.csv}, one row
+per deck--rater pair, and \id{paper/human\_eval.py} regenerates
+Table~\ref{tab:human}, the ICC values and their bootstrap intervals from it.
 
 \end{document}

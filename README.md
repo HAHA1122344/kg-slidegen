@@ -213,6 +213,8 @@ kg-slidegen/
 │   ├── draft-en.md           # 论文英文稿（Markdown 版）
 │   ├── latex/                # KBS 投稿用 LaTeX（elsarticle）+ 四个成品 PDF
 │   ├── tables.py             # 从 results.csv 生成论文表格
+│   ├── human_eval.csv        # 教师盲评原始评分（10 份课件 × 3 位评分者）
+│   ├── human_eval.py         # 盲评分析：描述统计、ICC(2,3)、自助置信区间
 │   └── figures/              # framework、graph_contract、graphical_abstract
 ├── tests/                    # 24 项测试
 ├── config/default.yaml
@@ -238,14 +240,17 @@ cd paper/latex && ./build.sh
 
 | 文件 | 用途 |
 | --- | --- |
-| `manuscript.pdf` | 审稿版：`[review,12pt]`，双倍行距 + 行号，40 页（含 2 页前置） |
-| `manuscript-preprint.pdf` | 预印本版：`[preprint,12pt]`，单倍行距无行号，29 页（含 2 页前置） |
+| `manuscript.pdf` | 审稿版：`[review,12pt]`，双倍行距 + 行号，43 页（含 2 页前置） |
+| `manuscript-preprint.pdf` | 预印本版：`[preprint,12pt]`，单倍行距无行号，31 页（含 2 页前置） |
 | `highlights.pdf` | Highlights 独立页，5 条、每条 ≤85 字符（Elsevier 硬性要求） |
 | `graphical_abstract.pdf` | 图形摘要，由 `paper/figures/make_graphical_abstract.py` 生成后自动复制进来 |
 
 依赖：TeX Live / TinyTeX，需含 `elsarticle`、`elsarticle-num.bst`、`tabularx`、
 `ragged2e`、`lineno`、`booktabs`、`caption`。参考文献用 BibTeX（`refs.bib`），
 编号制；构建脚本会顺带报告 overfull hbox 数量，当前两个版本均无 >4pt 溢出。
+
+论文含教师盲评（10 份课件 × 3 位评分者），原始评分在 `paper/human_eval.csv`，
+`python paper/human_eval.py` 复算 ICC 与描述统计，`--latex` 输出论文表格。
 
 正文里用 `elsarticle` 自带的 `highlights` 与 `graphicalabstract` 环境，
 `\maketitle` 会把它们排成两页前置页（图形摘要 → Highlights），然后由类文件把
