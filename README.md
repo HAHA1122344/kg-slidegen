@@ -17,20 +17,35 @@
 所以「要求什么」和「检查什么」不会漂移。这也是它区别于「把知识点写进提示词」的地方——
 提示词用完就扔，契约是数据对象，生成前后都能被程序读。
 
-## 效果示例
+## 实验结果
 
-以高职《Python 数据结构》第 11 讲「循环队列」为例（离线 mock 模式）：
+在高职《Python 数据结构》队列模块的 3 个讲次上，6 种条件 × 3 次重采样（每个条件 n=9），
+外加 3 组消融。均值（标准差）：
 
-| 指标 | 值 | 含义 |
-| --- | --- | --- |
-| coverage_rate | 1.000 | 6 个必需概念全部覆盖 |
-| oog_rate | 0.000 | 没有引入图谱外概念 |
-| background_rate | 0.125 | 只在一处回顾了先修的「顺序队列」 |
-| prerequisite_violation | 0.000 | 讲解顺序完全符合先修约束 |
-| misconception_coverage | 1.000 | 「判空当判满」这个高频错误已被纠正 |
-| editability | 1.000 | 全部为原生可编辑形状，无图片化文本 |
+| 条件 | 覆盖率 ↑ | 跑题 ↓ | 顺序违例 ↓ | 误区覆盖 ↑ | 输出 tok |
+| --- | :-: | :-: | :-: | :-: | :-: |
+| **full（本文）** | **0.981** (0.056) | **0.000** | 0.020 (0.045) | **1.000** (0.000) | 4079 |
+| rag_mc（给误区文本，无结构） | 0.698 (0.295) | 0.111 (0.220) | 0.007 (0.022) | 0.556 (0.527) | 2689 |
+| rag（教材片段） | 0.659 (0.248) | 0.111 (0.220) | 0.030 (0.089) | 0.222 (0.441) | 2378 |
+| placebo（与 full 等长的提示） | 0.675 (0.266) | 0.167 (0.250) | 0.096 (0.131) | 0.333 (0.500) | 1444 |
+| cot（思维链） | 0.614 (0.185) | 0.019 (0.056) | 0.089 (0.183) | 0.389 (0.486) | 2638 |
+| zero_shot（直出） | 0.643 (0.248) | 0.019 (0.056) | 0.037 (0.089) | 0.222 (0.441) | 2330 |
 
-生成结果是一个可直接编辑的 `.pptx`（13.33×7.5，16:9），在 PowerPoint、Keynote、WPS 里都能改字改版。
+三件值得注意的事：
+
+1. **覆盖率增益不是「提示更长」造成的。** 等长的 `placebo` 组把提示撑到与 `full` 相当
+   （U11 上 2195 对 1997 字符）但只填通用写作建议，覆盖率仍是 0.675。
+2. **误区这一项，方差比均值更重要。** `rag_mc` 拿到了同样的误区文本，均值 0.556、
+   标准差 0.527——9 次里只稳定成功一半。`full` 是 1.000 ± 0.000。
+   知识图谱改变的不是平均质量，而是可靠性。
+3. **顺序约束没有可靠贡献。** `full` 0.020 对 `zero_shot` 0.037，消融甚至方向相反。
+   强模型对教科书内容的顺序本来就有把握。这是负结果，照实报。
+
+完整表格、消融、成本与逐讲次数据见 [`paper/tables.md`](paper/tables.md)，
+实验口径见 [`docs/experiment.md`](docs/experiment.md)。
+
+单次生成产出一份可直接编辑的 `.pptx`（13.33×7.5，16:9），
+在 PowerPoint、Keynote、WPS 里都能改字改版。
 
 ## 安装
 
@@ -147,27 +162,34 @@ Schema 沿用 [K12-KGraph](https://github.com/haolpku/K12-KGraph)（NeurIPS 2026
 
 ## 实验条件
 
-`bench` 支持 7 种条件。四个对照用来回答「图谱有没有用」，三个消融用来回答「图谱的哪一部分在起作用」：
+`bench` 支持 9 种条件。六个对照用来回答「图谱有没有用」，三组消融用来回答「图谱的哪一部分在起作用」：
 
 | 条件 | 给模型的信息 |
 | --- | --- |
 | `full` | 完整契约：概念表 + 拓扑序 + 误区 + 禁止词 + 背景上限 |
-| `zero_shot` | 只给课程名、讲次名、页数 |
+| `rag_mc` | 教材片段 + 误区文本，但无任何结构（误区结论的控制组） |
 | `rag` | 教材片段（概念名 + 定义），无结构信息 |
+| `placebo` | 与 `full` **等长**的提示，但只填通用写作建议（长度效应的控制组） |
 | `cot` | 零样本 + 要求在 notes 中先说明定位 |
+| `zero_shot` | 只给课程名、讲次名、页数 |
 | `no_order` | 完整契约，删掉拓扑序 |
 | `no_misconception` | 完整契约，删掉误区 |
 | `no_forbidden` | 完整契约，删掉禁止词 |
 
 ```bash
-# 主表：4 组对照 × 3 讲次 × 3 次重采样
+# 主表：6 组对照 × 3 讲次 × 3 次重采样
 python -m kgslide.bench --units U10,U11,U12 \
-  --modes full,zero_shot,rag,cot --repeat 3 --out outputs/bench_main
+  --modes full,rag_mc,rag,placebo,cot,zero_shot --repeat 3 --out outputs/main_v1
 
 # 消融：拆掉图谱的一部分，看对应指标是否随之下降
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,no_order,no_misconception,no_forbidden \
   --repeat 2 --out outputs/bench_ablation
+
+# 改了指标口径后重新计分，不调用 API（省钱，且与原始输出严格对应）
+python -m kgslide.bench --units U10,U11,U12 \
+  --modes full,rag_mc,rag,placebo,cot,zero_shot --repeat 3 \
+  --out outputs/main_v1 --reuse
 ```
 
 `--repeat` 不是可有可无的：`full` 的单次覆盖率必然是 1.0（提示词里就是那份清单），单次数字证明不了什么。**跨重采样的方差**才是证据——如果约束真的起作用，`full` 的方差应该显著小于 `zero_shot`。
@@ -180,12 +202,17 @@ kg-slidegen/
 ├── src/kgslide/
 │   ├── graph.py              # 加载、查询、DAG 校验、拓扑排序
 │   ├── constraints.py        # 单元子图 → 生成契约
-│   ├── llm.py                # DeepSeek 客户端 + 确定性 mock + 实验条件
+│   ├── llm.py                # DeepSeek 客户端 + 确定性 mock + 9 种实验条件
 │   ├── renderer.py           # python-pptx 渲染
 │   ├── validator.py          # 六项指标回验
 │   ├── bench.py              # 对照与消融实验批量运行
 │   └── cli.py                # 命令行入口
-├── tests/                    # 19 项测试
+├── docs/experiment.md        # 实验方案与指标口径（改代码前先看这份）
+├── paper/
+│   ├── draft-zh.md           # 论文草稿
+│   ├── tables.py             # 从 results.csv 生成论文表格
+│   └── figures/              # 框架图（make_fig1.py 生成 pdf/png）
+├── tests/                    # 24 项测试
 ├── config/default.yaml
 └── schema.yaml               # 形式化 schema 定义（见 kg-design/）
 ```
@@ -196,7 +223,9 @@ kg-slidegen/
 pytest -q
 ```
 
-覆盖：图谱结构合法性、环检测、拓扑序、约束切分、mock 渲染、指标边界、顺序违例与漏讲检测、**顺序指标的文本级判定**（防回归）、**消融提示词的块级隔离**、`forbidden` 与 `siblings` 互斥。
+覆盖：图谱结构合法性、环检测、拓扑序、约束切分、mock 渲染、指标边界、顺序违例与漏讲检测，
+以及**七项防回归守门**——分别锁住 `docs/experiment.md` 里那七处会让指标偏袒约束方法的缺陷
+（自报 ID、预览页、前向引用、跨行抵消、逐字匹配、误区锚点、图谱外判定）。
 
 ## 路线图
 

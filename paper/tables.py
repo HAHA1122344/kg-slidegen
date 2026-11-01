@@ -27,12 +27,14 @@ METRICS = [
     ("editability", "可编辑 ↑"),
 ]
 
-ORDER = ["full", "rag_mc", "rag", "cot", "zero_shot", "no_order", "no_misconception", "no_forbidden"]
+ORDER = ["full", "rag_mc", "rag", "placebo", "cot", "zero_shot",
+         "no_order", "no_misconception", "no_forbidden"]
 
 LABEL = {
     "full": "**full（本文）**",
     "rag_mc": "rag_mc",
     "rag": "rag",
+    "placebo": "placebo（等长）",
     "cot": "cot",
     "zero_shot": "zero_shot",
     "no_order": "− 顺序约束",
@@ -48,7 +50,7 @@ def load(path: Path) -> list[dict]:
         for key, _ in METRICS:
             row[key] = float(row[key])
         row["passed"] = row["passed"] in ("True", "true", "1")
-        row["completion_tokens"] = int(row.get("completion_tokens") or 0)
+        row["completion_tokens"] = int(float(row.get("completion_tokens") or 0))
         row["latency_s"] = float(row.get("latency_s") or 0.0)
     return rows
 
@@ -78,9 +80,10 @@ def summary_markdown(rows: list[dict], title: str) -> str:
         cells = [fmt([r[key] for r in subset]) for key, _ in METRICS]
         rate = sum(1 for r in subset if r["passed"]) / len(subset)
         tokens = statistics.mean(r["completion_tokens"] for r in subset)
+        tok_cell = f"{tokens:.0f}" if tokens else "—"
         lines.append(
             f"| {LABEL[mode]} | {len(subset)} | " + " | ".join(cells)
-            + f" | {rate:.0%} | {tokens:.0f} |"
+            + f" | {rate:.0%} | {tok_cell} |"
         )
     return "\n".join(lines)
 
@@ -113,9 +116,9 @@ def cost_markdown(rows: list[dict]) -> str:
             continue
         subset = buckets[mode]
         cells = [
-            f"{statistics.mean(r.get('prompt_tokens') or 0 for r in subset):.0f}",
+            f"{statistics.mean(float(r.get('prompt_tokens') or 0) for r in subset):.0f}",
             f"{statistics.mean(r['completion_tokens'] for r in subset):.0f}",
-            f"{statistics.mean(r.get('reasoning_tokens') or 0 for r in subset):.0f}",
+            f"{statistics.mean(float(r.get('reasoning_tokens') or 0) for r in subset):.0f}",
             f"{statistics.mean(r['latency_s'] for r in subset):.1f}",
         ]
         lines.append(f"| {LABEL[mode]} | " + " | ".join(cells) + " |")
@@ -153,10 +156,21 @@ def to_latex(rows: list[dict], title: str, label: str) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--latex", action="store_true")
+    parser.add_argument("--main", default="", help="主表目录，默认自动挑最新的一份")
+    parser.add_argument("--abl", default="", help="消融目录")
     args = parser.parse_args()
 
-    main_csv = ROOT / "outputs" / "bench_main" / "results.csv"
-    abl_csv = ROOT / "outputs" / "bench_ablation" / "results.csv"
+    def pick(explicit: str, *candidates: str) -> Path:
+        if explicit:
+            return Path(explicit) / "results.csv"
+        for name in candidates:
+            path = ROOT / "outputs" / name / "results.csv"
+            if path.exists():
+                return path
+        return ROOT / "outputs" / candidates[0] / "results.csv"
+
+    main_csv = pick(args.main, "main_v1", "bench_main")
+    abl_csv = pick(args.abl, "ablation_v1", "bench_ablation")
 
     blocks: list[str] = []
     if main_csv.exists():
