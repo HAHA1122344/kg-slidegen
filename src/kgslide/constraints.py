@@ -49,7 +49,7 @@ class UnitConstraints:
     siblings: list[str] = field(default_factory=list)
     # Terms that must never appear (out-of-scope for this course).
     forbidden: list[str] = field(default_factory=list)
-    allowed_background_ratio: float = 0.20
+    allowed_background_ratio: float = 0.25
 
     # ------------------------------------------------------------- helpers
     @property

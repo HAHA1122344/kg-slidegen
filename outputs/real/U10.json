@@ -1,0 +1,106 @@
+{
+  "unit_id": "U10",
+  "slides": [
+    {
+      "index": 1,
+      "layout": "title",
+      "title": "队列的概念与假溢出",
+      "bullets": [
+        "队列：先进先出（FIFO）的线性表",
+        "掌握 front 与 rear 的含义",
+        "理解顺序队列假溢出的成因",
+        "能用 Python 列表手写队列四个方法"
+      ],
+      "code": "",
+      "notes": "本讲从队列的 FIFO 特性出发，先讲清 front、rear 两个指针的含义，再引出顺序队列的假溢出问题。最后落到动手实现，用 Python 列表写一个最简队列并做边界测试。",
+      "concept_ids": [],
+      "background": false
+    },
+    {
+      "index": 2,
+      "layout": "concept",
+      "title": "队列：先进先出的线性表",
+      "bullets": [
+        "队列只允许在一端插入、另一端删除",
+        "删除的一端称队头 front，插入的一端称队尾 rear",
+        "先进先出 FIFO：最早入队的最早出队",
+        "例：排队买票、打印任务缓冲"
+      ],
+      "code": "",
+      "notes": "强调队列是操作受限的线性表，插入和删除被固定在不同两端，这正是 FIFO 的来源。front 永远指向最老的元素一侧，rear 指向最新元素一侧，后面看指针移动才不会混淆。",
+      "concept_ids": [
+        "C1001",
+        "C1002"
+      ],
+      "background": false
+    },
+    {
+      "index": 3,
+      "layout": "concept",
+      "title": "顺序队列：数组加两个指针",
+      "bullets": [
+        "用一段连续存储单元存放队列元素",
+        "front 指向队头元素，rear 指向队尾后一位置",
+        "入队 O(1)，出队 O(1)",
+        "容量需预先固定，可能浪费空间"
+      ],
+      "code": "",
+      "notes": "顺序队列是队列的数组实现，连续存储带来了 O(1) 的随机访问。请提醒学生：这里说的 O(1) 指的是移动指针找位置这一步，不等于任何写法都能 O(1)，后面还会算这笔账。",
+      "concept_ids": [
+        "C1003"
+      ],
+      "background": false
+    },
+    {
+      "index": 4,
+      "layout": "code",
+      "title": "入队与出队操作",
+      "bullets": [
+        "入队：先判满，在 rear 处放元素并后移 rear",
+        "出队：先判空，取 front 处元素并后移 front",
+        "本讲约定判空条件为 front == rear",
+        "判满条件为 rear 到达数组长度"
+      ],
+      "code": "# 入队\ndef enqueue(data, x, front, rear):\n    if rear == len(data):\n        raise OverflowError(\"队满\")\n    data[rear] = x\n    return front, rear + 1\n\n# 出队\ndef dequeue(data, front, rear):\n    if front == rear:\n        raise IndexError(\"队空\")\n    x = data[front]\n    return x, front + 1, rear",
+      "notes": "两个操作都是先判断边界再动指针，这是后面查错的关键习惯。可以让学生在纸上跟着指针走一遍，观察 front 和 rear 只增不减，为下一页的假溢出埋下伏笔。",
+      "concept_ids": [
+        "C1005"
+      ],
+      "background": false
+    },
+    {
+      "index": 5,
+      "layout": "misconception",
+      "title": "假溢出与两个常见误区",
+      "bullets": [
+        "误区：rear 到数组末端即队满——前端可能还有空位（假溢出）",
+        "假溢出是顺序队列的结构性缺陷，会导致明明有空位却入不了队",
+        "误区：list 底层是链表——CPython 的 list 是动态数组，随机访问 O(1)",
+        "误区：队列操作恒为 O(1)——list 的 pop(0) 出队为 O(n)"
+      ],
+      "code": "",
+      "notes": "假溢出不是逻辑错误，而是指针只增不减带来的结构性浪费，真正解决要靠取模复用前端空间。同时借机纠正两个 list 误区：头部插入删除要整体前移，所以出队不要写 pop(0)。",
+      "concept_ids": [
+        "C1004"
+      ],
+      "background": false
+    },
+    {
+      "index": 6,
+      "layout": "summary",
+      "title": "用列表实现队列与小结",
+      "bullets": [
+        "front、rear 都是下标，初始均为 0",
+        "判空 front == rear；判满 rear == len(data)",
+        "入队写 rear 位置并后移；出队读 front 位置并后移",
+        "出队不要用 pop(0)，靠下标移动保持 O(1)"
+      ],
+      "code": "class ArrayQueue:\n    def __init__(self, cap):\n        self.data = [None] * cap\n        self.front = 0\n        self.rear = 0\n\n    def is_empty(self):\n        return self.front == self.rear\n\n    def is_full(self):\n        return self.rear == len(self.data)\n\n    def enqueue(self, x):\n        if self.is_full():\n            raise OverflowError(\"队满\")\n        self.data[self.rear] = x\n        self.rear += 1\n\n    def dequeue(self):\n        if self.is_empty():\n            raise IndexError(\"队空\")\n        x = self.data[self.front]\n        self.front += 1\n        return x\n\nq = ArrayQueue(3)\nq.enqueue(1); q.enqueue(2); q.enqueue(3)\nprint(q.dequeue(), q.dequeue())  # 1 2\nprint(q.is_empty(), q.is_full())  # False True",
+      "notes": "四个方法对应四个边界：空、满、入、出，建议课堂上现场加两组边界用例跑一遍。收尾时点一句：这段代码跑不了几次 rear 就到头了，正是假溢出，后续可用取模复用空间。",
+      "concept_ids": [
+        "S1001"
+      ],
+      "background": false
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "unit_id": "U12",
+  "slides": [
+    {
+      "index": 1,
+      "layout": "title",
+      "title": "链队列与 BFS 引入",
+      "bullets": [
+        "掌握链队列结构与入队、出队 O(1) 的实现",
+        "能准确判断链队列的队空条件",
+        "会根据场景在循环队列与链队列之间选型",
+        "理解队列在广度优先搜索中的作用"
+      ],
+      "code": "",
+      "notes": "本讲承接上一讲的循环队列，先给出链式实现，再讨论选型，最后把队列用到 BFS 上。请提醒学生：队列的 FIFO 特性是后面所有应用的共同基础。",
+      "concept_ids": [],
+      "background": false
+    },
+    {
+      "index": 2,
+      "layout": "code",
+      "title": "链队列：带头结点的链式队列",
+      "bullets": [
+        "带头结点单链表，front 指向头结点，rear 指向队尾",
+        "入队：新结点接到 rear 之后并后移 rear，O(1)",
+        "出队：删除 front 的后继结点，O(1)",
+        "不设尾指针时入队需遍历到表尾，退化为 O(n)"
+      ],
+      "code": "class Node:\n    def __init__(self, data=None):\n        self.data = data\n        self.next = None\n\nclass LinkedQueue:\n    def __init__(self):\n        self.head = Node()        # 头结点\n        self.front = self.head    # 队头侧\n        self.rear = self.head     # 队尾侧\n\n    def enqueue(self, x):         # O(1)\n        s = Node(x)\n        self.rear.next = s\n        self.rear = s\n\n    def dequeue(self):            # O(1)，判空见下页\n        p = self.front.next\n        self.front.next = p.next\n        if self.rear is p:        # 出的是最后一个元素\n            self.rear = self.front\n        return p.data",
+      "notes": "先画出带头结点的空队列图，让学生看清 front 与 rear 都指向头结点。强调队头在链表头部出队、队尾在链表尾部入队，两端的操作都不需要移动元素，因此都是 O(1)。",
+      "concept_ids": [
+        "C1201"
+      ],
+      "background": false
+    },
+    {
+      "index": 3,
+      "layout": "misconception",
+      "title": "误区：front == rear 就是队空？",
+      "bullets": [
+        "误区：只要两个指针相等就判队空",
+        "正解：队空是 front 与 rear 同时指向头结点",
+        "出清最后一个元素后，rear 必须回退到头结点",
+        "顺序队列里的判空结论不能直接照搬过来"
+      ],
+      "code": "def is_empty(self):\n    # 正确：队头队尾都指回头结点\n    return self.front is self.rear and self.front is self.head\n\n# 错误写法：只看 front is self.rear，\n# 漏掉“都指向头结点”这一前提，容易掩盖指针错位",
+      "notes": "这是本讲最容易出错的地方。学生刚学完循环队列的 front==rear 判空，很容易直接套用；要讲清链队列中队空的结构含义，即两个指针都回到头结点，并用图示演示出队最后一个元素的指针回退。",
+      "concept_ids": [
+        "C1202"
+      ],
+      "background": false
+    },
+    {
+      "index": 4,
+      "layout": "comparison",
+      "title": "链队列、循环队列与双端队列",
+      "bullets": [
+        "循环队列：定长数组、可能假溢出，长度可预估时首选",
+        "链队列：按需申请结点、无假溢出，长度波动大时首选",
+        "双端队列：两端都能入队出队，是队列的推广",
+        "选型依据：内存是否受限、长度是否可预估"
+      ],
+      "code": "",
+      "notes": "用一张对比表把存储方式、容量、时间复杂度、溢出风险四列摆出来，让学生自己说出选型理由。双端队列只在概念层面介绍，说明它两端都可操作，为后续滑动窗口等问题留个引子。",
+      "concept_ids": [
+        "C1203"
+      ],
+      "background": false
+    },
+    {
+      "index": 5,
+      "layout": "concept",
+      "title": "队列应用与 BFS 引入",
+      "bullets": [
+        "典型应用：任务调度、打印缓冲、树的层序遍历",
+        "BFS 从起点出发按层扩展，用队列保存待访问结点",
+        "出队即访问，把未访问的邻居依次入队",
+        "FIFO 保证了先访问近的、再访问远的"
+      ],
+      "code": "from collections import deque\n\ndef bfs(graph, start):\n    q = deque([start])\n    seen = {start}\n    order = []\n    while q:                      # 队列非空\n        u = q.popleft()           # 出队即访问\n        order.append(u)\n        for v in graph[u]:        # 邻居依次入队\n            if v not in seen:\n                seen.add(v)\n                q.append(v)\n    return order",
+      "notes": "先从学生熟悉的排队场景切入，再过渡到层序遍历，最后落到 BFS。重点是让学生看到“先进先出”正好对应“按层推进”，这也是 BFS 能求最短步数的原因。",
+      "concept_ids": [
+        "C1204",
+        "C1205"
+      ],
+      "background": false
+    },
+    {
+      "index": 6,
+      "layout": "summary",
+      "title": "小结与练习",
+      "bullets": [
+        "链队列 = 带头结点单链表 + front/rear，入队出队均 O(1)",
+        "队空条件是 front 与 rear 同时指向头结点",
+        "长度不定选链队列，长度固定选循环队列",
+        "BFS 借助队列按层扩展，是队列最典型的应用"
+      ],
+      "code": "",
+      "notes": "小结时让学生复述判空条件和选型依据，再口头描述一遍 BFS 的入队出队流程。课后练习：手写链队列的入队、出队与判空，并用它改写一段 BFS 代码。",
+      "concept_ids": [
+        "C1201",
+        "C1202",
+        "C1205"
+      ],
+      "background": false
+    }
+  ]
+}

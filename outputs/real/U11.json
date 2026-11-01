@@ -1,0 +1,123 @@
+{
+  "unit_id": "U11",
+  "slides": [
+    {
+      "index": 1,
+      "layout": "title",
+      "title": "循环队列",
+      "bullets": [
+        "理解取模实现空间复用",
+        "区分队空与队满条件",
+        "独立写出循环队列代码"
+      ],
+      "code": "",
+      "notes": "本讲从顺序队列的假溢出问题引入循环队列，重点放在取模运算和判空判满的区别上。学完后要能独立实现一个容量为 8 的循环队列。",
+      "concept_ids": [],
+      "background": false
+    },
+    {
+      "index": 2,
+      "layout": "concept",
+      "title": "循环队列：首尾相连",
+      "bullets": [
+        "把顺序队列存储空间首尾相连",
+        "rear/front 到末端后回到起点",
+        "复用出队留下的空闲单元",
+        "入队 O(1)，出队 O(1)"
+      ],
+      "code": "",
+      "notes": "先回顾顺序队列的假溢出：队尾到末端后前面还有空位却不能入队。循环队列把存储空间首尾相连，让 rear 和 front 回绕，从而复用空闲单元。",
+      "concept_ids": [
+        "C1101"
+      ],
+      "background": true
+    },
+    {
+      "index": 3,
+      "layout": "concept",
+      "title": "取模让指针循环",
+      "bullets": [
+        "指针前移用 (index + 1) % maxsize",
+        "下标始终落在 [0, maxsize-1]",
+        "取模是循环队列实现的关键",
+        "无需分支判断是否越界"
+      ],
+      "code": "rear = (rear + 1) % maxsize",
+      "notes": "首尾相连的数学表达就是取模。指针前移时先加 1 再对 maxsize 取模，下标自然在合法范围内循环，不需要写 if 判断越界。",
+      "concept_ids": [
+        "C1102"
+      ],
+      "background": false
+    },
+    {
+      "index": 4,
+      "layout": "concept",
+      "title": "队空条件：front == rear",
+      "bullets": [
+        "front 与 rear 相等表示队列为空",
+        "初始时 front = rear = 0",
+        "出队到空后两者再次相等",
+        "这是判空而非判满"
+      ],
+      "code": "def is_empty():\n    return front == rear",
+      "notes": "指针能够回绕之后，front 与 rear 相等才真正表示队列为空。初始状态和不断出队后的空状态都满足这个条件。注意它只用于判空。",
+      "concept_ids": [
+        "C1103"
+      ],
+      "background": false
+    },
+    {
+      "index": 5,
+      "layout": "misconception",
+      "title": "判满不是 rear == front",
+      "bullets": [
+        "错误说法：rear == front 表示队满",
+        "正确判空：front == rear",
+        "正确判满：(rear+1)%maxsize == front",
+        "牺牲一个单元以区分空与满"
+      ],
+      "code": "",
+      "notes": "这是本节最容易混淆的地方：rear == front 是队空条件。为了区分空和满，通常牺牲一个存储单元，队列满的条件是 (rear + 1) % maxsize == front。两者混淆会导致队空与队满无法区分。",
+      "concept_ids": [
+        "C1104",
+        "C1103"
+      ],
+      "background": false
+    },
+    {
+      "index": 6,
+      "layout": "code",
+      "title": "队列长度与 Python 实现",
+      "bullets": [
+        "长度=(rear-front+maxsize)%maxsize",
+        "维护 front、rear、maxsize 三个状态",
+        "所有指针移动都必须取模",
+        "用列表模拟定长数组"
+      ],
+      "code": "class CircularQueue:\n    def __init__(self, maxsize=8):\n        self.maxsize = maxsize\n        self.data = [None] * maxsize\n        self.front = 0\n        self.rear = 0\n\n    def is_empty(self):\n        return self.front == self.rear\n\n    def is_full(self):\n        return (self.rear + 1) % self.maxsize == self.front\n\n    def enqueue(self, x):\n        if self.is_full():\n            return False\n        self.data[self.rear] = x\n        self.rear = (self.rear + 1) % self.maxsize\n        return True\n\n    def dequeue(self):\n        if self.is_empty():\n            return None\n        x = self.data[self.front]\n        self.front = (self.front + 1) % self.maxsize\n        return x\n\n    def length(self):\n        return (self.rear - self.front + self.maxsize) % self.maxsize",
+      "notes": "实现时先定义判空和判满逻辑，再写入队和出队。长度公式 (rear - front + maxsize) % maxsize 保证 front 大于 rear 时也能得到正确元素个数。所有指针移动都要取模。",
+      "concept_ids": [
+        "C1105",
+        "C1106"
+      ],
+      "background": false
+    },
+    {
+      "index": 7,
+      "layout": "summary",
+      "title": "小结：取模计算与验证",
+      "bullets": [
+        "指针前移：先加 1 再取模",
+        "长度公式加 maxsize 防负数",
+        "判满牺牲一个单元",
+        "上机：容量 8，20 入队 15 出队"
+      ],
+      "code": "",
+      "notes": "取模表达式统一了指针回绕和长度计算：指针前移用 (index + 1) % maxsize；长度计算加 maxsize 是为了避免 rear - front 出现负数。配套上机用容量 8 完成 20 次入队和 15 次出队，验证复用与判满逻辑。",
+      "concept_ids": [
+        "S1002"
+      ],
+      "background": false
+    }
+  ]
+}

@@ -8,6 +8,7 @@ what actually catches the violation.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
@@ -73,6 +74,62 @@ def _net_occurrences(term: str, corpus: str, vocabulary: Iterable[str]) -> int:
     longer = [w for w in vocabulary if w != term and term in w and len(w) > len(term)]
     consumed = sum(corpus.count(w) for w in longer)
     return max(0, raw - consumed)
+
+
+def _bigrams(text: str) -> set[str]:
+    cleaned = re.sub(r"\s+", "", text)
+    return {cleaned[i : i + 2] for i in range(len(cleaned) - 1)}
+
+
+def _identifier_tokens(text: str) -> set[str]:
+    """English identifiers such as ``rear``, ``front``, ``list``."""
+    return {t.lower() for t in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", text)}
+
+
+def _covers_misconception(
+    mc: dict[str, Any],
+    slides: list[dict[str, Any]],
+    anchors: set[str],
+) -> bool:
+    """Decide whether a misconception was actually addressed.
+
+    Literal matching is too brittle: a model may write "rear == front 表示队满"
+    where the graph stores "循环队列判满的条件是 rear == front".  Three signals
+    are combined, in decreasing order of reliability:
+
+    1. structural -- a misconception slide cites a concept the graph links to
+       this misconception;
+    2. identifier overlap -- a misconception slide shares an English identifier
+       (``rear``, ``list``) with the statement;
+    3. character bigram overlap -- fuzzy Chinese matching without a tokenizer.
+    """
+    statement = mc.get("statement", "")
+    statement_ids = _identifier_tokens(statement)
+    statement_bigrams = _bigrams(statement)
+
+    for slide in slides:
+        ids = set(slide.get("concept_ids") or [])
+        text = _slide_text(slide)
+        is_mc_slide = slide.get("layout") == "misconception"
+
+        if statement and statement in text:
+            return True
+        if is_mc_slide and (mc["id"] in ids or ids & anchors):
+            return True
+        if is_mc_slide:
+            shared = statement_ids & _identifier_tokens(text)
+            if shared:
+                return True
+            if statement_bigrams:
+                overlap = len(statement_bigrams & _bigrams(text)) / len(statement_bigrams)
+                if overlap >= 0.35:
+                    return True
+        elif statement_bigrams:
+            # A non-misconception slide can still correct the error inline.
+            overlap = len(statement_bigrams & _bigrams(text)) / len(statement_bigrams)
+            if overlap >= 0.6:
+                return True
+    return False
 
 
 def _slide_text(slide: dict[str, Any]) -> str:
@@ -162,20 +219,27 @@ def evaluate(
         for term in constraints.forbidden
         if len(term) >= 2 and _net_occurrences(term, corpus, vocabulary) > 0
     }
-    # 3) Sibling concepts used as recap: allowed, but capped by ratio.
-    background_hits = {
+    # 3) Sibling concepts used as recap, measured as a share of characters.
+    #    Counting concepts is too coarse: a one-line comparison table legitimately
+    #    names three siblings without re-teaching any of them.
+    background_terms = {
         term
         for term in constraints.siblings
         if len(term) >= 2 and _net_occurrences(term, corpus, vocabulary) > 0
     }
+    cleaned = re.sub(r"\s+", "", corpus)
+    total_chars = max(len(cleaned), 1)
+    background_chars = sum(
+        _net_occurrences(term, corpus, vocabulary) * len(term) for term in background_terms
+    )
 
     oog_total = len(declared_oog) + len(forbidden_hits)
-    total_mentions = len(covered) + oog_total + len(background_hits)
-    oog_rate = oog_total / total_mentions if total_mentions else 0.0
-    background_rate = len(background_hits) / total_mentions if total_mentions else 0.0
+    mention_total = len(covered) + oog_total
+    oog_rate = oog_total / mention_total if mention_total else 0.0
+    background_rate = min(background_chars / total_chars, 1.0)
 
     report.out_of_graph = sorted(declared_oog | forbidden_hits)
-    report.background_terms = sorted(background_hits)
+    report.background_terms = sorted(background_terms)
 
     # ------------------------------------------------- prerequisite order
     sequence = _flatten_sequence(slides)
@@ -194,16 +258,9 @@ def evaluate(
     mc_items = constraints.misconceptions
     hit = 0
     for mc in mc_items:
-        statement = mc.get("statement", "")
-        for slide in slides:
-            text = _slide_text(slide)
-            is_mc_slide = slide.get("layout") == "misconception"
-            if is_mc_slide and (mc["id"] in (slide.get("concept_ids") or []) or statement in text):
-                hit += 1
-                break
-            if statement and statement in text:
-                hit += 1
-                break
+        anchors = {e["source"] for e in graph.in_edges(mc["id"], "addresses_misconception")}
+        if _covers_misconception(mc, slides, anchors):
+            hit += 1
     mc_coverage = hit / len(mc_items) if mc_items else 1.0
 
     # ------------------------------------------------------------ ratios

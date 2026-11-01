@@ -1,0 +1,14 @@
+[
+  {
+    "unit": "U11",
+    "pptx": "outputs/real/U11.pptx",
+    "passed": true,
+    "coverage_rate": 1.0,
+    "oog_rate": 0.0,
+    "background_rate": 0.2222,
+    "prerequisite_violation": 0.0,
+    "misconception_coverage": 0.0,
+    "editability": 1.0,
+    "page_budget_ratio": 1.0
+  }
+]
