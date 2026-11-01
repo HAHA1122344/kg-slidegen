@@ -1,0 +1,11 @@
+# LaTeX intermediates -- the three PDFs are kept, everything else is rebuilt.
+*.aux
+*.bbl
+*.blg
+*.bib.log
+*.log
+*.out
+*.spl
+*.toc
+_preprint.*
+_preview/

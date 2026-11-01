@@ -1,17 +1,20 @@
 """Generate Figure 2 (graph fragment and its compiled contract) for the paper.
 
-Run:  python paper/figures/make_fig2.py
+Run:  python paper/figures/make_fig2.py             # both languages
+      python paper/figures/make_fig2.py --lang en   # English only
 
 Left panel  : the U11 subgraph as it exists in ``data/kg_pyds_m4.json``
               (prerequisite edges, one cross-session edge, one misconception,
               one skill linked by ``implements``).
 Right panel : the contract that ``build_constraints`` compiles from it.
 
-Produces ``graph_contract.pdf`` (vector) and ``graph_contract.png`` (raster).
+Outputs ``graph_contract.pdf|png`` (Chinese, for the README) and
+``graph_contract_en.pdf|png`` (English, for the manuscript).
 """
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import matplotlib
@@ -47,6 +50,85 @@ C_CROSS = "#b08a5a"
 C_SKILL = "#4f7f63"
 C_MC = "#a4515f"
 
+S = {
+    "zh": {
+        "suffix": "",
+        "nodes": {
+            "C1101": "循环队列",
+            "C1102": "取模运算",
+            "C1103": "队空条件",
+            "C1104": "队满条件",
+            "C1105": "队列长度计算",
+            "C1106": "循环队列的实现",
+            "S1002": "取模计算\n（技能）",
+            "MC03": "MC03\n判满条件",
+            "C1004": "假溢出\n（U10）",
+        },
+        "frame": "U11 子图 $G_u$",
+        "legend": ["prerequisites_for", "跨讲次先修", "implements",
+                   "addresses_misconception"],
+        "card_title": "编译产物  $C(u)$ —— 生成与验收的同一份真值",
+        "rows": [
+            ("$S_u$", "必需概念集\n（≥ 掌握）",
+             "循环队列 · 取模运算 · 队空条件\n队满条件 · 队列长度计算 · 循环队列的实现",
+             8.55, 1.60),
+            ("$\\prec_u$", "讲解顺序\n（拓扑序）",
+             "循环队列 → 取模运算 → {队空, 队满}\n→ {队列长度计算, 循环队列的实现}",
+             6.55, 1.55),
+            ("$M_u$", "必须纠正\n的误区",
+             "MC03 判满条件是 rear == front\n→ 至少一页 layout = misconception",
+             4.60, 1.55),
+            ("$F_u$", "禁列词\n（本课程不讲）",
+             "优先队列 · 单调队列 · 消息队列\n最短路径 · 拓扑排序",
+             2.85, 1.30),
+            ("$B_u$", "可简要回顾\n的兄弟讲次",
+             "队列 · 队头与队尾 · 假溢出 · 链队列",
+             1.58, 0.72),
+            ("$k_u$", "页数预算", "7 页", 0.86, 0.44),
+        ],
+        "node_fs": 7.4, "small_fs": 6.2, "body_fs": 5.9, "tag_fs": 5.9,
+        "body_x": 4.55, "title_fs": 7.4,
+    },
+    "en": {
+        "suffix": "_en",
+        "nodes": {
+            "C1101": "Circular queue",
+            "C1102": "Modular arithmetic",
+            "C1103": "Empty condition",
+            "C1104": "Full condition",
+            "C1105": "Queue length",
+            "C1106": "Implementation",
+            "S1002": "Modular\ncalc. (skill)",
+            "MC03": "MC03\nfull condition",
+            "C1004": "False overflow\n(U10)",
+        },
+        "frame": "U11 subgraph $G_u$",
+        "legend": ["prerequisites_for", "cross-session", "implements",
+                   "addresses_misconception"],
+        "card_title": "Compiled contract  $C(u)$ : one source, two roles",
+        "rows": [
+            ("$S_u$", "required\n($\\geq$ master)",
+             "circular queue · modular arithmetic · empty condition\nfull condition · queue length · implementation",
+             8.55, 1.60),
+            ("$\\prec_u$", "teaching order\n(topological)",
+             "circular queue → modular arith. → {empty, full}\n→ {queue length, implementation}",
+             6.55, 1.55),
+            ("$M_u$", "must be\ncorrected",
+             "MC03: full condition is rear == front\n→ at least one slide with layout = misconception",
+             4.60, 1.55),
+            ("$F_u$", "forbidden\n(not taught here)",
+             "priority queue · monotone queue · message queue\nshortest path · topological sort",
+             2.85, 1.30),
+            ("$B_u$", "sibling recap\nallowed",
+             "queue · head and tail · false overflow · linked queue",
+             1.58, 0.72),
+            ("$k_u$", "slide budget", "7 slides", 0.86, 0.44),
+        ],
+        "node_fs": 7.0, "small_fs": 5.9, "body_fs": 5.2, "tag_fs": 5.5,
+        "body_x": 4.25, "title_fs": 6.9,
+    },
+}
+
 
 def _box(ax, x, y, w, h, text, *, fill, edge=EDGE, fs=7.4, ls="-"):
     ax.add_patch(
@@ -77,7 +159,7 @@ def _arrow(ax, p, q, *, color=EDGE, ls="-", lw=0.9, rad=0.0, shrink=13):
     )
 
 
-def draw_graph(ax):
+def draw_graph(ax, t):
     ax.set_xlim(0, 10.9)
     ax.set_ylim(0.2, 10.5)
     ax.axis("off")
@@ -93,22 +175,14 @@ def draw_graph(ax):
         "MC03": (9.15, 4.35),
         "C1004": (1.02, 8.45),
     }
-    label = {
-        "C1101": "循环队列",
-        "C1102": "取模运算",
-        "C1103": "队空条件",
-        "C1104": "队满条件",
-        "C1105": "队列长度计算",
-        "C1106": "循环队列的实现",
-        "S1002": "取模计算\n（技能）",
-        "MC03": "MC03\n判满条件",
-        "C1004": "假溢出\n（U10）",
-    }
     size = {
-        "C1106": (2.25, 0.76),
-        "C1105": (2.25, 0.76),
-        "MC03": (2.20, 0.84),
-        "S1002": (1.70, 0.80),
+        "C1106": (2.30, 0.76),
+        "C1105": (2.30, 0.76),
+        "MC03": (2.20, 0.86),
+        "S1002": (1.80, 0.80),
+        "C1102": (1.95, 0.72),
+        "C1103": (1.95, 0.72),
+        "C1104": (1.95, 0.72),
     }
 
     # session frame
@@ -120,7 +194,7 @@ def draw_graph(ax):
             linestyle=(0, (3, 3)), zorder=1,
         )
     )
-    ax.text(10.55, 10.28, "U11 子图 $G_u$", fontsize=7.2, color=MUTED,
+    ax.text(10.55, 10.28, t["frame"], fontsize=7.2, color=MUTED,
             style="italic", ha="right")
 
     for nid, (x, y) in pos.items():
@@ -133,8 +207,9 @@ def draw_graph(ax):
             fill, ls, ec = FILL_MC, "-", "#c9a9b0"
         else:
             fill, ls, ec = FILL_CONCEPT, "-", "#a9bacd"
-        _box(ax, x, y, w, h, label[nid], fill=fill, edge=ec, ls=ls,
-             fs=6.2 if nid == "MC03" else (6.8 if nid == "S1002" else 7.4))
+        fs = t["small_fs"] if nid == "MC03" else (
+            t["small_fs"] + 0.7 if nid == "S1002" else t["node_fs"])
+        _box(ax, x, y, w, h, t["nodes"][nid], fill=fill, edge=ec, ls=ls, fs=fs)
 
     for a, b in [
         ("C1101", "C1102"),
@@ -152,21 +227,17 @@ def draw_graph(ax):
     _arrow(ax, pos["C1104"], pos["MC03"], color=C_MC, ls=(0, (4, 2)), rad=0.30)
 
     # legend, two rows, below the frame
-    items = [
-        ("prerequisites_for", C_PRQ, "-"),
-        ("跨讲次先修", C_CROSS, (0, (4, 2))),
-        ("implements", C_SKILL, (0, (1.6, 1.6))),
-        ("addresses_misconception", C_MC, (0, (4, 2))),
-    ]
-    for i, (txt, col, ls) in enumerate(items):
+    cols = [C_PRQ, C_CROSS, C_SKILL, C_MC]
+    lss = ["-", (0, (4, 2)), (0, (1.6, 1.6)), (0, (4, 2))]
+    for i, txt in enumerate(t["legend"]):
         x0 = 1.62 + (i % 2) * 4.35
         y0 = 2.42 - (i // 2) * 0.42
-        ax.plot([x0, x0 + 0.52], [y0, y0], color=col, lw=1.0, ls=ls,
+        ax.plot([x0, x0 + 0.52], [y0, y0], color=cols[i], lw=1.0, ls=lss[i],
                 solid_capstyle="butt")
-        ax.text(x0 + 0.64, y0, txt, fontsize=6.2, color=MUTED, va="center")
+        ax.text(x0 + 0.64, y0, txt, fontsize=6.0, color=MUTED, va="center")
 
 
-def draw_contract(ax):
+def draw_contract(ax, t):
     ax.set_xlim(0, 10.9)
     ax.set_ylim(0.2, 10.5)
     ax.axis("off")
@@ -178,29 +249,10 @@ def draw_contract(ax):
             linewidth=0.8, edgecolor="#c7d0d9", facecolor=FILL_CARD,
         )
     )
-    ax.text(0.55, 9.78, "编译产物  $C(u)$ —— 生成与验收的同一份真值",
-            fontsize=7.6, color=INK, fontweight="bold")
+    ax.text(0.55, 9.78, t["card_title"], fontsize=t["title_fs"], color=INK,
+            fontweight="bold")
 
-    rows = [
-        ("$S_u$", "必需概念集\n（≥ 掌握）",
-         "循环队列 · 取模运算 · 队空条件\n队满条件 · 队列长度计算 · 循环队列的实现",
-         8.55, 1.60),
-        ("$\\prec_u$", "讲解顺序\n（拓扑序）",
-         "循环队列 → 取模运算 → {队空, 队满}\n→ {队列长度计算, 循环队列的实现}",
-         6.55, 1.55),
-        ("$M_u$", "必须纠正\n的误区",
-         "MC03 判满条件是 rear == front\n→ 至少一页 layout = misconception",
-         4.60, 1.55),
-        ("$F_u$", "禁列词\n（本课程不讲）",
-         "优先队列 · 单调队列 · 消息队列\n最短路径 · 拓扑排序",
-         2.85, 1.30),
-        ("$B_u$", "可简要回顾\n的兄弟讲次",
-         "队列 · 队头与队尾 · 假溢出 · 链队列",
-         1.58, 0.72),
-        ("$k_u$", "页数预算", "7 页", 0.86, 0.44),
-    ]
-
-    for sym, tag, body, y, h in rows:
+    for sym, tag, body, y, h in t["rows"]:
         ax.add_patch(
             FancyBboxPatch(
                 (0.50, y - h / 2), 9.90, h,
@@ -210,17 +262,19 @@ def draw_contract(ax):
         )
         ax.text(1.00, y, sym, fontsize=8.2, color="#3d5a80", ha="center",
                 va="center", fontweight="bold")
-        ax.text(1.85, y, tag, fontsize=5.9, color=MUTED, ha="left", va="center",
-                linespacing=1.45)
-        ax.text(4.55, y, body, fontsize=5.9, color=INK, ha="left", va="center",
-                linespacing=1.7)
+        ax.text(1.85, y, tag, fontsize=t["tag_fs"], color=MUTED, ha="left",
+                va="center", linespacing=1.45)
+        ax.text(t["body_x"], y, body, fontsize=t["body_fs"], color=INK,
+                ha="left", va="center", linespacing=1.75)
 
 
-def main() -> None:
+def build(lang: str) -> None:
+    t = S[lang]
     fig, axes = plt.subplots(1, 2, figsize=(7.4, 3.6), facecolor=PAPER)
-    draw_graph(axes[0])
-    draw_contract(axes[1])
-    fig.subplots_adjust(left=0.004, right=0.996, top=0.99, bottom=0.004, wspace=0.035)
+    draw_graph(axes[0], t)
+    draw_contract(axes[1], t)
+    fig.subplots_adjust(left=0.004, right=0.996, top=0.99, bottom=0.004,
+                        wspace=0.035)
 
     axes[0].text(0.01, -0.01, "(a)", transform=axes[0].transAxes,
                  fontsize=8, color=INK, fontweight="bold")
@@ -228,10 +282,18 @@ def main() -> None:
                  fontsize=8, color=INK, fontweight="bold")
 
     for ext in ("pdf", "png"):
-        path = OUT / f"graph_contract.{ext}"
+        path = OUT / f"graph_contract{t['suffix']}.{ext}"
         fig.savefig(path, dpi=300, bbox_inches="tight", facecolor=PAPER)
         print(f"wrote {path}")
     plt.close(fig)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--lang", choices=["zh", "en", "both"], default="both")
+    args = ap.parse_args()
+    for lang in (["zh", "en"] if args.lang == "both" else [args.lang]):
+        build(lang)
 
 
 if __name__ == "__main__":

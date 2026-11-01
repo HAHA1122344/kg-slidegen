@@ -210,7 +210,8 @@ kg-slidegen/
 ├── docs/experiment.md        # 实验方案与指标口径（改代码前先看这份）
 ├── paper/
 │   ├── draft-zh.md           # 论文中文稿（投稿用英文稿见 draft-en.md）
-│   ├── draft-en.md           # 论文英文稿（KBS 模板结构，含 Highlights）
+│   ├── draft-en.md           # 论文英文稿（Markdown 版）
+│   ├── latex/                # KBS 投稿用 LaTeX（elsarticle）+ 三个成品 PDF
 │   ├── tables.py             # 从 results.csv 生成论文表格
 │   └── figures/              # framework（框架图）、graph_contract（子图→契约）
 ├── tests/                    # 24 项测试
@@ -218,12 +219,32 @@ kg-slidegen/
 └── schema.yaml               # 形式化 schema 定义（见 kg-design/）
 ```
 
-重新生成两张图：
+重新生成两张图（默认出中文版；`--lang en` 出英文版，`--lang both` 两套都出）：
 
 ```bash
-python paper/figures/make_fig1.py    # → framework.pdf / framework.png
-python paper/figures/make_fig2.py    # → graph_contract.pdf / graph_contract.png
+python paper/figures/make_fig1.py --lang both
+python paper/figures/make_fig2.py --lang both
 ```
+
+## 编译论文 PDF
+
+`paper/latex/` 用 Elsevier 官方 `elsarticle` 文档类（《Knowledge-Based Systems》
+投稿模板），一次编译产出三个文件：
+
+```bash
+cd paper/latex && ./build.sh
+```
+
+| 文件 | 用途 |
+| --- | --- |
+| `manuscript.pdf` | 审稿版：`[review,12pt]`，双倍行距 + 行号，38 页 |
+| `manuscript-preprint.pdf` | 预印本版：`[preprint,12pt]`，单倍行距无行号，27 页 |
+| `highlights.pdf` | Highlights 独立页，5 条、每条 ≤85 字符（Elsevier 硬性要求） |
+
+依赖：TeX Live / TinyTeX，需含 `elsarticle`、`elsarticle-num.bst`、`tabularx`、
+`ragged2e`、`lineno`、`booktabs`、`caption`。参考文献用 BibTeX（`refs.bib`），
+编号制；构建脚本会顺带报告 overfull hbox 数量，当前两个版本均无 >4pt 溢出。
+
 
 ## 测试
 

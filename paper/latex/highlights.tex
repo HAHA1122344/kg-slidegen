@@ -1,0 +1,31 @@
+% Highlights for the Knowledge-Based Systems submission.
+% Elsevier requires 3-5 bullet points, at most 85 characters each (incl. spaces).
+% Lengths below: 76, 81, 81, 77, 77.
+% Compiled separately by build.sh -> highlights.pdf
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{enumitem}
+\setlength{\parindent}{0pt}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries Highlights}\\[2pt]
+{\itshape The Model Knows the Textbook but Not Your Class: Curriculum Knowledge
+Graph Constraints for Slide Generation in Vocational Education}
+\end{center}
+
+\vspace{6pt}
+
+\begin{itemize}[leftmargin=1.4em,itemsep=10pt]
+  \item Course-level knowledge is absent from pretraining data; it must be supplied.
+  \item A curriculum knowledge graph compiles into one contract that prompts and checks.
+  \item Coverage rises from 0.61--0.70 to 0.98; a length-matched placebo rules out length.
+  \item Misconceptions: 1.000 (0.000) vs 0.556 (0.527) when the text lacks structure.
+  \item Order constraints give no reliable gain; seven metric defects are documented.
+\end{itemize}
+
+\end{document}
