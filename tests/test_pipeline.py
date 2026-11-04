@@ -168,8 +168,8 @@ def test_outline_only_mention_is_not_coverage(graph: Graph) -> None:
     }
     report = evaluate(payload, constraints, graph)
     uncovered_ids = {item.split()[0] for item in report.uncovered}
-    assert "C1106" in uncovered_ids, "循环队列的实现 只出现在概览页，不应算作已覆盖"
-    assert "C1101" not in uncovered_ids, "循环队列 在正文页讲过，应算覆盖"
+    assert "C1106" in uncovered_ids, "C1106 appears only on the overview page and must not count as covered"
+    assert "C1101" not in uncovered_ids, "C1101 is taught on a body page and must count as covered"
 
 
 def test_objectives_page_is_not_a_teaching_slide(graph: Graph) -> None:
@@ -254,7 +254,7 @@ def test_forward_reference_does_not_move_a_concept(graph: Graph) -> None:
         slides,
         _vocabulary(graph, constraints),
     )
-    assert positions["C1106"][0] == 1, "循环队列的实现 应定位在标题点名的第 2 页"
+    assert positions["C1106"][0] == 1, "C1106 should be located on the second page, where the title names it"
     assert positions["C1102"][0] == 0
 
 
@@ -268,8 +268,8 @@ def test_unrelated_misconception_page_is_not_a_hit(graph: Graph) -> None:
     from kgslide.validator import _misconception_anchors
 
     anchors = _misconception_anchors(graph, "MC13")
-    assert "C1202" not in anchors, "队空判断 与「BFS 用栈」这条误区无教学关系"
-    assert "U12" not in anchors, "讲次级 addresses_misconception 不能当作页面锚点"
+    assert "C1202" not in anchors, "C1202 has no teaching relationship to the 'BFS uses a stack' misconception"
+    assert "U12" not in anchors, "a unit-level addresses_misconception edge must not act as a page anchor"
 
     constraints = build_constraints(graph, "U12")
     payload = {
@@ -325,7 +325,7 @@ def test_prerequisite_order_is_judged_from_text(graph: Graph) -> None:
     report = evaluate(payload, constraints, graph)
     assert not any(s.get("concept_ids") for s in payload["slides"])
     assert report.metrics["prerequisite_violation"] > 0, (
-        "队满条件 出现在 循环队列 之前，属先修倒置，应被发现"
+        "the full-queue condition precedes the circular queue: a prerequisite inversion, and it must be caught"
     )
 
 
@@ -362,7 +362,7 @@ def test_forbidden_terms_are_out_of_graph_only(graph: Graph) -> None:
         constraints = build_constraints(graph, unit)
         assert not set(constraints.forbidden) & set(constraints.siblings), unit
         for term in constraints.forbidden:
-            assert term not in names, f"{term} 在图谱内，应走 siblings 而非 forbidden"
+            assert term not in names, f"{term} is in the graph, so it belongs in siblings rather than forbidden"
 
 
 def test_provider_presets_do_not_leak_across_vendors() -> None:
@@ -417,7 +417,7 @@ def test_a_bare_string_slide_does_not_kill_the_batch(
     """
     constraints = build_constraints(graph, "U11")
     payload = mock_client.generate_slides(constraints)
-    payload["slides"][2] = "顺序队列的入队与出队（模型写成了裸字符串）"
+    payload["slides"][2] = "顺序队列的入队与出队 (the model wrote this slide as a bare string)"
 
     out = tmp_path / "U11.pptx"
     result = render(payload, out, unit_name=constraints.unit_name)

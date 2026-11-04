@@ -1,7 +1,7 @@
 """Turn ``results.csv`` into the tables the manuscript needs.
 
-    python paper/tables.py            # 主表 + 消融表 + 逐讲次表
-    python paper/tables.py --latex    # 额外输出 LaTeX
+    python paper/tables.py            # main, ablation and per-lecture tables
+    python paper/tables.py --latex    # also emit LaTeX
 
 Numbers are reported as ``mean (sd)`` over the re-sampling runs, because a
 single run of the constrained condition is guaranteed to look perfect (the
@@ -19,27 +19,27 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 METRICS = [
-    ("coverage_rate", "覆盖 ↑"),
-    ("oog_rate", "跑题 ↓"),
-    ("background_rate", "背景 ↓"),
-    ("prerequisite_violation", "顺序违例 ↓"),
-    ("misconception_coverage", "误区 ↑"),
-    ("editability", "可编辑 ↑"),
+    ("coverage_rate", "Coverage ↑"),
+    ("oog_rate", "Off-graph ↓"),
+    ("background_rate", "Background ↓"),
+    ("prerequisite_violation", "Order viol. ↓"),
+    ("misconception_coverage", "Misconception ↑"),
+    ("editability", "Editable ↑"),
 ]
 
 ORDER = ["full", "rag_mc", "rag", "placebo", "cot", "zero_shot",
          "no_order", "no_misconception", "no_forbidden"]
 
 LABEL = {
-    "full": "**full（本文）**",
+    "full": "**full (ours)**",
     "rag_mc": "rag_mc",
     "rag": "rag",
-    "placebo": "placebo（等长）",
+    "placebo": "placebo (length-matched)",
     "cot": "cot",
     "zero_shot": "zero_shot",
-    "no_order": "− 顺序约束",
-    "no_misconception": "− 误区注入",
-    "no_forbidden": "− 禁列词表",
+    "no_order": "− ordering",
+    "no_misconception": "− misconception",
+    "no_forbidden": "− forbidden list",
 }
 
 
@@ -70,7 +70,7 @@ def grouped(rows: list[dict]) -> dict[str, list[dict]]:
 
 def summary_markdown(rows: list[dict], title: str) -> str:
     buckets = grouped(rows)
-    head = "| 条件 | n | " + " | ".join(label for _, label in METRICS) + " | 通过率 | 输出 tok |"
+    head = "| Condition | n | " + " | ".join(label for _, label in METRICS) + " | Pass rate | Output tok |"
     sep = "| --- | :-: | " + " | ".join(":-:" for _ in METRICS) + " | :-: | :-: |"
     lines = [f"**{title}**", "", head, sep]
     for mode in ORDER:
@@ -89,9 +89,9 @@ def summary_markdown(rows: list[dict], title: str) -> str:
 
 
 def per_unit_markdown(rows: list[dict], modes: tuple[str, ...]) -> str:
-    head = "| 讲次 | 条件 | n | " + " | ".join(label for _, label in METRICS) + " |"
+    head = "| Lecture | Condition | n | " + " | ".join(label for _, label in METRICS) + " |"
     sep = "| :-: | --- | :-: | " + " | ".join(":-:" for _ in METRICS) + " |"
-    lines = ["**逐讲次**", "", head, sep]
+    lines = ["**Per lecture**", "", head, sep]
     units = sorted({r["unit"] for r in rows})
     for unit in units:
         for mode in modes:
@@ -106,9 +106,9 @@ def per_unit_markdown(rows: list[dict], modes: tuple[str, ...]) -> str:
 def cost_markdown(rows: list[dict]) -> str:
     buckets = grouped(rows)
     lines = [
-        "**成本与延迟**",
+        "**Cost and latency**",
         "",
-        "| 条件 | 输入 tok | 输出 tok | reasoning tok | 延迟 (s) |",
+        "| Condition | Input tok | Output tok | reasoning tok | Latency (s) |",
         "| --- | :-: | :-: | :-: | :-: |",
     ]
     for mode in ORDER:
@@ -135,7 +135,7 @@ def to_latex(rows: list[dict], title: str, label: str) -> str:
         rf"\label{{{label}}}",
         rf"\begin{{tabular}}{{{cols}}}",
         r"\toprule",
-        "条件 & " + " & ".join(label for _, label in METRICS) + r" & 通过率 & 输出 tok \\",
+        "Condition & " + " & ".join(label for _, label in METRICS) + r" & Pass rate & Output tok \\",
         r"\midrule",
     ]
     for mode in ORDER:
@@ -145,7 +145,7 @@ def to_latex(rows: list[dict], title: str, label: str) -> str:
         cells = [fmt([r[key] for r in subset]) for key, _ in METRICS]
         rate = sum(1 for r in subset if r["passed"]) / len(subset)
         tokens = statistics.mean(r["completion_tokens"] for r in subset)
-        name = LABEL[mode].replace("**", "").replace("（本文）", " (ours)")
+        name = LABEL[mode].replace("**", "")
         lines.append(
             f"{name} & " + " & ".join(cells) + f" & {rate:.0%} & {tokens:.0f} \\\\"
         )
@@ -170,12 +170,12 @@ def cross_model_markdown(
                "misconception_coverage"]
     labels = dict(METRICS)
     head = (
-        "| 条件 | 骨干 | n | "
+        "| Condition | Backbone | n | "
         + " | ".join(labels[m] for m in metrics)
-        + " | 通过率 |"
+        + " | Pass rate |"
     )
     sep = "| --- | --- | :-: | " + " | ".join(":-:" for _ in metrics) + " | :-: |"
-    lines = ["**跨模型复核**", "", head, sep]
+    lines = ["**Cross-model replication**", "", head, sep]
 
     def block(rows: list[dict], label: str) -> None:
         buckets = grouped(rows)
@@ -194,8 +194,8 @@ def cross_model_markdown(
     block(base_rows, base_label)
     block(other_rows, other_label)
 
-    lines += ["", "**关键对比：full − rag_mc（误区覆盖 / 覆盖）**", "",
-              f"| 骨干 | Δ 误区覆盖 | Δ 覆盖 |", "| --- | :-: | :-: |"]
+    lines += ["", "**Key contrast: full − rag_mc (misconception coverage / coverage)**", "",
+              "| Backbone | Δ misconception | Δ coverage |", "| --- | :-: | :-: |"]
     for rows, label in ((base_rows, base_label), (other_rows, other_label)):
         buckets = grouped(rows)
         if "full" not in buckets or "rag_mc" not in buckets:
@@ -245,8 +245,8 @@ def cross_model_latex(
                 continue
             cells = [fmt([row[metric] for row in subset]) for metric in metrics]
             rate = sum(1 for r in subset if r["passed"]) / len(subset)
-            name = LABEL[mode].replace("**", "").replace("（本文）", "")
-            name = name.replace("（等长）", "").replace("_", r"\_")
+            name = LABEL[mode].replace("**", "").replace(" (ours)", "")
+            name = name.replace(" (length-matched)", "").replace("_", r"\_")
             # "67%" would comment out the row terminator in LaTeX.
             pct = f"{rate * 100:.0f}\\%"
             lines.append(
@@ -353,7 +353,7 @@ def course_b_latex(rows: list[dict]) -> str:
         if not subset:
             continue
         cells = [fmt([row[m] for row in subset]) for m in metrics]
-        name = LABEL[mode].replace("**", "").replace("（本文）", " (ours)")
+        name = LABEL[mode].replace("**", "")
         lines.append(f"{name.replace('_', chr(92) + '_')} & " + " & ".join(cells) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(lines)
@@ -399,9 +399,11 @@ def sweep_latex(specs: list[tuple[str, str, list[dict]]]) -> str:
 
 def sweep_markdown(specs: list[tuple[str, str, list[dict]]]) -> str:
     lines = [
-        "**表  骨干 × 课程：两个配对差值**",
+        "**Backbone × course: the two paired differences**",
         "",
-        "| 骨干 | 课程 | n(full) | Δ 覆盖（full−rag_mc） | Δ 误区 | full 的误区（均值（标准差）） |",
+        "| Backbone | Course | n(full) | "
+        "Δ coverage (full−rag_mc) | Δ misconception | "
+        "full's misconception, mean (sd) |",
         "| --- | --- | :-: | :-: | :-: | :-: |",
     ]
     for backbone, course, rows in specs:
@@ -423,14 +425,14 @@ def sweep_markdown(specs: list[tuple[str, str, list[dict]]]) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--latex", action="store_true")
-    parser.add_argument("--main", default="", help="主表目录，默认自动挑最新的一份")
-    parser.add_argument("--abl", default="", help="消融目录")
-    parser.add_argument("--cross", default="", help="第二骨干的目录，如 outputs/bench_kimi")
-    parser.add_argument("--course-b", default="", help="第二门课的目录，如 outputs/bench_cpp")
+    parser.add_argument("--main", default="", help="main-table directory; the newest one by default")
+    parser.add_argument("--abl", default="", help="ablation directory")
+    parser.add_argument("--cross", default="", help="second-backbone directory, e.g. outputs/bench_kimi")
+    parser.add_argument("--course-b", default="", help="second-course directory, e.g. outputs/bench_cpp")
     parser.add_argument(
         "--sweep",
         default="",
-        help='骨干×课程扫描，分号分隔的 "骨干|课程|目录"，如 '
+        help='backbone × course sweep: semicolon-separated "backbone|course|dir", e.g. '
              '"DeepSeek V4|Python|outputs/main_v1;Kimi K3|Python|outputs/bench_kimi"',
     )
     args = parser.parse_args()
@@ -450,17 +452,17 @@ def main() -> None:
     blocks: list[str] = []
     if main_csv.exists():
         rows = load(main_csv)
-        blocks.append(summary_markdown(rows, "表 1  主结果（均值（标准差），n = 讲次 × 重采样）"))
+        blocks.append(summary_markdown(rows, "Table 1  Main results (mean (sd), n = lectures × resamplings)"))
         blocks.append(per_unit_markdown(rows, ("full", "rag_mc", "rag", "zero_shot")))
         blocks.append(cost_markdown(rows))
         if args.latex:
             blocks.append("```latex\n" + to_latex(rows, "Main results", "tab:main") + "\n```")
     else:
-        blocks.append(f"（缺少 {main_csv}，先跑主表实验）")
+        blocks.append(f"(missing {main_csv}; run the main experiment first)")
 
     if abl_csv.exists():
         rows = load(abl_csv)
-        blocks.append(summary_markdown(rows, "表 2  消融（每次只删掉图谱的一个部分）"))
+        blocks.append(summary_markdown(rows, "Table 2  Ablations (one part of the graph removed at a time)"))
         if args.latex:
             blocks.append("```latex\n" + to_latex(rows, "Ablation", "tab:ablation") + "\n```")
             attrib = attribution_latex(rows)
@@ -469,7 +471,7 @@ def main() -> None:
             )
             blocks.append("```latex\n" + attrib + "\n```")
     else:
-        blocks.append(f"（缺少 {abl_csv}，先跑消融实验）")
+        blocks.append(f"(missing {abl_csv}; run the ablation first)")
 
     out = ROOT / "paper" / "tables.md"
     out.write_text("\n\n".join(blocks) + "\n", encoding="utf-8")
@@ -482,10 +484,10 @@ def main() -> None:
             tex = course_b_latex(cb_rows)
             (ROOT / "paper" / "latex" / "course_b.tex").write_text(tex + "\n", encoding="utf-8")
             with out.open("a", encoding="utf-8") as handle:
-                handle.write("\n\n" + summary_markdown(cb_rows, "表 3  第二门课（C++ 数组）") + "\n")
-            print("\n已写入 paper/latex/course_b.tex")
+                handle.write("\n\n" + summary_markdown(cb_rows, "Table 3  Second course (C++ arrays)") + "\n")
+            print("\nwrote paper/latex/course_b.tex")
         else:
-            print(f"\n（缺少 {cb_csv}）")
+            print(f"\n(missing {cb_csv})")
 
     if args.cross:
         cross_csv = Path(args.cross) / "results.csv"
@@ -499,9 +501,9 @@ def main() -> None:
             with out.open("a", encoding="utf-8") as handle:
                 handle.write("\n\n" + block + "\n")
             print("\n\n" + block)
-            print("\n已写入 paper/latex/cross_model.tex")
+            print("\nwrote paper/latex/cross_model.tex")
         else:
-            print(f"\n（缺少 {cross_csv}）")
+            print(f"\n(missing {cross_csv})")
 
     if args.sweep:
         specs: list[tuple[str, str, list[dict]]] = []
@@ -513,15 +515,15 @@ def main() -> None:
             if csv_path.exists():
                 specs.append((backbone, course, load(csv_path)))
             else:
-                print(f"（缺少 {csv_path}）")
+                print(f"(missing {csv_path})")
         if specs:
             tex = sweep_latex(specs)
             (ROOT / "paper" / "latex" / "sweep.tex").write_text(tex + "\n", encoding="utf-8")
             with out.open("a", encoding="utf-8") as handle:
                 handle.write("\n\n" + sweep_markdown(specs) + "\n")
-            print("\n已写入 paper/latex/sweep.tex")
+            print("\nwrote paper/latex/sweep.tex")
 
-    print(f"\n已写入 {out}")
+    print(f"\nwrote {out}")
 
 
 if __name__ == "__main__":

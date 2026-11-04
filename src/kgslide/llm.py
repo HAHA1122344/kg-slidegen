@@ -30,8 +30,8 @@ def load_dotenv(path: Path | None = None) -> None:
     """Load ``KEY=VALUE`` pairs from ``.env`` into the environment.
 
     ``.env.example`` has always told the user to copy it to ``.env``, but
-    nothing read the file, so a freshly cloned repo failed with "环境变量未设置"
-    even after the key was filled in.  Done here rather than in a dependency:
+    nothing read the file, so a freshly cloned repo failed with "the environment
+    variable is not set" even after the key was filled in.  Done here rather than in a dependency:
     the format needed is three lines of ``str.partition``.
 
     Existing environment variables win, so an explicit ``export`` (or a CI
@@ -205,7 +205,7 @@ def _build_prompt(c: UnitConstraints, mode: str) -> str:
         base = f"{head}\n\n{spec}\n\n{RULES_BASELINE.format(slide_budget=c.slide_budget)}"
         target = len(_build_prompt(c, "full"))
         return _pad_to(base, target, PLACEBO_GUIDANCE)
-    raise ValueError(f"unknown mode: {mode}（可选 {', '.join(MODES)}）")
+    raise ValueError(f"unknown mode: {mode} (expected one of {', '.join(MODES)})")
 
 
 def _drop_rule(rules: str, mode: str) -> str:
@@ -303,7 +303,8 @@ class LLMConfig:
         preset = PROVIDER_PRESETS.get(self.provider)
         if preset is None:
             raise LLMError(
-                f"未知 provider: {self.provider}（可选 {', '.join(PROVIDER_PRESETS)}）"
+                f"unknown provider: {self.provider} "
+                f"(expected one of {', '.join(PROVIDER_PRESETS)})"
             )
         if not self.model:
             self.model = preset.default_model
@@ -394,8 +395,8 @@ class LLMClient:
             api_key = os.environ.get(self.config.api_key_env, "")
             if not api_key:
                 raise LLMError(
-                    f"环境变量 {self.config.api_key_env} 未设置。"
-                    "可设置后重试，或使用 --mock 运行离线演示。"
+                    f"environment variable {self.config.api_key_env} is not set. "
+                    "Set it and retry, or use --mock for an offline demo."
                 )
             from openai import OpenAI  # imported lazily to keep mock mode light
 
@@ -550,12 +551,12 @@ class LLMClient:
             try:
                 return json.loads(repaired)
             except json.JSONDecodeError as exc:
-                raise LLMError(f"{exc}（已尝试修复尾逗号与截断）") from exc
+                raise LLMError(f"{exc} (after repairing trailing commas and truncation)") from exc
 
     def _parse(self, raw: str) -> dict[str, Any]:
         payload = self._loads(raw)
         if "slides" not in payload or not isinstance(payload["slides"], list):
-            raise LLMError("返回 JSON 缺少 slides 数组")
+            raise LLMError("the returned JSON has no slides array")
         return payload
 
     # --------------------------------------------------------------- mock

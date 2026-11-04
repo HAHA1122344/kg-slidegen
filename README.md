@@ -1,68 +1,87 @@
-# kgslide · 知识图谱约束的课件生成
+# kgslide · knowledge-graph-constrained courseware generation
 
-> 用课程知识图谱约束大模型生成课件，让每一页都有据可依、顺序讲得通、错误有人管。
+> Constrain an LLM with a course knowledge graph so that every page is grounded,
+> the teaching order holds, and student misconceptions are actually addressed.
 
-大多数「AI 生成 PPT」的做法是把文档丢给模型，让它自由发挥。结果通常是：内容看着像，但漏掉关键知识点、顺序颠倒、把学生常见的错误又讲了一遍。
+Most "AI-generated slides" pipelines hand a document to a model and let it improvise.
+The result usually looks plausible but drops key concepts, teaches topics out of order,
+and sometimes restates the very error students make.
 
-本项目换一个思路：**先把课程建成知识图谱，再让图谱约束生成**。
+This project takes a different route: **model the course as a knowledge graph first,
+then let the graph constrain generation.**
 
-- 每个讲次生成哪几个概念，由图谱的 `appears_in` 和 `importance` 决定
-- 讲解顺序由 `prerequisites_for` 的拓扑序强制约束，不会先讲队满再讲队空
-- 学生的高频误区作为一等公民建模（`Misconception` 节点），生成时必须产出纠错内容
-- 生成完自动回验，六项指标量化「讲没讲全、有没有跑题、顺序对不对、老师能不能改」
+- which concepts a lecture covers is decided by the graph's `appears_in` and `importance`
+- the teaching order is forced by the topological order of `prerequisites_for`, so
+  "queue full" cannot be taught before "queue empty"
+- students' recurring misconceptions are first-class nodes (`Misconception`), and the
+  generator has to produce corrective content for them
+- every deck is re-validated after generation, with six metrics quantifying whether it
+  is complete, on-topic, in order, and editable by a teacher
 
-![框架](paper/figures/framework.png)
+![framework](paper/figures/framework_en.png)
 
-关键设计是**约束即数据**：`UnitConstraints` 同时驱动提示词构造与后验校验，
-所以「要求什么」和「检查什么」不会漂移。这也是它区别于「把知识点写进提示词」的地方——
-提示词用完就扔，契约是数据对象，生成前后都能被程序读。
+The key design is that **the constraint is data**. A single `UnitConstraints` object
+drives both prompt construction and post-hoc validation, so "what is required" and
+"what is checked" cannot drift apart. This is what separates the approach from simply
+writing the concept list into the prompt: a prompt is discarded once used, whereas a
+contract is a data object that programs can read before and after generation.
 
-## 实验结果
+## Results
 
-在高职《Python 数据结构》队列模块的 3 个讲次上，6 种条件 × 3 次重采样（每个条件 n=9），
-外加 3 组消融。均值（标准差）：
+On three lectures of the queue module in a vocational *Python Data Structures* course,
+six conditions × three resamplings (n=9 per condition), plus three ablations.
+Mean (standard deviation):
 
-| 条件 | 覆盖率 ↑ | 跑题 ↓ | 顺序违例 ↓ | 误区覆盖 ↑ | 输出 tok |
+| Condition | Coverage ↑ | Off-graph ↓ | Order violation ↓ | Misconception ↑ | Output tok |
 | --- | :-: | :-: | :-: | :-: | :-: |
-| **full（本文）** | **0.981** (0.056) | **0.000** | 0.020 (0.045) | **1.000** (0.000) | 4079 |
-| rag_mc（给误区文本，无结构） | 0.698 (0.295) | 0.111 (0.220) | 0.007 (0.022) | 0.556 (0.527) | 2689 |
-| rag（教材片段） | 0.659 (0.248) | 0.111 (0.220) | 0.030 (0.089) | 0.222 (0.441) | 2378 |
-| placebo（与 full 等长的提示） | 0.675 (0.266) | 0.167 (0.250) | 0.096 (0.131) | 0.333 (0.500) | 1444 |
-| cot（思维链） | 0.614 (0.185) | 0.019 (0.056) | 0.089 (0.183) | 0.389 (0.486) | 2638 |
-| zero_shot（直出） | 0.643 (0.248) | 0.019 (0.056) | 0.037 (0.089) | 0.222 (0.441) | 2330 |
+| **full (this work)** | **0.981** (0.056) | **0.000** | 0.020 (0.045) | **1.000** (0.000) | 4079 |
+| rag_mc (misconception text, no structure) | 0.698 (0.295) | 0.111 (0.220) | 0.007 (0.022) | 0.556 (0.527) | 2689 |
+| rag (textbook excerpts) | 0.659 (0.248) | 0.111 (0.220) | 0.030 (0.089) | 0.222 (0.441) | 2378 |
+| placebo (length-matched to full) | 0.675 (0.266) | 0.167 (0.250) | 0.096 (0.131) | 0.333 (0.500) | 1444 |
+| cot (chain of thought) | 0.614 (0.185) | 0.019 (0.056) | 0.089 (0.183) | 0.389 (0.486) | 2638 |
+| zero_shot | 0.643 (0.248) | 0.019 (0.056) | 0.037 (0.089) | 0.222 (0.441) | 2330 |
 
-四件值得注意的事：
+Six things are worth noting:
 
-1. **覆盖率增益不是「提示更长」造成的。** 等长的 `placebo` 组把提示撑到与 `full` 相当
-   （U11 上 2195 对 1997 字符）但只填通用写作建议，覆盖率仍是 0.675。
-2. **误区这一项，方差比均值更重要。** `rag_mc` 拿到了同样的误区文本，均值 0.556、
-   标准差 0.527——9 次里只稳定成功一半。`full` 是 1.000 ± 0.000。
-   知识图谱改变的不是平均质量，而是可靠性。
-3. **增益可归因到具体知识组件。** 一次只删一个块再全量重测：删掉误区槽位，
-   该指标从 1.000 掉到 0.167（−0.833），覆盖率顺带 −0.056；删掉禁列词表，
-   跑题率从 0.000 升到 0.083（+0.083），其余指标一格不动。见正文 Table 5。
-4. **顺序是表征的边界，不是方法的失败。** `full` 0.020 对 `zero_shot` 0.037，
-   消融也测不出来——因为「必讲概念」清单本身就按拓扑序输出，删掉顺序块等于
-   删掉一句重复的话。图谱能*表达*顺序，但提示词这个接口无法*扣留*它；
-   这条边界在正文 §1.5 事先说明，不留给审稿人当成漏洞来发现。
-5. **第二门课：方向复现，可靠性不复现。** 换一门课（C++ 数组）、换一种语言、
-   换一个骨干重跑 12 格：覆盖 0.800 对 zero-shot 0.350、对同文本对照 0.600；
-   误区 0.625 对 0.000。方向全都在。但误区槽在这门课上是 **0.625 ± 0.479**
-   ——四次里两次没填。
-6. **把「课变了」和「骨干变了」拆开。** 第二门课同时换了三样，本身分不清原因。
-   于是把第一门课**原封不动**换到第二门课的骨干上再跑 18 格：误区槽的优势同样
-   消失（0.833 ± 0.408 对同文本对照 0.833 ± 0.408，差 0.000；同一门课在
-   DeepSeek 上是 +0.444、Kimi 上 +0.333）。只有端点变了，所以**前置条件在模型
-   一侧，不在课程一侧**。同一批运行里禁列词表仍然生效（跑题 0.097 → 0.000），
-   说明这个骨干不是不服从结构，而是不填「指定类型的页」（正文 Table 7）。
+1. **The coverage gain is not a length effect.** The length-matched `placebo` arm pads the
+   prompt to roughly the length of `full` (2195 against 1997 characters on U11) but fills it
+   with generic writing advice, and still reaches only 0.675 coverage.
+2. **For misconceptions, variance matters more than the mean.** `rag_mc` receives the same
+   misconception text and lands at 0.556 ± 0.527 — it succeeds in barely half of nine runs.
+   `full` is 1.000 ± 0.000. What the graph changes is not average quality but reliability.
+3. **The gain is attributable to specific knowledge components.** Deleting one block at a
+   time and re-measuring everything: removing the misconception slot drops that metric from
+   1.000 to 0.167 (−0.833) and coverage by −0.056; removing the forbidden-term list raises
+   the off-graph rate from 0.000 to 0.083 (+0.083) and leaves every other cell untouched.
+   See Table 5 in the manuscript.
+4. **Ordering is a boundary of the representation, not a failure of the method.**
+   `full` 0.020 against `zero_shot` 0.037, and the ablation cannot measure a contribution
+   either — the required-concept list is itself already emitted in topological order, so
+   deleting the ordering block deletes a sentence that repeated the list. The graph can
+   *express* order, but the prompt interface cannot *withhold* it. This boundary is stated
+   up front in §1.5 rather than left for a reviewer to discover.
+5. **A second course: the direction replicates, the reliability does not.** A different
+   course (C++ arrays), a different language, a different backbone, 12 cells: coverage 0.800
+   against zero-shot 0.350 and against the same-text control 0.600; misconceptions 0.625
+   against 0.000. Every direction survives. But the misconception slot is **0.625 ± 0.479**
+   on that course — it goes unfilled in two runs out of four.
+6. **Separating "the course changed" from "the backbone changed".** The second course changed
+   three things at once, so on its own it cannot attribute the effect. Re-running the first
+   course, **unchanged in every respect**, on the second course's backbone for another 18
+   cells makes the slot's advantage disappear in the same way (0.833 ± 0.408 against
+   0.833 ± 0.408 for the same-text control, a difference of 0.000; the same course gives
+   +0.444 on DeepSeek and +0.333 on Kimi). Only the endpoint changed, so **the precondition
+   sits with the model, not with the syllabus**. The forbidden-term list still binds in the
+   same batch (off-graph 0.097 → 0.000), so this backbone does not ignore structure — it
+   simply will not fill a required page type (Table 7).
 
-完整表格、消融、成本与逐讲次数据见 [`paper/tables.md`](paper/tables.md)，
-实验口径见 [`docs/experiment.md`](docs/experiment.md)。
+Full tables, ablations, cost and per-lecture data are in [`paper/tables.md`](paper/tables.md);
+the measurement protocol is in [`docs/experiment.md`](docs/experiment.md).
 
-单次生成产出一份可直接编辑的 `.pptx`（13.33×7.5，16:9），
-在 PowerPoint、Keynote、WPS 里都能改字改版。
+One generation yields a directly editable `.pptx` (13.33 × 7.5 in, 16:9) that can be
+re-typeset in PowerPoint, Keynote or WPS.
 
-## 安装
+## Install
 
 ```bash
 git clone <your-repo-url>
@@ -72,288 +91,356 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
-需要 Python 3.10+。
+Python 3.10+ is required.
 
-## 快速开始
+## Quick start
 
-### 1. 先看图谱长什么样
+### 1. Look at the graph first
 
 ```bash
 kgslide info
 kgslide check-graph
 ```
 
-`check-graph` 会跑结构校验：悬空边、先修成环、节点未锚定讲次、语义边缺证据、讲次概念数越界。
+`check-graph` runs the structural checks: dangling edges, prerequisite cycles, nodes not
+anchored to a lecture, semantic edges without evidence, and per-lecture concept counts out
+of range.
 
-### 2. 查看某个讲次的生成约束
+### 2. Inspect the constraint for one lecture
 
 ```bash
 kgslide inspect --unit U11
 ```
 
-输出就是这个讲次交给模型的完整契约：必须覆盖什么、按什么顺序、要纠正哪条误区、哪些概念只能一句话带过。
+The output is the complete contract handed to the model: what must be covered, in what
+order, which misconception must be corrected, and which concepts may only be mentioned
+in passing.
 
-### 3. 离线跑通全流程（不花钱、不需要 key）
+### 3. Run the whole pipeline offline (free, no key)
 
 ```bash
 kgslide generate --unit U11 --mock
 ```
 
-会在 `outputs/` 下生成 `U11.pptx` 并打印六项指标。mock 模式完全确定性，适合调试和写论文时的流程验证。
+This writes `U11.pptx` under `outputs/` and prints the six metrics. The mock is fully
+deterministic, which is useful for debugging and for validating the pipeline while writing.
 
-### 4. 接入真实模型
+### 4. Connect a real model
 
 ```bash
 export DEEPSEEK_API_KEY=sk-xxxxxxxx
 kgslide generate --unit all --out outputs --summary outputs/summary.json
 ```
 
-默认走 DeepSeek 的 OpenAI 兼容接口。
+DeepSeek's OpenAI-compatible endpoint is the default.
 
-**模型选择**
+**Model selection**
 
-| 模型 ID | 说明 | 适用场景 |
+| Model ID | Notes | Use case |
 | --- | --- | --- |
-| `deepseek-v4-flash` | 默认，单价低 | 批量生成、日常迭代 |
-| `deepseek-v4-pro` | 推理更强，单价约为 flash 的 3 倍 | 复杂讲次、终稿 |
-| `kimi-k3`（`--provider kimi`） | 第二厂商骨干，`temperature` 被厂商锁定为 1.0 | 跨模型复核，见 `docs/experiment.md` §7b |
+| `deepseek-v4-flash` | default, lowest unit price | batch generation, everyday iteration |
+| `deepseek-v4-pro` | stronger reasoning, about 3× the price of flash | hard lectures, final passes |
+| `kimi-k3` (`--provider kimi`) | second vendor, `temperature` locked at 1.0 by the vendor | cross-model replication, see `docs/experiment.md` §7b |
 
-> `deepseek-chat` 与 `deepseek-reasoner` 已于 2026-07-24 废弃，现仅作为兼容别名保留。旧代码里写这两个名字仍能跑，但新项目建议直接用 v4 系列。
+> `deepseek-chat` and `deepseek-reasoner` were retired on 2026-07-24 and remain only as
+> compatibility aliases. Old code that uses those names still runs, but new code should use
+> the v4 family directly.
 
-**跨模型复核**：`--provider kimi` 换厂商重跑同一套提示词，只用来问「`full − rag_mc` 的符号是否复现」，不做跨模型均值比较（两家 temperature 不同，Kimi K3 只接受 1.0）。切换 provider 时密钥变量与模型 ID 都随 preset 一起换，不会继承上一家的配置；`results.csv` 每行记录 `provider`、`model`、`temperature`。
+**Cross-model replication.** `--provider kimi` re-runs the same prompts on another vendor,
+purely to ask whether the sign of `full − rag_mc` replicates; no cross-model comparison of
+means is made, because the two vendors use different temperatures and Kimi K3 accepts only
+1.0. Switching provider swaps both the key variable and the model ID through the preset, so
+nothing is inherited from the previous vendor; `results.csv` records `provider`, `model` and
+`temperature` on every row.
 
-**关于「思考模式」**：实测（2026-11）`deepseek-v4-flash` **默认会产生 `reasoning_tokens`**，即调用本身就带一轮内部推理。这一点必须显式记录——否则 CoT 基线会被污染（模型本来就在做 CoT，你再让它写推理步骤就测不出差别）。配置 `LLMConfig(thinking="disabled")` 可关闭，`bench` 会用 `--thinking` 参数把该设置写进结果文件。
+**On "thinking mode".** As measured in 2026-11, `deepseek-v4-flash` **emits
+`reasoning_tokens` by default**, meaning every call already performs one round of internal
+reasoning. This has to be recorded explicitly, otherwise the CoT baseline is contaminated:
+the model is already doing CoT, so asking it to write down its reasoning cannot show a
+difference. Set `LLMConfig(thinking="disabled")` to turn it off; `bench` writes the setting
+into the results through `--thinking`.
 
-成本估算：一次 8 页课件的输入约 2K tokens、输出约 3K tokens（思考模式下另含 1–3K reasoning tokens），按 v4-flash 当前价折算每套不足 1 分钱，全课程 34 讲约三毛。`bench` 会把每次调用的 token 与耗时写进 `results.csv`，可直接做论文的成本表。具体价格以[官方定价页](https://api-docs.deepseek.com/quick_start/pricing)为准。
+Cost: one 8-page deck takes about 2K input tokens and 3K output tokens (plus 1–3K reasoning
+tokens in thinking mode), which at current v4-flash prices is well under one US cent per
+deck and roughly thirty cents for a full 34-lecture course. `bench` records tokens and
+latency per call in `results.csv`, so the cost table in the paper is reproducible. Check the
+[official pricing page](https://api-docs.deepseek.com/quick_start/pricing) for current rates.
 
-**JSON 模式的两个坑**（代码里已处理）
+**Two JSON-mode traps** (both handled in code)
 
-1. DeepSeek 的 JSON 模式要求提示词中出现 `json` 字样并给出样例，否则可能返回空内容。
-2. 输出无法解析为 JSON 时，接口会把非法片段替换成空格，`content` 可能只有空白且 `finish_reason` 仍是 `stop`。`llm.py` 检测到空内容会自动重试并追加格式提醒，重试两次仍失败才抛错。
+1. DeepSeek's JSON mode requires the literal word `json` in the prompt along with a sample,
+   otherwise it may return empty content.
+2. When the output cannot be parsed as JSON, the API replaces the invalid fragment with
+   whitespace, so `content` may be blank while `finish_reason` still reads `stop`. `llm.py`
+   detects empty content, retries with an added format reminder, and raises only after two
+   failed retries.
 
-## 图谱结构
+## Graph structure
 
-`data/kg_pyds_m4.json` 是 M4「队列」模块的完整图谱（34 节点 / 75 边），格式遵循 `schema.yaml`。
+`data/kg_pyds_m4.json` is the complete graph for module M4, "queues" (34 nodes / 75 edges),
+in the format defined by `schema.yaml`.
 
-**8 类节点**：`Course` · `Module` · `Unit` · `Concept` · `Skill` · `Lab` · `Exercise`（以上 7 类沿用 K12-KGraph）· `Misconception`（本文扩展）
+**Eight node types**: `Course` · `Module` · `Unit` · `Concept` · `Skill` · `Lab` ·
+`Exercise` (these seven follow K12-KGraph) · `Misconception` (added here).
 
-Schema 沿用 [K12-KGraph](https://github.com/haolpku/K12-KGraph)（NeurIPS 2026 Evaluations & Datasets Track），并扩展三处：
+The schema follows [K12-KGraph](https://github.com/haolpku/K12-KGraph) (NeurIPS 2026
+Evaluations & Datasets Track) and extends it in three places:
 
-| 扩展 | 理由 |
+| Extension | Rationale |
 | --- | --- |
-| `Misconception` 节点 | 职教场景下纠错比讲授更有效，原 schema 无法表达这一教学要素 |
-| `implements` 边（概念→代码） | 编程课的知识落点是代码，需显式建模，并用于检查生成内容的可执行性 |
-| `addresses_misconception` 边 | 让图谱能约束生成器产出针对性纠错内容 |
+| `Misconception` node | in vocational teaching, correcting an error is more effective than presenting the correct version again, and the original schema cannot express this element |
+| `implements` edge (concept → code) | in a programming course the knowledge lands in code, so it is modelled explicitly and used to check that generated content is executable |
+| `addresses_misconception` edge | lets the graph require the generator to produce targeted corrective content |
 
-**10 类边**：`is_a` · `prerequisites_for` · `relates_to` · `implements` · `verified_by` · `assessed_by` · `addresses_misconception` · `appears_in` · `is_part_of` · `leads_to`
+**Ten edge types**: `is_a` · `prerequisites_for` · `relates_to` · `implements` ·
+`verified_by` · `assessed_by` · `addresses_misconception` · `appears_in` · `is_part_of` ·
+`leads_to`
 
-## 工作流
+## Workflow
 
 ```
-单元子图 ──► 约束契约 ──► LLM 生成 ──► 渲染 pptx ──► 回验证
-   │            │            │            │           │
- graph.py  constraints.py  llm.py    renderer.py  validator.py
+unit subgraph ──► constraint contract ──► LLM generation ──► pptx render ──► re-validation
+     │                  │                       │                 │                │
+  graph.py       constraints.py              llm.py         renderer.py     validator.py
 ```
 
-关键设计：**约束是数据，不是提示词**。`UnitConstraints` 同时驱动生成和校验，保证「要求」和「验收」用的是同一份定义。
+The key design: **the constraint is data, not a prompt**. `UnitConstraints` drives
+generation and validation alike, so that "what is required" and "what is accepted" are the
+same definition.
 
-## 指标定义
+## Metric definitions
 
-| 指标 | 计算方式 |
+| Metric | Computation |
 | --- | --- |
-| `coverage_rate` | 已覆盖的必需概念 / 必需概念总数 |
-| `oog_rate` | 图谱外概念与禁用概念 / 总提及概念数 |
-| `background_rate` | 作为回顾引用的兄弟讲次概念**字数** / 全文总字数（上限 25%） |
-| `prerequisite_violation` | 违反拓扑序的概念对 / 概念对总数 |
-| `misconception_coverage` | 已纠正的误区 / 该讲次关联的误区总数 |
-| `editability` | 原生可编辑形状 / 全部形状 |
+| `coverage_rate` | required concepts covered / total required concepts |
+| `oog_rate` | out-of-graph plus forbidden concepts / total concept mentions |
+| `background_rate` | **characters** spent on sibling-lecture concepts as review / total characters (capped at 25%) |
+| `prerequisite_violation` | concept pairs violating topological order / total concept pairs |
+| `misconception_coverage` | misconceptions corrected / misconceptions attached to the lecture |
+| `editability` | native editable shapes / all shapes |
 
-中文没有词边界，`队列` 会匹配到 `循环队列` 里。因此文本级检测使用 `_net_occurrences`：先统计原始出现次数，再扣除出现在更长术语内部的次数，避免虚高。
+Chinese has no word boundaries, so `队列` also matches inside `循环队列`. Text-level
+detection therefore uses `_net_occurrences`: count raw occurrences, then subtract those that
+fall inside a longer term, so the count is not inflated.
 
-**顺序按文字出现位置判定，不按模型自报的 `concept_ids`。** 三个基线组根本没被告知存在这个字段，若用自报结果计分，一个完全空白的答卷会因为「没有报告」而拿到 0 违例率——这是把漏答当成满分。改成扫描每页文字、取每个概念首次出现的位置，指标才对所有条件可比。
+**Ordering is judged by where text appears, not by the model's self-reported
+`concept_ids`.** The three baselines are never told the field exists, so scoring on
+self-reports would give a completely blank answer a violation rate of zero — treating a
+non-answer as a perfect score. Scanning each page's text and taking the first occurrence
+position of each concept makes the metric comparable across all conditions.
 
-背景引用按**字数占比**而非概念个数计算。一页对比表同时点名三个兄弟概念是正常教学，按个数计会误报；按篇幅计才反映「有没有跑题」。
+Background recall is counted as a **share of characters** rather than a number of concepts.
+A single comparison slide naming three sibling concepts is normal teaching and would be a
+false positive under a concept count; a length share reflects whether the deck drifted
+off-topic.
 
-误区覆盖采用三重判定：结构锚点（误区页是否引用了图谱关联到该误区的概念）→ 英文标识符重叠（`rear`、`list`）→ 中文字符 bigram 重叠（阈值 0.35）。只用字面匹配会漏判，因为模型常用自己的话重述错误说法。
+Misconception coverage uses a three-way decision: structural anchor (does the misconception
+page reference a concept the graph attaches to that misconception) → English identifier
+overlap (`rear`, `list`) → Chinese character bigram overlap (threshold 0.35). Literal
+matching alone under-detects, because models often restate the error in their own words.
 
-`forbidden` 与 `siblings` 互斥：前者计入跑题，后者计入背景回顾，同一个词同时出现在两边会让两个指标互相打架。测试里有断言守着这条。
+`forbidden` and `siblings` are mutually exclusive: the first counts toward off-graph, the
+second toward background review, and a word appearing in both would make two metrics fight
+each other. A test asserts this.
 
-## 实验条件
+## Experimental conditions
 
-`bench` 支持 9 种条件。六个对照用来回答「图谱有没有用」，三组消融用来回答「图谱的哪一部分在起作用」：
+`bench` supports nine conditions. Six contrasts answer "does the graph help", three
+ablations answer "which part of the graph is doing the work":
 
-| 条件 | 给模型的信息 |
+| Condition | What the model is given |
 | --- | --- |
-| `full` | 完整契约：概念表 + 拓扑序 + 误区 + 禁止词 + 背景上限 |
-| `rag_mc` | 教材片段 + 误区文本，但无任何结构（误区结论的控制组） |
-| `rag` | 教材片段（概念名 + 定义），无结构信息 |
-| `placebo` | 与 `full` **等长**的提示，但只填通用写作建议（长度效应的控制组） |
-| `cot` | 零样本 + 要求在 notes 中先说明定位 |
-| `zero_shot` | 只给课程名、讲次名、页数 |
-| `no_order` | 完整契约，删掉拓扑序 |
-| `no_misconception` | 完整契约，删掉误区 |
-| `no_forbidden` | 完整契约，删掉禁止词 |
+| `full` | the complete contract: concept table + topological order + misconceptions + forbidden terms + background cap |
+| `rag_mc` | textbook excerpts + misconception text, with no structure at all (control for the misconception conclusion) |
+| `rag` | textbook excerpts (concept names + definitions), no structural information |
+| `placebo` | a prompt **as long as** `full` but filled with generic writing advice (control for length) |
+| `cot` | zero-shot plus an instruction to state the approach in the notes first |
+| `zero_shot` | course name, lecture name and page count only |
+| `no_order` | the full contract with topological order removed |
+| `no_misconception` | the full contract with misconceptions removed |
+| `no_forbidden` | the full contract with forbidden terms removed |
 
 ```bash
-# 主表：6 组对照 × 3 讲次 × 3 次重采样
+# main table: 6 conditions × 3 lectures × 3 resamplings
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,rag_mc,rag,placebo,cot,zero_shot --repeat 3 --out outputs/main_v1
 
-# 消融：拆掉图谱的一部分，看对应指标是否随之下降
+# ablation: remove one part of the graph, see whether the matching metric drops
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,no_order,no_misconception,no_forbidden \
   --repeat 2 --out outputs/bench_ablation
 
-# 改了指标口径后重新计分，不调用 API（省钱，且与原始输出严格对应）
+# re-score existing payloads after a metric change, without calling the API
+# (cheaper, and strictly paired with the original outputs)
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,rag_mc,rag,placebo,cot,zero_shot --repeat 3 \
   --out outputs/main_v1 --reuse
 ```
 
-`--repeat` 不是可有可无的：`full` 的单次覆盖率必然是 1.0（提示词里就是那份清单），单次数字证明不了什么。**跨重采样的方差**才是证据——如果约束真的起作用，`full` 的方差应该显著小于 `zero_shot`。
+`--repeat` is not optional: a single run of `full` necessarily reaches 1.0 coverage (that
+list is the prompt), so one number proves nothing. **Variance across resamplings** is the
+evidence — if the constraint works, the variance of `full` should be clearly smaller than
+that of `zero_shot`.
 
-## 目录结构
+## Repository layout
 
 ```
 kg-slidegen/
-├── data/kg_pyds_m4.json      # 课程图谱（M4 队列模块）
+├── data/kg_pyds_m4.json      # course graph (module M4, queues)
 ├── src/kgslide/
-│   ├── graph.py              # 加载、查询、DAG 校验、拓扑排序
-│   ├── constraints.py        # 单元子图 → 生成契约
-│   ├── llm.py                # DeepSeek 客户端 + 确定性 mock + 9 种实验条件
-│   ├── renderer.py           # python-pptx 渲染
-│   ├── validator.py          # 六项指标回验
-│   ├── bench.py              # 对照与消融实验批量运行
-│   └── cli.py                # 命令行入口
-├── docs/experiment.md        # 实验方案与指标口径（改代码前先看这份）
+│   ├── graph.py              # load, query, DAG validation, topological sort
+│   ├── constraints.py        # unit subgraph → generation contract
+│   ├── llm.py                # DeepSeek client + deterministic mock + 9 conditions
+│   ├── renderer.py           # python-pptx rendering
+│   ├── validator.py          # six-metric re-validation
+│   ├── bench.py              # batch runs for contrasts and ablations
+│   └── cli.py                # command-line entry point
+├── docs/experiment.md        # protocol and metric definitions (read before changing code)
 ├── paper/
-│   ├── draft-zh.md           # 论文中文稿（投稿用英文稿见 draft-en.md）
-│   ├── draft-en.md           # 论文英文稿（Markdown 版）
-│   ├── latex/                # KBS 投稿用 LaTeX（elsarticle）+ 四个成品 PDF
-│   ├── tables.py             # 从 results.csv 生成论文表格
-│   ├── human_eval.csv        # 教师盲评原始评分（10 份课件 × 3 位评分者）
-│   ├── human_eval.py         # 盲评分析：描述统计、ICC(2,3)、自助置信区间
-│   └── figures/              # framework、graph_contract、graphical_abstract
-├── tests/                    # 24 项测试
+│   ├── draft-zh.md           # Chinese draft (the submission is the English one)
+│   ├── draft-en.md           # English draft (Markdown)
+│   ├── latex/                # KBS submission in LaTeX (elsarticle) + four PDFs
+│   ├── tables.py             # build the paper tables from results.csv
+│   ├── human_eval.csv        # raw teacher blind-review scores (10 decks × 3 raters)
+│   ├── human_eval.py         # blind-review analysis: descriptives, ICC(2,3), bootstrap CIs
+│   └── figures/              # framework, graph_contract, graphical_abstract
+├── tests/                    # 33 tests
 ├── config/default.yaml
-└── schema.yaml               # 形式化 schema 定义（见 kg-design/）
+└── schema.yaml               # formal schema definition
 ```
 
-重新生成插图（默认出中文版；`--lang en` 出英文版，`--lang both` 两套都出）：
+Regenerating the figures (Chinese by default; `--lang en` for English, `--lang both` for
+both sets):
 
 ```bash
 python paper/figures/make_fig1.py --lang both
 python paper/figures/make_fig2.py --lang both
-python paper/figures/make_graphical_abstract.py   # 图形摘要（仅英文，投稿用）
+python paper/figures/make_graphical_abstract.py   # graphical abstract (English only, submission)
 ```
 
-## 编译论文 PDF
+## Compiling the paper
 
-`paper/latex/` 用 Elsevier 官方 `elsarticle` 文档类（《Knowledge-Based Systems》
-投稿模板），一次编译产出三个文件：
+`paper/latex/` uses Elsevier's official `elsarticle` class (the *Knowledge-Based Systems*
+template) and produces everything in one build:
 
 ```bash
 cd paper/latex && ./build.sh
 ```
 
-| 文件 | 用途 |
+| File | Purpose |
 | --- | --- |
-| `manuscript.pdf` | 审稿版：`[review,12pt]`，双倍行距 + 行号，70 页（无前置页，从标题页开始） |
-| `manuscript-preprint.pdf` | 预印本版：`[preprint,12pt]`，单倍行距无行号，49 页（无前置页，从标题页开始） |
-| `highlights.pdf` | Highlights 独立页，5 条、每条 ≤85 字符（Elsevier 硬性要求） |
-| `supplementary.pdf` | 补充材料 S1–S5：消融结果、图校验变异测试、行为探针、跨模型复核、概念级配对分析（正文各以 2–3 句概括并指向这里） |
-| `graphical_abstract.pdf` | 图形摘要，由 `paper/figures/make_graphical_abstract.py` 生成后自动复制进来 |
-| `cover-letter.pdf` | 投稿信（1 页），把稿件的知识表示主张锚定到 KBS 的 knowledge presentation and engineering 范围，随稿件单独上传 |
+| `manuscript.pdf` | review version: `[review,12pt]`, double-spaced with line numbers, 70 pages |
+| `manuscript-preprint.pdf` | preprint version: `[preprint,12pt]`, single-spaced without line numbers, 49 pages |
+| `highlights.pdf` | standalone highlights page, five items of at most 85 characters each (an Elsevier requirement) |
+| `supplementary.pdf` | supplementary S1–S5: ablation results, mutation tests for the graph checks, behaviour probes, cross-model replication, concept-level paired analysis (each summarised in 2–3 sentences in the body and pointed to here) |
+| `graphical_abstract.pdf` | the graphical abstract, copied in automatically after `paper/figures/make_graphical_abstract.py` runs |
+| `cover-letter.pdf` | one-page cover letter anchoring the paper's knowledge-representation claim to the journal's scope in knowledge presentation and engineering; uploaded separately |
 
-依赖：TeX Live / TinyTeX，需含 `elsarticle`、`elsarticle-num.bst`、`tabularx`、
-`ragged2e`、`lineno`、`booktabs`、`caption`。参考文献用 BibTeX（`refs.bib`），
-编号制；构建脚本会顺带报告 overfull hbox 数量，当前两个版本均无 >4pt 溢出。
+Dependencies: TeX Live or TinyTeX with `elsarticle`, `elsarticle-num.bst`, `tabularx`,
+`ragged2e`, `lineno`, `booktabs` and `caption`. References go through BibTeX (`refs.bib`) in
+numeric style. The build script also reports the number of overfull hboxes; both versions
+currently have none above 4pt.
 
-论文含教师盲评（10 份课件 × 3 位评分者），原始评分在 `paper/human_eval.csv`，
-`python paper/human_eval.py` 复算 ICC 与描述统计，`--latex` 输出论文表格。
+The paper includes a teacher blind review (10 decks × 3 raters). Raw scores are in
+`paper/human_eval.csv`; `python paper/human_eval.py` recomputes ICC and the descriptives,
+and `--latex` emits the paper table.
 
-另有四个核对脚本，对应审稿意见里的「度量约定是否决定结论」与「图谱是不是只是查找表」：
+These scripts cover the reviewer questions "does the measurement convention decide the
+conclusion" and "is the graph just a lookup table":
 
 ```bash
-python paper/coverage_sensitivity.py   # 覆盖率在三种前置页约定下、以及去掉别名匹配后的变化
-python paper/tables.py --cross outputs/bench_kimi   # 跨模型表（生成 paper/latex/cross_model.tex）
-python paper/tables.py --course-b outputs/bench_cpp # 第二门课的表（生成 paper/latex/course_b.tex）
-python paper/tables.py --sweep "DeepSeek V4|Python|outputs/main_v1;Kimi K3|Python|outputs/bench_kimi;agnes-2.5-flash|Python|outputs/bench_py_agnes;agnes-2.5-flash|C++|outputs/bench_cpp"  # 骨干×课程扫描表
-python paper/concept_pairs.py --latex  # 概念级配对（生成 paper/latex/concept_pairs.tex，并打印 S6 的 LOO）
-python paper/code_check.py             # 逐块 ast.parse 全部代码块（判据饱和：117/117 全部通过）
-python paper/behavior_check.py         # 行为探针：37/117 块可测，36 块全部行为通过
-python paper/graph_checks.py           # 图校验的变异测试：12 个错误码各注入一个缺陷，12/12 命中
+python paper/coverage_sensitivity.py   # coverage under three front-matter conventions, and without alias matching
+python paper/tables.py --cross outputs/bench_kimi   # cross-model table (writes paper/latex/cross_model.tex)
+python paper/tables.py --course-b outputs/bench_cpp # second-course table (writes paper/latex/course_b.tex)
+python paper/tables.py --sweep "DeepSeek V4|Python|outputs/main_v1;Kimi K3|Python|outputs/bench_kimi;agnes-2.5-flash|Python|outputs/bench_py_agnes;agnes-2.5-flash|C++|outputs/bench_cpp"  # backbone × course sweep
+python paper/concept_pairs.py --latex  # concept-level pairing (writes paper/latex/concept_pairs.tex, prints the S6 leave-one-out)
+python paper/code_check.py             # ast.parse every code block (criteria saturated: 117/117 pass)
+python paper/behavior_check.py         # behaviour probes: 37/117 blocks testable, all 36 executed behaviours pass
+python paper/graph_checks.py           # mutation tests for the graph checks: one defect per error code, 12/12 caught
 ```
 
-`graph_checks.py` 的意义：出厂图 10 项检查 0 发现，本身不构成证据——不报警的检查器
-与不会报警的检查器无法区分。因此对每个错误码注入一个最小缺陷，看对应检查是否响。
-12/12 全部命中，只有 1 例连带触发（未落地 Skill 同时违反 NOT_GROUNDED，属正确裁定）。
+`graph_checks.py` exists because the shipped graph producing zero findings under ten checks
+is not evidence by itself — a checker that never fires cannot be told apart from one that
+cannot fire. So each error code gets one minimal injected defect, and the corresponding check
+has to fire. All 12 are caught, with a single collateral hit (an ungrounded `Skill` also
+violates `NOT_GROUNDED`, which is the correct verdict).
 
-`paper/make_deposit.py` 生成投稿用归档（`paper/deposit/`），字节可复现：两次构建
-sha256 相同，便于在论文里给出可核验的 DOI。
+`paper/make_deposit.py` builds the submission archive in `paper/deposit/`. It is
+byte-reproducible — two builds give the same sha256 — so the paper can cite a verifiable
+record.
 
-`coverage_sensitivity.py` 的结果：只放开 title 页时 54 次里只有 2 次变化、条件排序不变
-（ρ=1.00），`full` 与 `rag_mc` 的差值反而从 +0.283 升到 +0.302；去掉别名匹配时基线
-掉到 0.325–0.389 而 `full` 仅降到 0.963，即别名是在**收紧**而不是放宽结论。
+`coverage_sensitivity.py` finds that opening up the title page changes only 2 of 54
+observations and leaves the condition ordering intact (ρ = 1.00), with the `full − rag_mc`
+gap widening from +0.283 to +0.302; dropping alias matching pushes the baselines down to
+0.325–0.389 while `full` falls only to 0.963, so alias matching **tightens** the result
+rather than loosening it.
 
-**正文不含任何前置页**：`highlights` 与 `graphicalabstract` 两个环境都已从
-`manuscript.tex` 里删掉，第 1 页就是标题页。这两个都是 EES 的**独立上传项**，
-分别由 `highlights.tex` → `highlights.pdf`、`paper/figures/graphical_abstract.pdf`
-提供，不必也不应再嵌进正文（否则稿件开头先是图、再是一页要点，正文被推到第 3 页）。
+**The body contains no front matter.** Both the `highlights` and `graphicalabstract`
+environments were removed from `manuscript.tex`, so page 1 is the title page. Both are
+separate uploads in EES, provided by `highlights.tex` → `highlights.pdf` and
+`paper/figures/graphical_abstract.pdf`; embedding them again would open the manuscript with
+a figure and then a page of bullets, pushing the body to page 3.
 
-**文末顺序**：附录 A–C → 参考文献，参考文献是全文最后一节（其后不再有任何文字）。
-Table 9 体量接近整页，用 `[tp]` 而不是 `[t]` 才能在正文就近落版；否则它会被推迟到
-参考文献之后，让全文以一张表收尾。
+**End-of-document order**: appendices A–C → references, with references as the final
+section and nothing after it. Table 9 is close to a full page, so it uses `[tp]` rather than
+`[t]` to land near its reference in the text; otherwise LaTeX defers it past the references
+and the paper ends on a table.
 
-## 图形摘要
+## Graphical abstract
 
-Elsevier 把图形摘要缩到 **500 × 200 px**（2.5:1）显示，所以这张图不是 Figure 1
-的缩略版，而是重画：**四步编号流程**（① 课程图谱 —compile→ ② 一份契约 —prompt→ ③ 模型 —render→ ④ 可编辑课件）
-加一条虚线旁路表示"同一份契约兼作验收标准"，下方三组结果，末句收束。
-正文字号全部 ≥12 pt，缩到缩略图仍能读出主干与先后顺序。
+Elsevier displays the graphical abstract at **500 × 200 px** (2.5:1), so this is not a
+thumbnail of Figure 1 but a redraw: a **four-step numbered flow** (① course graph
+—compile→ ② one contract —prompt→ ③ model —render→ ④ editable deck) with a dashed bypass
+showing that the same contract also serves as the acceptance criterion, three result groups
+below it, and a closing sentence. Every label is at least 12 pt, so the spine and the
+ordering remain readable at thumbnail size.
 
-产出 `paper/figures/graphical_abstract.pdf`（矢量）与 `.png`（3990 × 1596 px，
-即 300 dpi 下 13.3 × 5.32 英寸，为下限 1328 × 531 的 3 倍）。合规项：
+Outputs `paper/figures/graphical_abstract.pdf` (vector) and `.png` (3990 × 1596 px, i.e.
+13.3 × 5.32 in at 300 dpi, three times the 1328 × 531 minimum). Compliance:
 
-- 比例 2.5:1，PDF 页面 33.78 × 13.51 cm；
-- 只用 Arial，TrueType（`pdf.fonttype=42`）嵌入，不是出版社不收的 Type 3；
-- 图内不含 “Graphical Abstract” 标题、不含图外文字；
-- 脚本自带排版审计：任何文字越界或相互重叠都会直接报错。
+- 2.5:1 aspect ratio, PDF page 33.78 × 13.51 cm;
+- Arial only, embedded as TrueType (`pdf.fonttype=42`), not Type 3 which publishers reject;
+- no "Graphical Abstract" title inside the image and no text outside the canvas;
+- the script audits its own layout and fails on any overflow or overlap.
 
-
-## 测试
+## Tests
 
 ```bash
 pytest -q --basetemp="$(mktemp -d)"
 ```
 
-`--basetemp` 不是必需的，但如果你在沙箱或受限环境里跑过 pytest、留下了残留的临时目录，
-默认的 `/tmp/pytest-of-*` 可能因 EEXIST 报错——换一个干净目录即可，与测试本身无关。
+`--basetemp` is optional, but if you have run pytest in a sandbox or restricted environment
+and left stale temporary directories behind, the default `/tmp/pytest-of-*` can fail with
+EEXIST — point it at a clean directory and the failure goes away. It is unrelated to the
+tests themselves.
 
-覆盖：图谱结构合法性、环检测、拓扑序、约束切分、mock 渲染、指标边界、顺序违例与漏讲检测，
-以及**七项防回归守门**——分别锁住 `docs/experiment.md` 里那七处会让指标偏袒约束方法的缺陷
-（自报 ID、预览页、前向引用、跨行抵消、逐字匹配、误区锚点、图谱外判定）。
+Coverage: graph structural validity, cycle detection, topological order, constraint
+partitioning, mock rendering, metric edge cases, order-violation and omission detection, plus
+**seven regression guards** that pin down the seven defects documented in
+`docs/experiment.md` which would otherwise bias the metrics toward the constrained method
+(self-reported IDs, preview pages, forward references, cross-line cancellation, verbatim
+matching, misconception anchors, off-graph detection).
 
-## 路线图
+## Roadmap
 
-- [ ] 补齐 M1–M8 全部模块（当前只有 M4）
-- [ ] 支持从教材 PDF 半自动建图（参考 SciMKG 的抽取—校验—整合管线）
-- [ ] 加入渲染回看闭环：截图 → VLM 检查溢出与重叠 → 自动修正
-- [ ] 发布中文职教课件评测集，供同类工作横向对比
+- [ ] complete modules M1–M8 (only M4 exists today)
+- [ ] semi-automatic graph construction from textbook PDFs (following the extract–verify–integrate pipeline of SciMKG)
+- [ ] close the loop through rendering: screenshot → VLM check for overflow and overlap → automatic repair
+- [ ] release a Chinese vocational-courseware benchmark for like-for-like comparison
 
-## 引用
+## Citation
 
-如果你在论文中使用本项目，请引用：
+If you use this project in your work, please cite:
 
 ```bibtex
 @software{kgslide2026,
   title  = {kgslide: Knowledge-Graph-Constrained Courseware Generation},
   author = {Liu, Suxing},
   year   = {2026},
-  url    = {https://github.com/<your-account>/kg-slidegen}
+  url    = {https://github.com/HAHA1122344/kg-slidegen}
 }
 ```
 
 ## License
 
-MIT，见 [LICENSE](LICENSE)。
+MIT, see [LICENSE](LICENSE).

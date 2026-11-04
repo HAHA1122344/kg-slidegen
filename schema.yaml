@@ -1,9 +1,15 @@
 # ============================================================
-# 课程知识图谱 Schema v0.1
-# 适配课程：Python 数据结构（高职，人工智能技术应用专业）
-# 基础：K12-KGraph schema (NeurIPS 2026 E&D Track, PKU-DCAI)
-#       7 节点 / 9 边 沿用，扩展 Misconception 节点与 2 类边
-# 用途：为「知识图谱约束的课件生成」提供形式化定义
+# Course knowledge-graph schema, v0.1
+# Course: Python Data Structures (higher vocational, Artificial
+#         Intelligence Technology Application major)
+# Base: K12-KGraph schema (NeurIPS 2026 E&D Track, PKU-DCAI);
+#       the 7 node types and 9 edge types are kept, and a Misconception
+#       node type plus 2 edge types are added
+# Purpose: a formal definition for knowledge-graph-constrained courseware
+#          generation
+#
+# Enum values are left in the language of the data (Chinese), because they
+# are stored verbatim in the graph JSON and compared by the code.
 # ============================================================
 
 meta:
@@ -20,13 +26,13 @@ meta:
     - "addresses_misconception edge"
 
 # ------------------------------------------------------------
-# 节点类型（8 类）
-# 前 7 类沿用 K12-KGraph，第 8 类为本文扩展
+# Node types (8)
+# The first seven follow K12-KGraph; the eighth is added here.
 # ------------------------------------------------------------
 node_types:
 
   Course:
-    description: "课程根节点"
+    description: "root node of the course"
     attributes:
       id:        {type: string, required: true, unique: true}
       name:      {type: string, required: true}
@@ -34,100 +40,101 @@ node_types:
       total_hours: {type: int, required: true}
       major:     {type: string, required: true}
       level:     {type: string, required: true}
-      prerequisites_of_course: {type: string, required: false, note: "先修课程，如 Python 程序设计基础"}
+      prerequisites_of_course: {type: string, required: false, note: "prerequisite course, e.g. the introduction to Python programming"}
 
   Module:
-    description: "模块／章，课程的一级切分"
+    description: "module or chapter: the first-level division of a course"
     attributes:
       id:        {type: string, required: true, unique: true}
       name:      {type: string, required: true}
       order:     {type: int, required: true}
       hours:     {type: int, required: true}
-      objective: {type: string, required: true, note: "模块级教学目标，用于生成章节页"}
+      objective: {type: string, required: true, note: "module-level teaching objective, used to generate the chapter page"}
 
   Unit:
-    description: "讲次，对应一次课（4 学时）"
+    description: "lecture, corresponding to one class session (4 class hours)"
     attributes:
       id:        {type: string, required: true, unique: true}
       name:      {type: string, required: true}
       order:     {type: int, required: true}
       hours:     {type: int, required: true}
-      slide_budget: {type: int, required: true, note: "该讲次分配到的 PPT 页数，约束生成量"}
+      slide_budget: {type: int, required: true, note: "page budget for this lecture, which constrains the generation volume"}
 
   Concept:
-    description: "知识点，图谱的最小语义单元"
+    description: "a knowledge point: the smallest semantic unit of the graph"
     attributes:
       id:          {type: string, required: true, unique: true}
       name:        {type: string, required: true}
       definition:  {type: string, required: true}
       importance:  {type: enum, required: true, values: [了解, 理解, 掌握, 熟练]}
-      complexity:  {type: string, required: false, note: "时间/空间复杂度，如 O(n)"}
+      complexity:  {type: string, required: false, note: "time or space complexity, e.g. O(n)"}
       aliases:     {type: list, required: false}
       examples:    {type: list, required: false}
-      pseudocode:  {type: string, required: false, note: "算法核心伪代码，约束代码示例生成"}
+      pseudocode:  {type: string, required: false, note: "core pseudocode, which constrains the generated code examples"}
 
   Skill:
-    description: "可操作的程序设计技能，区别于陈述性概念"
+    description: "an actionable programming skill, as distinct from a declarative concept"
     attributes:
       id:          {type: string, required: true, unique: true}
       name:        {type: string, required: true}
       description: {type: string, required: true}
       importance:  {type: enum, required: true, values: [了解, 理解, 掌握, 熟练]}
-      verifiable:  {type: bool, required: true, note: "是否可通过上机运行验证"}
+      verifiable:  {type: bool, required: true, note: "whether it can be verified by running code"}
 
   Lab:
-    description: "上机实验（对应 K12-KGraph 的 Experiment）"
+    description: "a hands-on lab (the Experiment of K12-KGraph)"
     attributes:
       id:          {type: string, required: true, unique: true}
       name:        {type: string, required: true}
       objective:   {type: string, required: true}
-      instruments: {type: list, required: true, note: "环境与工具，如 Python 3.11 / pytest"}
+      instruments: {type: list, required: true, note: "environment and tools, e.g. Python 3.11 / pytest"}
       steps:       {type: list, required: false}
       expected_output: {type: string, required: false}
       difficulty:  {type: int, required: true, values: [1, 2, 3]}
 
   Exercise:
-    description: "习题与考核点，可来自教材、试卷、在线判题"
+    description: "an exercise or assessment point, drawn from the textbook, an exam paper or an online judge"
     attributes:
       id:          {type: string, required: true, unique: true}
       name:        {type: string, required: true}
       type:        {type: enum, required: true, values: [选择题, 填空题, 代码填空, 编程题, 简答题]}
       difficulty:  {type: int, required: true, values: [1, 2, 3, 4, 5]}
       answer:      {type: string, required: false}
-      source:      {type: string, required: false, note: "来源：教材页码 / 期末试卷 / 自建"}
+      source:      {type: string, required: false, note: "source: textbook page / final exam paper / authored"}
 
   Misconception:
-    description: "典型误区。本文扩展节点，用于生成针对性纠错页与评测"
+    description: "a typical misconception. Added here, and used to generate targeted corrective pages and to evaluate them"
     attributes:
       id:          {type: string, required: true, unique: true}
-      statement:   {type: string, required: true, note: "错误说法本身，需具体可判定"}
-      correction:  {type: string, required: true, note: "正确理解"}
+      statement:   {type: string, required: true, note: "the incorrect statement itself, which must be specific enough to be judged"}
+      correction:  {type: string, required: true, note: "the correct understanding"}
       frequency:   {type: enum, required: false, values: [低频, 常见, 高频]}
-      evidence:    {type: string, required: false, note: "来源：历年答题统计 / 教师经验 / 文献"}
+      evidence:    {type: string, required: false, note: "source: past answer statistics / teacher experience / literature"}
 
 # ------------------------------------------------------------
-# 边类型（10 类）
-# source / target 的允许类型即 schema 约束，抽取时用于校验
+# Edge types (10)
+# The allowed source and target types are themselves schema constraints,
+# used to validate extraction.
 # ------------------------------------------------------------
 edge_types:
 
   is_a:
-    description: "分类关系（taxonomy）"
+    description: "classification (taxonomy)"
     source: [Concept]
     target: [Concept]
     attributes:
-      evidence: {type: string, required: true, note: "支撑该关系的教材原文或代码片段"}
+      evidence: {type: string, required: true, note: "the textbook passage or code fragment that supports the relation"}
 
   prerequisites_for:
-    description: "先修关系，决定教学顺序，构成 DAG"
+    description: "prerequisite relation; determines teaching order and forms a DAG"
     source: [Concept, Skill]
     target: [Concept, Skill]
     attributes:
       evidence: {type: string, required: true}
-      strength: {type: enum, required: true, values: [强依赖, 弱依赖], note: "强依赖=不会A无法学B"}
+      strength: {type: enum, required: true, values: [强依赖, 弱依赖], note: "strong means B cannot be learned without A"}
 
   relates_to:
-    description: "关联但非先修（对照、类比、互补）"
+    description: "related but not prerequisite (contrast, analogy, complement)"
     source: [Concept, Skill, Misconception]
     target: [Concept, Skill, Misconception]
     attributes:
@@ -135,135 +142,136 @@ edge_types:
       evidence: {type: string, required: true}
 
   implements:
-    description: "概念到代码实现的映射。本文扩展，用于生成代码示例与可编辑性检查"
+    description: "concept-to-code mapping. Added here, and used to generate code examples and to check editability"
     source: [Concept, Skill]
     target: [Concept]
     attributes:
       language: {type: string, required: true, default: "Python"}
-      api:      {type: list, required: false, note: "涉及的标准库/方法，如 list.append"}
+      api:      {type: list, required: false, note: "standard library calls involved, e.g. list.append"}
       evidence: {type: string, required: true}
 
   verified_by:
-    description: "概念/技能由哪个上机实验验证（对应 K12 的 verifies）"
+    description: "which lab verifies a concept or skill (the verifies of K12-KGraph)"
     source: [Concept, Skill]
     target: [Lab]
     attributes:
       evidence: {type: string, required: true}
 
   assessed_by:
-    description: "概念/技能由哪些习题考核（合并 K12 的 tests_concept / tests_skill）"
+    description: "which exercises assess a concept or skill (merges tests_concept and tests_skill of K12-KGraph)"
     source: [Concept, Skill]
     target: [Exercise]
     attributes:
-      weight: {type: number, required: false, note: "该题在考核中的分值占比"}
+      weight: {type: number, required: false, note: "the share of the assessment this exercise carries"}
 
   addresses_misconception:
-    description: "某讲次或实验应纠正确认的误区。本文扩展"
+    description: "the misconception a lecture or lab is expected to correct. Added here"
     source: [Unit, Lab, Concept]
     target: [Misconception]
     attributes:
       strategy: {type: enum, required: false, values: [反例对比, 代码演示, 边界测试, 提问引导]}
 
   appears_in:
-    description: "节点锚定到所属讲次，保证可追溯"
+    description: "anchors a node to its lecture, which keeps everything traceable"
     source: [Concept, Skill, Lab, Exercise, Misconception]
     target: [Unit]
     attributes:
-      sequence: {type: int, required: false, note: "在该讲次内的讲解顺序"}
+      sequence: {type: int, required: false, note: "teaching position within that lecture"}
 
   is_part_of:
-    description: "层级包含"
+    description: "hierarchical containment"
     source: [Module, Unit]
     target: [Course, Module]
 
   leads_to:
-    description: "跨模块的概念递进（不构成强先修，但教学上顺势）"
+    description: "concept progression across modules (not a strong prerequisite, but the natural teaching next step)"
     source: [Concept]
     target: [Concept]
     attributes:
       note: {type: string, required: false}
 
 # ------------------------------------------------------------
-# 全局约束（structural validation）
+# Global constraints (structural validation)
 # ------------------------------------------------------------
 constraints:
 
   dag:
     edge: prerequisites_for
-    rule: "子图必须无环；建图后执行拓扑排序，检测到环则拒绝并回溯"
+    rule: "the subgraph must be acyclic; build the graph, run a topological sort, and on a cycle reject and backtrack"
     action: reject_and_report
 
   grounding:
-    rule: "每个 Concept / Skill / Lab / Misconception 必须至少有一条 appears_in 边"
+    rule: "every Concept / Skill / Lab / Misconception needs at least one appears_in edge"
     action: reject
 
   evidence_required:
     edges: [is_a, prerequisites_for, relates_to, implements, verified_by]
-    rule: "上述边必须有非空 evidence 字段，且 evidence 能定位到教材页码或代码文件行号"
+    rule: "these edges must carry a non-empty evidence field that can be located to a textbook page or a code line"
     action: reject
 
   unit_capacity:
-    rule: "每个 Unit 的 Concept 数在 3–8 之间；超过 8 需拆分为两个 Unit"
+    rule: "a Unit holds 3-8 Concept nodes; more than 8 has to be split into two Units"
     action: warn
 
   unique_name:
-    rule: "同一 Module 内 Concept.name 唯一，避免同名不同义"
+    rule: "Concept.name is unique within a Module, so the same name never means two things"
     action: reject
 
   importance_coverage:
-    rule: "每个 Unit 至少包含 1 个 importance ∈ {掌握, 熟练} 的节点"
+    rule: "every Unit contains at least one node with importance in {掌握, 熟练}"
     action: warn
 
 # ------------------------------------------------------------
-# 生成约束（供课件生成器读取，对应论文 Method 的 constraint layer）
+# Generation rules (read by the courseware generator; the constraint layer
+# of the method section)
 # ------------------------------------------------------------
 generation_rules:
 
   page_mapping:
-    rule: "1 个 Unit 生成 slide_budget 页；首页为该 Unit 的学习目标（由 objective 与核心 Concept 生成）"
+    rule: "one Unit produces slide_budget pages; the first page states the Unit's objectives (built from objective and the core Concepts)"
     priority: high
 
   concept_coverage:
-    rule: "本 Unit 中 importance ∈ {掌握, 熟练} 的 Concept 必须全部出现在生成课件中"
+    rule: "every Concept in this Unit with importance in {掌握, 熟练} must appear in the generated deck"
     check: coverage_rate
 
   order_constraint:
-    rule: "同一讲次内，概念出现顺序必须满足 prerequisites_for 的拓扑序；跨讲次不得倒置"
+    rule: "within a lecture, the order in which concepts appear must respect the topological order of prerequisites_for; across lectures it must not be inverted"
     check: prerequisite_violation
 
   no_out_of_graph:
-    rule: "生成内容不得引入图谱外的 Concept；允许引入但须标记 background=true 且不超过全文概念数的 10%"
+    rule: "generated content must not introduce Concepts outside the graph; where one is unavoidable it must be marked background=true and stay under 10% of the concepts in the deck"
     check: oog_rate
 
   misconception_hook:
-    rule: "若 Unit 存在 addresses_misconception 边，生成课件须包含至少 1 处针对性纠错内容"
+    rule: "if the Unit has an addresses_misconception edge, the deck must contain at least one targeted corrective page"
     check: misconception_coverage
 
   evidence_anchor:
-    rule: "每个核心概念页需附 evidence 指向的教材位置，便于教师核对"
+    rule: "each core-concept page carries the textbook location its evidence points to, so a teacher can check it"
     priority: medium
 
 # ------------------------------------------------------------
-# 自动评测指标（对应论文 Evaluation 章节）
+# Automatic metrics (the evaluation section of the paper)
 # ------------------------------------------------------------
 metrics:
 
   coverage_rate:
-    formula: "生成的 Concept 集合 ∩ Unit 必需 Concept 集合 / Unit 必需 Concept 集合"
-    range: "0–1，越高越好"
+    formula: "|generated Concepts ∩ required Concepts of the Unit| / |required Concepts of the Unit|"
+    range: "0-1, higher is better"
 
   oog_rate:
-    formula: "图谱外概念数 / 生成概念总数"
-    range: "0–1，越低越好"
+    formula: "out-of-graph concepts / generated concepts"
+    range: "0-1, lower is better"
 
   prerequisite_violation:
-    formula: "违反拓扑序的相邻概念对数 / 相邻概念对总数"
-    range: "0–1，越低越好"
+    formula: "adjacent concept pairs violating the topological order / all adjacent concept pairs"
+    range: "0-1, lower is better"
 
   misconception_coverage:
-    formula: "已覆盖的 Misconception 数 / Unit 关联的 Misconception 数"
-    range: "0–1"
+    formula: "misconceptions covered / misconceptions attached to the Unit"
+    range: "0-1"
 
   editability:
-    formula: "生成 PPT 中可直接编辑的原生对象比例（非图片化）"
-    range: "0–1，对应 python-pptx 原生形状占比"
+    formula: "share of objects in the deck that are natively editable (not rasterised)"
+    range: "0-1, the native-shape ratio reported by python-pptx"

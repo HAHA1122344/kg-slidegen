@@ -276,7 +276,7 @@ class Graph:
                     Issue(
                         "warning",
                         "NO_CORE_CONCEPT",
-                        "unit has no concept at 掌握/熟练 level",
+                        "unit has no concept at the 掌握/熟练 level",
                         unit["id"],
                     )
                 )

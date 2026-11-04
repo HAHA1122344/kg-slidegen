@@ -78,7 +78,7 @@ def _coerce(row: dict) -> dict:
 def _summary_table(rows: list[dict]) -> str:
     """Per-condition aggregate: mean (sd) for each metric."""
     lines = [
-        "| 组别 | n | " + " | ".join(METRIC_KEYS) + " | 通过率 | 输出 token |",
+        "| condition | n | " + " | ".join(METRIC_KEYS) + " | pass rate | output tok |",
         "| --- | --- | " + " | ".join("---" for _ in METRIC_KEYS) + " | --- | --- |",
     ]
     for mode in MODES:
@@ -101,12 +101,12 @@ def _summary_table(rows: list[dict]) -> str:
 
 
 def _detail_table(rows: list[dict]) -> str:
-    header = "| 讲次 | 组别 | 重复 | 页数 | " + " | ".join(METRIC_KEYS) + " | 判定 |"
+    header = "| lecture | condition | repeat | pages | " + " | ".join(METRIC_KEYS) + " | verdict |"
     sep = "| --- | --- | --- | --- | " + " | ".join("---" for _ in METRIC_KEYS) + " | --- |"
     lines = [header, sep]
     for row in rows:
         cells = " | ".join(f"{row[k]:.3f}" for k in METRIC_KEYS)
-        verdict = "通过" if row["passed"] else "未通过"
+        verdict = "pass" if row["passed"] else "fail"
         lines.append(
             f"| {row['unit']} | {row['mode']} | {row['repeat']} | {row['pages']} "
             f"| {cells} | {verdict} |"
@@ -115,44 +115,48 @@ def _detail_table(rows: list[dict]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="kgslide.bench", description="基线对比实验")
+    parser = argparse.ArgumentParser(prog="kgslide.bench", description="baseline comparison experiments")
     parser.add_argument("--kg", default=str(DEFAULT_KG))
     parser.add_argument("--units", default="U10,U11,U12")
     parser.add_argument("--modes", default=",".join(BASELINE_MODES))
-    parser.add_argument("--repeat", type=int, default=1, help="每个单元格重采样次数")
+    parser.add_argument("--repeat", type=int, default=1, help="resamplings per cell")
     parser.add_argument("--thinking", default="default", choices=("default", "disabled"))
     parser.add_argument("--temperature", type=float, default=0.3)
     parser.add_argument(
         "--out",
         default=None,
-        help="输出目录；留空则 deepseek 写 outputs/bench，其它 provider 写 outputs/bench_<provider>",
+        help="output directory; left empty, deepseek writes outputs/bench and other "
+             "providers write outputs/bench_<provider>",
     )
     parser.add_argument(
         "--provider",
         default="deepseek",
         choices=("deepseek", "kimi", "agnes", "mock"),
-        help="模型提供方；kimi 用于第二骨干的跨模型复核",
+        help="model provider; kimi is the second backbone for cross-model replication",
     )
     parser.add_argument(
         "--model",
         default="",
-        help="模型 ID；留空则使用该 provider 的默认值",
+        help="model ID; left empty, the provider default is used",
     )
     parser.add_argument("--mock", action="store_true")
     parser.add_argument(
         "--append",
         action="store_true",
-        help="把本次结果并入已有 results.csv（补跑个别条件时用，不要覆盖整张表）",
+        help="merge this run into an existing results.csv (for filling in a few cells; "
+             "does not overwrite the whole table)",
     )
     parser.add_argument(
         "--reuse",
         action="store_true",
-        help="复用已有的 .json 原始输出重新算指标，不调用 API（改指标时用，省钱且结果可比）",
+        help="re-score existing .json payloads without calling the API (for metric "
+             "changes: cheaper, and strictly comparable)",
     )
     parser.add_argument(
         "--skip-existing",
         action="store_true",
-        help="已存在 .json 的单元格直接评分不重跑（低配额账号下断点续跑用）",
+        help="score cells that already have a .json instead of re-running them "
+             "(resume on a low-quota account)",
     )
     args = parser.parse_args(argv)
 
@@ -192,7 +196,7 @@ def main(argv: list[str] | None = None) -> int:
 
                 if args.reuse:
                     if not payload_path.exists():
-                        print(f"{tag} 跳过：缺少 {payload_path.name}", flush=True)
+                        print(f"{tag} skipped: missing {payload_path.name}", flush=True)
                         continue
                     payload = json.loads(payload_path.read_text(encoding="utf-8"))
                     usage = {}
@@ -202,7 +206,7 @@ def main(argv: list[str] | None = None) -> int:
                     # cell 50 means paying for the first 49 twice.
                     payload = json.loads(payload_path.read_text(encoding="utf-8"))
                     usage = {}
-                    print(f"{tag} 已有输出，直接评分", flush=True)
+                    print(f"{tag} has output, scoring it directly", flush=True)
                 else:
                     assert client is not None
                     print(f"{tag} ...", flush=True)
@@ -265,12 +269,12 @@ def main(argv: list[str] | None = None) -> int:
                 )
 
     if failures:
-        print(f"\n{len(failures)} 个单元格失败（未计入表格）：")
+        print(f"\n{len(failures)} cells failed (excluded from the tables):")
         for item in failures:
             print(f"  - {item}")
 
     if not rows:
-        print(f"{out_dir} 下没有可评估的输出，先跑一次生成。")
+        print(f"no evaluable output under {out_dir}; run a generation pass first.")
         return 1
 
     csv_path = out_dir / "results.csv"
@@ -303,11 +307,11 @@ def main(argv: list[str] | None = None) -> int:
     resolved_model = client.config.model if client is not None else (args.model or "reuse")
     md = "\n\n".join(
         [
-            "# 基线对比（各条件均值，括号内为标准差）",
+            "# baseline comparison (per-condition mean, standard deviation in brackets)",
             _summary_table(rows),
-            "## 逐条明细",
+            "## per-cell detail",
             _detail_table(rows),
-            f"配置：provider={provider} model={resolved_model} thinking={args.thinking} "
+            f"config: provider={provider} model={resolved_model} thinking={args.thinking} "
             f"temperature={args.temperature} repeat={args.repeat}",
         ]
     )
@@ -320,7 +324,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print()
     print(_summary_table(rows))
-    print(f"\n已写入 {csv_path} / {md_path}")
+    print(f"\nwrote {csv_path} / {md_path}")
     return 0
 
 

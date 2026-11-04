@@ -1,356 +1,436 @@
-# 实验方案（可复现记录）
+# Experimental protocol (reproducible record)
 
-这份文件记录论文里每一个数字是怎么来的。改代码后请重跑并同步更新本文件，
-否则论文与仓库会对不上——审稿人如果 clone 下来跑不出同样的数，一切都白费。
+This file records where every number in the paper comes from. If you change the code,
+re-run the experiments and update this file; otherwise the paper and the repository will
+disagree — and if a reviewer clones the repository and cannot reproduce the numbers, nothing
+else matters.
 
-## 1. 固定条件
+## 1. Fixed conditions
 
-| 项 | 值 |
+| Item | Value |
 | --- | --- |
-| 模型 | `deepseek-v4-flash` |
+| Model | `deepseek-v4-flash` |
 | temperature | 0.3 |
 | max_tokens | 16000 |
-| 思考模式 | 默认（模型自带一轮内部推理，`reasoning_tokens` 单独记录） |
-| JSON 模式 | 开启，`response_format={"type":"json_object"}` |
-| 讲次 | U10 队列的概念与假溢出 / U11 循环队列 / U12 链队列与 BFS 引入 |
-| 页数 | 由图谱 `slide_budget` 给定（6 / 7 / 6） |
-| 重采样 | 主表每格 3 次，消融每格 2 次 |
+| Thinking mode | default (the model performs one internal reasoning round; `reasoning_tokens` is logged separately) |
+| JSON mode | on, `response_format={"type":"json_object"}` |
+| Lectures | U10 concepts and false overflow of queues / U11 circular queues / U12 linked queues and the BFS lead-in |
+| Page count | given by the graph's `slide_budget` (6 / 7 / 6) |
+| Resampling | 3 runs per cell in the main table, 2 in the ablations |
 
-**为什么固定页数而不让模型自由决定**：页数是课程契约的一部分，教师按课时排好版面。
-放开页数会让「覆盖率」失去意义——页数越多当然覆盖越全，比较就退化成比页数。
+**Why the page count is fixed rather than left to the model**: page count is part of the
+course contract; a teacher lays out the pages against the class hours. Releasing it would
+make coverage meaningless — more pages naturally cover more, and the comparison degenerates
+into a comparison of page counts.
 
-## 2. 六个对照
+## 2. The six contrasts
 
-各组收到的信息严格递进，逐项剥掉结构：
+The information each arm receives is strictly nested, stripping structure one item at a time:
 
-| 条件 | 课程名/讲次名 | 页数 | 概念名+定义 | 拓扑序 | 误区 | 禁列词 | 提示长度（U11） |
+| Condition | Course/lecture name | Page count | Concept names + definitions | Topological order | Misconceptions | Forbidden terms | Prompt length (U11) |
 | --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| `full` | ✓ | ✓ | ✓ | ✓ | ✓（单列区块+版面要求） | ✓ | 1997 |
-| `rag_mc` | ✓ | ✓ | ✓ | ✗ | ✓（平铺文本） | ✗ | 1122 |
+| `full` | ✓ | ✓ | ✓ | ✓ | ✓ (own block + layout requirement) | ✓ | 1997 |
+| `rag_mc` | ✓ | ✓ | ✓ | ✗ | ✓ (flat text) | ✗ | 1122 |
 | `rag` | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | 997 |
 | `placebo` | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | 2195 |
 | `cot` | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | 625 |
 | `zero_shot` | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | 585 |
 
-`rag` 与 `zero_shot` 的差别只有「教材片段」，因此两者之差度量**内容检索**的贡献；
-`full` 与 `rag` 的差别只有结构（顺序、误区、禁止词），因此度量**结构约束**的贡献。
-这个设计让每一层的增益可以单独归因，而不是笼统地说「我们的提示词更好」。
+`rag` and `zero_shot` differ only in the textbook excerpts, so their difference measures the
+contribution of **content retrieval**; `full` and `rag` differ only in structure (order,
+misconceptions, forbidden terms), so their difference measures the contribution of
+**structural constraint**. This design lets each layer's gain be attributed separately
+instead of making the blanket claim that "our prompt is better".
 
-`cot` 组额外要求模型在每页 `notes` 里先写定位再写内容——它是「单靠提示工程能做到什么程度」的上界。
+The `cot` arm additionally asks the model to state its positioning in each page's `notes`
+before writing the content — it is the upper bound of what prompt engineering alone can do.
 
-**`rag_mc` 是为误区结论专设的控制组**，用来挡住一个必然会被提出的质疑：
-「你在误区指标上赢，只是因为你把误区写进了提示词，那叫提示不叫知识图谱」。
-这一组把同样的误区文本作为平铺片段交给模型，但不给顺序、不给版面要求、不给必覆盖清单。
-若 `full` 仍在误区指标上稳定胜出，说明增益来自**结构化到足以约束版面**，
-而不是文本出现在提示词里这件事本身。
+**`rag_mc` is a control built specifically for the misconception conclusion**, to pre-empt an
+objection that will certainly be raised: "you only win on the misconception metric because
+you wrote the misconceptions into the prompt, and that is prompting, not a knowledge graph."
+This arm hands the model the same misconception text as a flat excerpt, but gives no order,
+no layout requirement and no must-cover list. If `full` still wins reliably on the
+misconception metric, the gain comes from **being structured enough to constrain the page**,
+not from the text appearing in the prompt.
 
-**`placebo` 是为「提示更长」这一替代解释专设的控制组**：提示被填充到与 `full` 等长
-（实际略长 1–16%），但填充内容是与本课程无关的通用课件写作建议。
-若 `full` 的优势来自提示长度，这一组应当追平；实测它没有。
-注意这一组的提示**比 full 更长**，所以它是保守对照：`full` 在更短的提示下胜出。
+**`placebo` is a control built specifically for the "longer prompt" alternative
+explanation**: the prompt is padded to the length of `full` (in practice 1–16% longer), but
+the padding is generic courseware-writing advice unrelated to the course. If the advantage of
+`full` came from prompt length, this arm should catch up; measured, it does not. Note that
+this arm's prompt is **longer than full's**, so it is a conservative control: `full` wins with
+a shorter prompt.
 
-## 3. 三种消融
+## 3. The three ablations
 
-保持 `full` 的完整契约与规则措辞，只删掉一个数据块：
+The complete contract and rule wording of `full` are kept; exactly one data block is removed:
 
-| 条件 | 删除内容 | 预期受影响的指标 |
+| Condition | Removed content | Metric expected to move |
 | --- | --- | --- |
-| `no_order` | `讲解顺序` 块 + 对应规则 3 | `prerequisite_violation` |
-| `no_misconception` | `必须纠正的典型误区` 块 + 规则 5 | `misconception_coverage` |
-| `no_forbidden` | `严禁引入的概念` 块 + 规则 6 | `oog_rate` |
+| `no_order` | the `teaching order` block + rule 3 | `prerequisite_violation` |
+| `no_misconception` | the `misconceptions that must be corrected` block + rule 5 | `misconception_coverage` |
+| `no_forbidden` | the `concepts that must not be introduced` block + rule 6 | `oog_rate` |
 
-规则文本同步删除是关键：如果只删数据块、留着「必须遵守给定顺序」这条规则，
-模型会去猜顺序，消融就不干净了。测试 `test_ablation_prompt_drops_exactly_one_block` 守住这点。
+Deleting the rule text along with the block is essential: if only the data block goes and
+the rule "you must follow the given order" stays, the model will guess an order and the
+ablation is no longer clean. The test `test_ablation_prompt_drops_exactly_one_block` guards
+this.
 
-**读法（正文 Table 5）**：消融不是第二组条件均值，而是归因——一次只删一个块、全量重测四个指标，
-一个块的价值就是「它本该管的那个指标」的位移：误区槽位 −0.833（顺带覆盖率 −0.056），
-禁列词表 +0.083 跑题率且其余不动，顺序块 −0.032 但属空操作（见下）。
-`python paper/tables.py --latex` 会从同一份 `results.csv` 生成 `paper/latex/attribution.tex`，
-旁效阈值 0.04，低于阈值的移动不列——那是抽样噪声，不是归因。
+**How to read it (Table 5 in the paper)**: an ablation is not a second set of condition
+means but an attribution — remove one block, re-measure all four metrics, and the value of a
+block is the displacement of the metric it was supposed to govern: the misconception slot
+−0.833 (with coverage −0.056 alongside), the forbidden-term list +0.083 on the off-graph
+rate with everything else unmoved, the ordering block −0.032 but a no-op (see below).
+`python paper/tables.py --latex` generates `paper/latex/attribution.tex` from the same
+`results.csv`, with a side-effect threshold of 0.04; moves below it are not listed, because
+they are sampling noise rather than attribution.
 
-## 4. 指标口径
+## 4. Metric definitions
 
-| 指标 | 口径 | 已知偏差与处理 |
+| Metric | Definition | Known bias and how it is handled |
 | --- | --- | --- |
-| `coverage_rate` | 必需概念中被「讲到」的比例 | 只看正文页；标题/目标/小结页的罗列不算讲过。匹配用「原名 ∪ 图谱 aliases」，避免偏袒照抄原文名的 `full` 组 |
-| `oog_rate` | (图谱外 ID + 禁列词命中) / (已覆盖 + 图谱外) | 只统计符合图谱编号格式（`^[A-Z]{1,3}\d{2,4}$`）的不存在 ID；模型自造的 slug（`queue-def`）属另一套命名空间，不判跑题 |
-| `background_rate` | 兄弟讲次概念的**字数** / 全文总字数 | 按字数不按概念个数：一页对比表点名三个兄弟概念是正常教学 |
-| `prerequisite_violation` | 违反拓扑序的概念对 / 概念对总数 | 见下方「顺序怎么判」 |
-| `misconception_coverage` | 已纠正的误区 / 该讲次关联的误区数 | 三重判定：结构锚点 → 英文标识符重叠 → 中文字符 bigram（阈值 0.35） |
-| `editability` | 原生可编辑形状 / 全部形状 | 由 `python-pptx` 渲染器决定，全原生即为 1.0 |
+| `coverage_rate` | required concepts that are "taught" | body pages only; concepts merely listed on the title, objectives or summary page do not count as taught. Matching uses name ∪ graph aliases, so the `full` arm is not favoured for copying the original names |
+| `oog_rate` | (out-of-graph IDs + forbidden-term hits) / (covered + out-of-graph) | only IDs in the graph's own format (`^[A-Z]{1,3}\d{2,4}$`) that do not exist are counted; a slug the model invents (`queue-def`) belongs to another namespace and is not judged off-topic |
+| `background_rate` | **characters** spent on sibling-lecture concepts / total characters | characters, not concept count: one comparison slide naming three sibling concepts is normal teaching |
+| `prerequisite_violation` | concept pairs violating the topological order / total concept pairs | see "How ordering is judged" below |
+| `misconception_coverage` | misconceptions corrected / misconceptions attached to the lecture | three-way decision: structural anchor → English identifier overlap → Chinese character bigram (threshold 0.35) |
+| `editability` | native editable shapes / all shapes | determined by the `python-pptx` renderer; all-native is 1.0 |
 
-### 顺序怎么判
+### How ordering is judged
 
-这是改动最多、也最容易出错的一处，单独说明。
+This is the part that changed the most and breaks most easily, so it gets its own section.
 
-1. **不看模型自报的 `concept_ids`。** 三组基线从未被告知存在这个字段，
-   用自报结果计分，一份完全空白的答卷会因为「没有报告」而拿到 0 违例率——把漏答当成满分。
-2. **排除标题页、学习目标页、小结页。** 这三页按定义就把全部概念列一遍，
-   计入会让所有概念首现位置打平，排序由字典顺序而非讲解顺序决定。实测这一条凭空造出过 3 处违例。
-3. **以「标题点名」定位置，而非首次提及。** 一页讲什么看它的标题；
-   正文里的前向引用（「取模是循环队列实现的关键」）不代表这页在讲该概念。实测这一条造出过 2 处违例。
-4. **同一页内按字面偏移排序**，再按 `(页序, 偏移)` 取全序。
-5. **匹配用「原名 ∪ aliases」**，与覆盖率同表，避免偏袒照抄原文名的条件。
+1. **The model's self-reported `concept_ids` are ignored.** The three baselines are never told
+   the field exists; scoring on self-reports would give a completely blank answer a violation
+   rate of zero — treating a non-answer as a perfect score.
+2. **Title, objectives and summary pages are excluded.** By definition these list every
+   concept, so including them flattens the first-occurrence position of all concepts and lets
+   dictionary order, not teaching order, decide the ranking. Measured, this alone created
+   three spurious violations.
+3. **Position is fixed by "named in the title", not by first mention.** What a page teaches is
+   what its title names; a forward reference in the body ("the modulo is the key to
+   implementing a circular queue") does not mean the page teaches that concept. Measured,
+   this created two spurious violations.
+4. **Within a page, order by literal offset**, then take the total order by
+   `(page index, offset)`.
+5. **Matching uses name ∪ aliases**, the same table as coverage, so no condition is favoured
+   for copying the original names.
 
-### 中文匹配的一个坑
+### One trap in Chinese matching
 
-`队列` 会命中 `循环队列`。所有文本计数采用**逐行**净出现次数（原始次数 − 该行内被更长术语覆盖的次数）。
-按行而非按全文扣减是关键：否则第 2 页独立的「队列」会被第 4 页的「顺序队列」抵消掉，
-概念被判为「从未讲过」。这个 bug 真实发生过。
+`队列` also matches inside `循环队列`. All text counts use a **line-by-line** net occurrence
+count (raw count − occurrences covered by a longer term on that same line). Doing the
+subtraction per line rather than over the whole document is essential: otherwise a
+standalone `队列` on page 2 is cancelled by `顺序队列` on page 4 and the concept is judged
+"never taught". This bug really happened.
 
-## 5. 必须承认的口径局限
+## 5. Limitations of the measurement that must be acknowledged
 
-1. **`full` 的覆盖率天然接近 1.0。** 提示词里就是那份概念清单，模型照抄即可。
-   单次绝对值证明不了方法优越，可比的只有**跨重采样的方差**与其他条件之间的差距。
-2. **六项指标测的是「契约符合度」，不是教学质量。** 讲得好不好、例子贴不贴切、
-   板书节奏对不对，都测不出来。已用教师盲评做补充（见第 6 节），但 10 份 × 3 人
-   只够做一致性核对，不足以覆盖全部教学维度，不能拿指标冒充教学质量。
-3. **`misconception_coverage` 对基线天然不利**，因为基线从未被告知这些误区。
-   这不是缺陷而是结论本身：课程级误区知识不在模型权重里，只能由知识库供给。
-   `rag_mc` 控制组就是为此设的上界对照——它证明「给了文本」与「给了结构」不是一回事。
-4. **`oog_rate` 在现有数据上几乎恒为 0**，因为三层防护（必覆盖清单、禁列词表、背景上限）
-   已经把跑题这条路堵死，模型没有机会跑偏。这个指标更接近「安全网」而非「区分度来源」。
-5. **样本量小**（3 讲次 × 3 次）。统计检验只能是描述性的，不能报 p 值当强证据。
+1. **The coverage of `full` is naturally close to 1.0.** The prompt contains that concept
+   list, so the model can simply copy it. A single absolute value does not demonstrate
+   superiority; what is comparable is the **variance across resamplings** and the gaps to the
+   other conditions.
+2. **The six metrics measure contract compliance, not teaching quality.** Whether a lecture
+   is any good, whether examples fit, whether the board-work has the right rhythm — none of
+   this is measured. A teacher blind review supplements it (§6), but 10 decks × 3 raters
+   supports an agreement check only, not full coverage of teaching dimensions, and the metrics
+   must not be passed off as teaching quality.
+3. **`misconception_coverage` is structurally unfavourable to the baselines**, because they
+   are never told the misconceptions. That is not a defect but the conclusion itself:
+   course-level misconception knowledge is not in the model's weights and has to be supplied
+   by a knowledge base. The `rag_mc` control is the upper-bound contrast built for exactly
+   this — it shows that "given the text" and "given the structure" are not the same thing.
+4. **`oog_rate` is almost always 0 on the existing data**, because the three layers of
+   protection (must-cover list, forbidden-term list, background cap) have already closed off
+   drifting and the model has no opportunity to wander. The metric behaves more like a safety
+   net than a source of discrimination.
+5. **The sample is small** (3 lectures × 3 runs). Statistical tests can only be descriptive;
+   p-values must not be reported as strong evidence.
 
-## 6. 教师盲评
+## 6. Teacher blind review
 
-- **数据**：`paper/human_eval.csv`，一行 = 一份课件 × 一位评分者；10 份 × 3 人 = 30 条
-- **分布**：`full` 3 份 / `rag_mc` 3 份 / `rag` 3 份 / `placebo` 1 份（每份 3 人评）
-- **维度**：Q1 大纲覆盖、Q2 误区纠正、Q3 教学逻辑、Q4 内容准确、Q5 课堂可用性，1–5 分
-- **总分**：`Overall_Score` = 五题**未加权均值**；脚本会核验，当前最大偏差 0.0000
-- **信度**：ICC(2,3)（双向随机、绝对一致性），总分 **0.92**；分项 Q2 0.91、Q5 0.91、
-  Q1 0.80、Q3 0.53、Q4 0.00。Q4 的信度为 0 是**构造性**的：各条件都在 4.0 以上、
-  组间方差与评分噪声不可区分（F(9,18) = 1.00），不是评分者意见相左
-- **不做显著性检验**：3 份 vs 3 份，完全分离下双侧置换检验最小 p = 0.10，
-  因此只作「与自动指标一致」的解读，不宣称独立确证
-- **与自动指标对照**：Q2 归一化到 [0,1] 后为 0.97 / 0.56 / 0.42 / 0.28
-  （full / rag_mc / placebo / rag），对应自动值 1.000 / 0.556 / 0.333 / 0.222，
-  **秩次完全一致，最大差 0.09**
+- **Data**: `paper/human_eval.csv`, one row = one deck × one rater; 10 decks × 3 raters = 30
+  rows
+- **Distribution**: `full` 3 decks / `rag_mc` 3 / `rag` 3 / `placebo` 1 (each rated by 3
+  raters)
+- **Dimensions**: Q1 syllabus coverage, Q2 misconception correction, Q3 teaching logic,
+  Q4 content accuracy, Q5 classroom usability, on a 1–5 scale
+- **Total**: `Overall_Score` is the **unweighted mean** of the five items; the script verifies
+  this, and the current maximum deviation is 0.0000
+- **Reliability**: ICC(2,3) (two-way random, absolute agreement), total **0.92**; by item
+  Q2 0.91, Q5 0.91, Q1 0.80, Q3 0.53, Q4 0.00. Q4's zero is **structural**: every condition
+  scores above 4.0 and between-deck variance is indistinguishable from rating noise
+  (F(9,18) = 1.00), so it is not a case of raters disagreeing
+- **No significance test**: with 3 decks against 3, the smallest two-sided permutation p
+  under complete separation is 0.10, so the review is read as agreeing with the automatic
+  metrics, not as independent confirmation
+- **Against the automatic metrics**: Q2 normalised to [0,1] gives 0.97 / 0.56 / 0.42 / 0.28
+  (full / rag_mc / placebo / rag) against automatic values of 1.000 / 0.556 / 0.333 / 0.222
+  — **identical ranks, largest gap 0.09**
 
 ```bash
-python paper/human_eval.py          # 描述统计 + ICC + 自助置信区间
-python paper/human_eval.py --latex  # 输出论文用的 LaTeX 表格
+python paper/human_eval.py          # descriptives + ICC + bootstrap intervals
+python paper/human_eval.py --latex  # emit the LaTeX table for the paper
 ```
 
-## 7. 度量约定与代码块的两项稳健性核查
+## 7. Two robustness checks: measurement conventions and code blocks
 
-审稿人质疑「覆盖率只计正文页」会系统性惩罚把定义写在标题页的基线。这类质疑不能靠
-辩解回答，只能重算：
+A reviewer objected that counting coverage on body pages only would systematically penalise
+baselines that put definitions on the title page. That kind of objection cannot be answered
+by argument, only by recomputation:
 
 ```bash
-python paper/coverage_sensitivity.py            # 三种前置页约定 + 去掉别名匹配
-python paper/code_check.py                      # 逐块 ast.parse
+python paper/coverage_sensitivity.py            # three front-matter conventions + no alias matching
+python paper/code_check.py                      # ast.parse every block
 ```
 
-| 约定 | `full` | `rag_mc` | `placebo` | `rag` | `zero_shot` | `cot` | 受影响的运行 |
+| Convention | `full` | `rag_mc` | `placebo` | `rag` | `zero_shot` | `cot` | Runs affected |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 只计正文页（论文口径） | 0.981 | 0.698 | 0.675 | 0.659 | 0.643 | 0.614 | — |
-| 保留 title 页 | 1.000 | 0.698 | 0.675 | 0.659 | 0.643 | 0.632 | 2 / 54 |
-| 全页计入 | 1.000 | 0.772 | 0.728 | 0.749 | 0.643 | 0.632 | 排序 ρ=0.94 |
-| 只匹配本名、不用别名 | 0.963 | 0.389 | 0.325 | 0.373 | 0.357 | 0.370 | 31 / 54 |
+| Body pages only (the paper's convention) | 0.981 | 0.698 | 0.675 | 0.659 | 0.643 | 0.614 | — |
+| Title page included | 1.000 | 0.698 | 0.675 | 0.659 | 0.643 | 0.632 | 2 / 54 |
+| All pages included | 1.000 | 0.772 | 0.728 | 0.749 | 0.643 | 0.632 | ranking ρ = 0.94 |
+| Exact names only, no aliases | 0.963 | 0.389 | 0.325 | 0.373 | 0.357 | 0.370 | 31 / 54 |
 
-结论：放开 title 页只动 2 次运行（U10/full/r3、U10/cot/r2），条件排序完全不变，
-`full − rag_mc` 从 +0.283 升到 +0.302；去掉别名匹配反而把基线打到 0.33–0.39、`full`
-只降到 0.963（差值 +0.574），说明别名匹配是在**收紧**结论，论文里的 +0.283 是下界。
+Conclusion: relaxing to the title page moves only two runs (U10/full/r3, U10/cot/r2) and
+leaves the condition ordering untouched, while `full − rag_mc` rises from +0.283 to +0.302;
+dropping alias matching instead pushes the baselines down to 0.33–0.39 while `full` falls
+only to 0.963 (a gap of +0.574), which shows alias matching is **tightening** the result and
+that the paper's +0.283 is a lower bound.
 
-代码块：54 次运行共 117 块，全部 `ast.parse` 通过（6 个条件都是 1.00），判据饱和、
-无法区分条件；`full` 有 28 块（占其页面 48%），基线 16–19 块（27%–33%）。因此
-「能跑」必须做**行为级**测试才有区分度。`paper/behavior_check.py` 做了有界版本：
-去掉 `__main__` 演示段后在干净命名空间里按 4 类行为（FIFO、空、满、存活）跑，
-117 块中 37 块可测、36 块通过；论文 §7.6 把它明确写成**上界**而不是指标，
-`full` 的 8/9 与 28/28 不是证据。
+Code blocks: 54 runs contain 117 blocks, all of which pass `ast.parse` (every condition
+scores 1.00), so the criterion is saturated and cannot discriminate. `full` has 28 blocks
+(48% of its pages) and the baselines 16–19 (27%–33%). "It runs" therefore needs a
+**behavioural** test to have any discriminative power. `paper/behavior_check.py` does a
+bounded version: after removing `__main__` demo sections, blocks run in a clean namespace
+against four behaviour classes (FIFO, empty, full, survival); 37 of 117 blocks are testable
+and 36 pass. The paper states this explicitly in §7.6 as an **upper bound** rather than a
+metric — `full`'s 8/9 and 28/28 are not evidence.
 
-## 7b. 跨模型复核（第二骨干）
+## 7b. Cross-model replication (second backbone)
 
-同一套提示词、同一批讲次、同一套指标，换一个厂商的模型重跑，用来回答「结构化的效果
-是不是某一个模型提示词调优的产物」。这不是「哪个模型更强」的比较：
+Same prompts, same lectures, same metrics, one model from another vendor — to answer whether
+the effect of structure is an artefact of prompt tuning for one model. This is not a
+"which model is better" comparison:
 
-| 项 | DeepSeek（主实验） | Kimi（复核） |
+| Item | DeepSeek (main experiment) | Kimi (replication) |
 | --- | --- | --- |
-| 模型 | `deepseek-v4-flash` | `kimi-k3` |
-| temperature | 0.3 | **1.0（厂商锁定，传 0.3 直接 400）** |
+| Model | `deepseek-v4-flash` | `kimi-k3` |
+| temperature | 0.3 | **1.0 (pinned by the vendor; passing 0.3 returns 400)** |
 | max_tokens | 16000 | 16000 |
-| 提示词 | 完全一致（`_build_prompt` 共用） | 完全一致 |
-| 格数 | 6 条件 × 3 讲次 × 3 次 = 54 | 同 |
-| 输出目录 | `outputs/main_v1` | `outputs/bench_kimi` |
+| Prompts | identical (`_build_prompt` is shared) | identical |
+| Cells | 6 conditions × 3 lectures × 3 runs = 54 | same |
+| Output directory | `outputs/main_v1` | `outputs/bench_kimi` |
 
-temperature 不同是这段复核最容易被质疑的地方，因此：
-`LLMConfig` 里由 `ProviderPreset.fixed_temperature` 显式写死，`results.csv` 每行都记
-`model` 与 `temperature`，单测 `test_vendor_pinned_temperature_is_applied` 钉住。
-两个骨干各自内部条件相同，因此**组内对比可比、组间绝对值不可比**——表格只用来问
-「`full − rag_mc` 的符号是否复现」，不做跨栏均值比较。
+The differing temperature is the most attackable point in this replication, so it is pinned
+explicitly through `ProviderPreset.fixed_temperature` in `LLMConfig`, every row of
+`results.csv` records `model` and `temperature`, and the unit test
+`test_vendor_pinned_temperature_is_applied` locks it down. Within each backbone the
+conditions are identical, so **within-backbone contrasts are comparable and between-backbone
+absolute values are not** — the table is used only to ask whether the sign of
+`full − rag_mc` replicates, never to compare means across columns.
 
 ```bash
 export MOONSHOT_API_KEY=sk-xxxx
 python -m kgslide.bench --provider kimi --units U10,U11,U12 \
   --modes full,rag_mc,placebo,zero_shot --repeat 2 \
   --out outputs/bench_kimi --skip-existing
-python paper/tables.py --cross outputs/bench_kimi   # 生成 paper/latex/cross_model.tex
+python paper/tables.py --cross outputs/bench_kimi   # writes paper/latex/cross_model.tex
 ```
 
-**实际执行与结果（2026-11-03）**：账号并发上限为 1（并发 3 个进程互相 429），
-故改为**串行**；`rag` 与 `cot` 未在第二骨干上重跑（不承载结论，每格约 7 分钟），
-最终 4 条件 × 3 讲 × 2 次 = 24 格，其中 `U12/zero_shot#2` 因账号额度耗尽缺失，
-按缺口如实记录（`n=5`），未补造。
+**What was actually run (2026-11-03)**: the account's concurrency limit is 1 (three
+concurrent processes returned 429 to each other), so the run was made **serial**; `rag` and
+`cot` were not re-run on the second backbone (they carry no conclusion, at about 7 minutes per
+cell), giving 4 conditions × 3 lectures × 2 runs = 24 cells, of which `U12/zero_shot#2` is
+missing because the account quota ran out. The gap is recorded as it stands (`n=5`) and was
+not fabricated.
 
-| 指标 | DeepSeek V4 | Kimi K3 |
+| Metric | DeepSeek V4 | Kimi K3 |
 | --- | --- | --- |
-| 误区覆盖 `full → rag_mc` | 1.000 → 0.556（−0.444） | 1.000 → 0.667（−0.333） |
-| 覆盖 `full → rag_mc` | 0.981 → 0.698（−0.283） | 1.000 → 0.734（−0.266） |
-| `full` 的误区覆盖标准差 | 0.000（9 次全 1.000） | 0.000（6 次全 1.000） |
-| `rag_mc` 的误区覆盖标准差 | 0.527 | 0.516 |
-| 通过率 `full` vs `rag_mc` | 67% vs 22% | 67% vs 17% |
+| Misconception coverage `full → rag_mc` | 1.000 → 0.556 (−0.444) | 1.000 → 0.667 (−0.333) |
+| Coverage `full → rag_mc` | 0.981 → 0.698 (−0.283) | 1.000 → 0.734 (−0.266) |
+| SD of `full`'s misconception coverage | 0.000 (9 of 9 at 1.000) | 0.000 (6 of 6 at 1.000) |
+| SD of `rag_mc`'s misconception coverage | 0.527 | 0.516 |
+| Pass rate `full` vs `rag_mc` | 67% vs 22% | 67% vs 17% |
 
-结论写法（已进论文 §5.5）：**符号在两个骨干上复现，效应量缩小**（0.444 → 0.333），
-且在 U11 上 Kimi 的四个条件全部 1.000——该讲次在第二骨干上不贡献对比。
-方差行为比均值更稳定复现，这正是论文「可靠性而非平均质量」论点的直接支撑。
+The conclusion as written in §5.5: **the sign replicates on both backbones, the effect size
+shrinks** (0.444 → 0.333), and on U11 all four Kimi conditions score 1.000, so that lecture
+contributes no contrast on the second backbone. Variance behaviour replicates more stably
+than means, which is direct support for the paper's claim about reliability rather than
+average quality.
 
-## 7c. 第二门课（C++ 语言 · 第 4 章 数组）
+## 7c. Second course (C++ Programming, chapter 4, arrays)
 
-### 为什么要有
+### Why it exists
 
-第一稿的全部证据来自一门课（Python 数据结构，三讲次）。审稿人对「单课程 + 单骨干 +
-核心约束维度之一（顺序）为 null」这个组合的警惕是合理的：它无法区分「契约有效」与
-「这位老师的这门课恰好如此」。第二门课的作用不是把样本做大，而是**换一个知识域、
-换一门编程语言、换一个骨干**，看两个 claim-bearing 对照的方向是否还在。
+All the evidence in the first draft came from one course (Python data structures, three
+lectures). A reviewer is right to be wary of "one course + one backbone + one of the core
+constraint dimensions (ordering) coming out null": that combination cannot distinguish "the
+contract works" from "this teacher's course happens to work this way". The second course is
+not about enlarging the sample; it **changes the knowledge domain, the programming language
+and the backbone** to see whether the direction of the two claim-bearing contrasts survives.
 
-### 图从哪来（与第一门课的差异，必须写在正文里）
+### Where the graph comes from (and how it differs — this is stated in the paper)
 
-`data/build_cpp_m4.py` 从 `第4章 数组.docx`（24 动漫制作技术 4 班，第 2 周第 5 次，
-4 学时）生成 `data/kg_cpp_m4.json`：26 节点 / 51 边，`validate()` 零 issue。
+`data/build_cpp_m4.py` generates `data/kg_cpp_m4.json` from `第4章 数组.docx` (class 4 of the
+2024 Animation Production Technology intake, week 2, session 5, 4 class hours): 26 nodes /
+51 edges, `validate()` reports zero issues.
 
-差异有一处，正文已明写：**第一门课的误区有考试错误率支撑，第二门课的误区来自教案
-自己的「教学重难点」与「教学反思」原文，是教师记录的教学难点，不是测量出来的频率。**
-三个误区节点：MC41（下标从 1 开始）、MC42（字符数组不必管 `'\0'`）、MC43（数组传参
-是值传递）——都是从教案原文抽的，不是编的。
+There is one difference, spelled out in the paper: **the misconceptions in the first course
+are backed by exam error rates, whereas the misconceptions in the second course come from the
+lesson plan's own "teaching priorities and difficulties" and "teaching reflection" — they are
+difficulties the teacher recorded, not measured frequencies.** The three misconception nodes
+are MC41 (indices start at 1), MC42 (character arrays need not worry about `'\0'`) and MC43
+(array arguments are passed by value) — all extracted from the lesson plan, none invented.
 
-另一个必须注意的工程细节：`UnitConstraints.language` 会把课程语言注入 prompt 的 JSON
-spec（`json_spec(code_lang)`）。不注入的话，C++ 课会被要求输出 Python 代码，而且是
-**静默混杂**——不报错，只是代码块语言错。
+One engineering detail worth noting: `UnitConstraints.language` injects the course language
+into the prompt's JSON spec (`json_spec(code_lang)`). Without it, a C++ course is asked for
+Python code, and the result is a **silent mix-up** — no error is raised, the code blocks are
+simply in the wrong language.
 
-### 设计
+### Design
 
-2 讲次（U41 一维数组、U42 字符数组与传参）× 3 条件（`full`、`rag_mc`、`zero_shot`）
-× 2 次重采样 = 12 格。骨干是 `agnes-2.5-flash`（`https://apihub.agnes-ai.com/v1`，
-temperature 0.3），换骨干是因为当天主 key 余额不足（DeepSeek 402、Moonshot 429），
-这个替换本身是**课程与骨干的联合替换**，正文照实说了，且明确 magnitudes 不与主表对读。
+2 lectures (U41 one-dimensional arrays, U42 character arrays and parameter passing) ×
+3 conditions (`full`, `rag_mc`, `zero_shot`) × 2 resamplings = 12 cells. The backbone is
+`agnes-2.5-flash` (`https://apihub.agnes-ai.com/v1`, temperature 0.3); the backbone was
+switched because the primary keys were out of balance that day (DeepSeek 402, Moonshot 429).
+That substitution is itself a **joint replacement of course and backbone**, and the paper says
+so plainly and states that these magnitudes are not read against the main table.
 
-### 结果
+### Results
 
-| 指标 | `full` | `rag_mc` | `zero_shot` |
+| Metric | `full` | `rag_mc` | `zero_shot` |
 | --- | --- | --- | --- |
-| 覆盖 | 0.800 (0.163) | 0.600 (0.231) | 0.350 (0.191) |
-| 图外内容 | 0.000 (0.000) | 0.000 (0.000) | 0.125 (0.250) |
-| 顺序违例 | 0.042 (0.083) | 0.017 (0.033) | 0.042 (0.083) |
-| 误区覆盖 | 0.625 (0.479) | 0.375 (0.479) | 0.000 (0.000) |
+| Coverage | 0.800 (0.163) | 0.600 (0.231) | 0.350 (0.191) |
+| Off-graph content | 0.000 (0.000) | 0.000 (0.000) | 0.125 (0.250) |
+| Order violation | 0.042 (0.083) | 0.017 (0.033) | 0.042 (0.083) |
+| Misconception coverage | 0.625 (0.479) | 0.375 (0.479) | 0.000 (0.000) |
 
-三条读法：
+Three readings:
 
-1. **方向复现**。覆盖 +0.450（对 zero-shot）/ +0.200（对同文本对照）；误区 +0.625 /
-   +0.250；图外内容复现第一门课的模式（zero-shot 引入后续章节内容，契约不引）。
-   这两个 claim-bearing 对照在另一门课、另一种语言、另一个骨干上同号。
-2. **可靠性不复现**。第一门课误区槽是 1.000 ± 0.000，这里是 0.625 ± 0.479——四次里
-   两次填了两次没填，而同文本对照的离散度一样大。所以 reliability 不是契约的固有
-   属性，而是 **representation × backbone 的联合属性**。这句话写进了 §6.2，并因此把
-   原来那句无条件的「契约让槽每次都被填」改成了带条件的版本。
-3. **顺序仍是边界**。`full` 0.042 = `zero_shot` 0.042，`rag_mc` 0.017：没有对比。
-   这是 §1.5 边界预言的第二次独立读数——一门教材顺序同样权威的课上，这个维度依然
-   分不开条件。
+1. **The direction replicates.** Coverage +0.450 against zero-shot and +0.200 against the
+   same-text control; misconceptions +0.625 / +0.250; the off-graph pattern of the first
+   course recurs (zero-shot introduces content from later chapters, the contract does not).
+   Both claim-bearing contrasts have the same sign on another course, another language and
+   another backbone.
+2. **The reliability does not replicate.** The misconception slot was 1.000 ± 0.000 in the
+   first course and is 0.625 ± 0.479 here — filled in two runs out of four, with the
+   same-text control just as dispersed. So reliability is not an intrinsic property of the
+   contract but a **joint property of representation × backbone**. That sentence went into
+   §6.2, and it is why the earlier unconditional claim that "the contract gets the slot
+   filled every time" became a conditional one.
+3. **Ordering is still the boundary.** `full` 0.042 = `zero_shot` 0.042, `rag_mc` 0.017: no
+   contrast. This is the second independent reading of the boundary predicted in §1.5 — on a
+   course whose textbook is equally authoritative on ordering, the dimension still fails to
+   separate the conditions.
 
-两条解释都记下来、都不采纳（设计分不开它们）：骨干在任务上更弱（zero-shot 覆盖
-0.35 对第一门课的 0.64，且是唯一引入图外内容的条件），以及误区是记录难点而非测量频率
-（prompt 只说「学生常错」，不说「错多少」）。
+Two explanations are recorded and neither is adopted, because the design cannot separate them:
+the backbone is weaker at the task (zero-shot coverage 0.35 against 0.64 in the first course,
+and it is the only condition that introduces off-graph content), and the misconceptions are
+recorded difficulties rather than measured frequencies (the prompt says "students often get
+this wrong", not "how often").
 
-## 7d. 分离实验：把「课变了」与「骨干变了」拆开
+## 7d. The separation run: splitting "the course changed" from "the backbone changed"
 
-### 为什么必须补
+### Why it had to be added
 
-7c 的第二门课同时换了课程、语言、骨干、端点。结果是「误区槽的方差没有复现」，
-但这个设计**无法指出**原因在课还是在模型——审稿人一定会问，而且「两个因素一起变」
-通常会被判为复现设计不干净，而不是诚实的边界报告。
+The second course in §7c changed the course, the language, the backbone and the endpoint all
+at once. The result is that "the variance of the misconception slot did not replicate", but
+that design **cannot say** whether the cause lies in the course or in the model — a reviewer
+will certainly ask, and "two factors moved together" is usually judged a dirty replication
+rather than an honest boundary report.
 
-### 设计
+### Design
 
-把第一门课**原封不动**（同一份图 `kg_pyds_m4.json`、同一份 prompt、同一个
-validator、同一份指标代码）换到第二门课的骨干 `agnes-2.5-flash` 上：
+Take the first course **exactly as it stands** (same graph `kg_pyds_m4.json`, same prompt,
+same validator, same metric code) and move it to the second course's backbone,
+`agnes-2.5-flash`:
 
 ```bash
-PYTHONPATH=src python -m kgslide.bench --provider agnes   --kg data/kg_pyds_m4.json --units U10,U11,U12   --modes full,rag_mc,zero_shot --repeat 2 --out outputs/bench_py_agnes
+PYTHONPATH=src python -m kgslide.bench --provider agnes \
+  --kg data/kg_pyds_m4.json --units U10,U11,U12 \
+  --modes full,rag_mc,zero_shot --repeat 2 --out outputs/bench_py_agnes
 ```
 
-18 格，约 8 分钟。只有端点变了。
+18 cells, about 8 minutes. Only the endpoint changed.
 
-### 结果
+### Results
 
-| 骨干 | 课程 | n(full) | Δ覆盖（full−rag_mc） | Δ误区 | full 的误区 |
+| Backbone | Course | n(full) | Δ coverage (full−rag_mc) | Δ misconception | full's misconception |
 | --- | --- | :-: | :-: | :-: | :-: |
 | DeepSeek V4 | Python | 9 | +0.283 | +0.444 | 1.000 (0.000) |
 | Kimi K3 | Python | 6 | +0.266 | +0.333 | 1.000 (0.000) |
 | agnes-2.5-flash | Python | 6 | +0.052 | **+0.000** | **0.833 (0.408)** |
 | agnes-2.5-flash | C++ | 4 | +0.200 | +0.250 | 0.625 (0.479) |
 
-前三行课程、图、prompt、validator、指标代码全部固定，只有端点变。第三行的误区槽
-优势**归零**，且 full 的离散度从 0.000 变成 0.408——和第二门课上看到的是同一个现象。
-所以：**前置条件在模型一侧，不在课程一侧。** 第二门课的失败不是那门课的特殊性，
-是这个骨干的行为在另一份大纲上又被观察了一次。
+In the first three rows the course, graph, prompt, validator and metric code are all fixed and
+only the endpoint varies. In row 3 the misconception slot's advantage **goes to zero**, and
+`full`'s dispersion moves from 0.000 to 0.408 — the same phenomenon seen on the second course.
+Therefore: **the precondition sits with the model, not with the course.** The failure of the
+second course is not a peculiarity of that course; it is this backbone's behaviour observed
+once more on a different syllabus.
 
-两个不能省略的细节：
+Two details that cannot be omitted:
 
-1. **禁列词表在同一个骨干上仍然生效**：跑题 0.097（rag_mc）→ 0.000（full），与第一门课
-   在 DeepSeek 上的模式一致。所以这个骨干不是「不服从结构」，而是**不填指定类型的页**。
-   「模型决定一切」是过度概括。
-2. **对同文本对照的覆盖优势在这行掉到 +0.052**（对 zero_shot 仍有 +0.401）。也就是说，
-   在这个骨干上，把同样的误区文本平铺给模型，效果已接近契约。这是方法的一个真实
-   边界：契约补的是模型没有的能力，模型自己读得够仔细时，结构在「覆盖」上买不到多少。
+1. **The forbidden-term list still binds on the same backbone**: off-graph 0.097 (`rag_mc`) →
+   0.000 (`full`), matching the first course's pattern on DeepSeek. So this backbone is not
+   "disobedient to structure"; it **will not fill a required page type**. "The model decides
+   everything" would be an overgeneralisation.
+2. **The coverage advantage over the same-text control falls to +0.052 in this row** (against
+   zero-shot it is still +0.401). That is, on this backbone, laying the same misconception text
+   in front of the model already comes close to the contract. This is a real boundary of the
+   method: the contract supplies a capability the model lacks, and when the model reads
+   carefully enough by itself, structure buys little on coverage.
 
-两格 r1 触发了一个真实 bug：模型把某个 slide 写成了裸字符串，渲染器 `.get()` 直接崩，
-整批 18 格连同 CSV 全丢。已修：`renderer.render` 把非 dict 的 slide 降级成一页标题，
-`validator.evaluate` 入口统一归一化，`bench` 的渲染/评分也包进 try/except（一格坏不再
-拖垮整表）。
+Two cells (r1) triggered a real bug: the model wrote one slide as a bare string, the renderer
+crashed on `.get()`, and all 18 cells were lost along with the CSV. Fixed:
+`renderer.render` degrades a non-dict slide to a title-only page, `validator.evaluate`
+normalises at the entry point, and `bench` wraps rendering and scoring in try/except so one bad
+cell no longer takes down the whole table.
 
-## 8. 复现命令
+## 8. Reproduction commands
 
 ```bash
 export DEEPSEEK_API_KEY=sk-xxxx
 
-# 主表
+# main table
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,zero_shot,rag,cot --repeat 3 --out outputs/bench_main
 
-# 消融
+# ablations
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,no_order,no_misconception,no_forbidden \
   --repeat 2 --out outputs/bench_ablation
 
-# 改了指标口径后重新计分，不调用 API（省钱且保证与原始输出完全对应）
+# re-score after a metric change, without calling the API
+# (cheaper, and guaranteed to correspond exactly to the original outputs)
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,zero_shot,rag,rag_mc,cot --repeat 3 \
   --out outputs/bench_main --reuse
 
-# 关闭思考模式做稳健性检查
+# robustness check with thinking mode disabled
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,zero_shot --repeat 2 --thinking disabled --out outputs/bench_nothink
 
-# 跨模型复核（第二骨干，注意 temperature 由厂商锁定为 1.0）
+# cross-model replication (second backbone; note temperature is pinned at 1.0 by the vendor)
 python -m kgslide.bench --provider kimi --units U10,U11,U12 \
   --modes full,rag_mc,rag,placebo,cot,zero_shot --repeat 3 --out outputs/bench_kimi
 
-# 第二门课：先建图，再跑 12 格（需要 AGNES_API_KEY）
+# second course: build the graph, then run the 12 cells (needs AGNES_API_KEY)
 python data/build_cpp_m4.py
 PYTHONPATH=src python -m kgslide.bench --provider agnes \
   --kg data/kg_cpp_m4.json --units U41,U42 \
   --modes full,rag_mc,zero_shot --repeat 2 --out outputs/bench_cpp
 
-# 第二门课的表（论文 Table 6）
+# the second-course table (Table 6 in the paper)
 python paper/tables.py --course-b outputs/bench_cpp
 
-# 骨干×课程扫描表（论文 Table 7）
+# backbone × course sweep (Table 7 in the paper)
 python paper/tables.py --sweep "DeepSeek V4|Python|outputs/main_v1;Kimi K3|Python|outputs/bench_kimi;agnes-2.5-flash|Python|outputs/bench_py_agnes;agnes-2.5-flash|C++|outputs/bench_cpp"
 
-# 概念级配对（论文 §5.4、补充材料 S5；不调用 API）
-python paper/concept_pairs.py            # 打印各基线配对表
-python paper/concept_pairs.py --latex    # 写 paper/latex/concept_pairs.tex
+# concept-level pairing (§5.4, supplementary S5; no API calls)
+python paper/concept_pairs.py            # print the per-baseline pairing tables
+python paper/concept_pairs.py --latex    # write paper/latex/concept_pairs.tex
 ```
 
-每个单元格会留下三份文件：`.pptx`（成品）、`.json`（模型原始输出）、
-`.report.md`（逐条 findings）。论文里任何一个数字都能顺着这三份文件回溯。
+Every cell leaves three files behind: `.pptx` (the artefact), `.json` (the raw model output)
+and `.report.md` (item-by-item findings). Any number in the paper can be traced back through
+these three files.

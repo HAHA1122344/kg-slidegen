@@ -9,37 +9,39 @@ dist/
 .mypy_cache/
 .ruff_cache/
 
-# 虚拟环境
+# virtual environments
 .venv/
 venv/
 env/
 
-# 密钥与本机配置
+# secrets and local configuration
 .env
 config/local.yaml
 
-# 生成产物：课件本身不入库，但实验结果（表格）要留档以便复现。
-# ``!outputs/**/`` 是必需的：父目录被忽略时，git 不会进去找后面的例外。
+# Generated artefacts: the decks themselves are not tracked, but the result
+# tables are kept so the experiments can be reproduced.
+# ``!outputs/**/`` is required: when a parent directory is ignored, git never
+# descends into it to look for the exceptions below.
 outputs/**
 !outputs/**/
 !outputs/.gitkeep
 !outputs/*/results.csv
 !outputs/*/results.md
 
-# 系统文件
+# OS files
 .DS_Store
 Thumbs.db
 
-# 编辑器
+# editors
 .idea/
 .vscode/
 
-# 投稿用归档：由 paper/make_deposit.py 生成，正文随 Zenodo 发布，不入库
+# Submission archive: built by paper/make_deposit.py and published with Zenodo, not tracked
 paper/deposit/
 
-# 内部评审与改稿记录：工作文档，不随代码发表
+# Internal review and revision notes: working documents, not published with the code
 paper/KBS-预评审-20261102.md
 paper/revision-notes.md
 
-# 测试临时目录
+# pytest temporary directories
 .pytest_tmp/

@@ -55,25 +55,28 @@ class Report:
         return not any(f.level == "error" for f in self.findings)
 
     def to_markdown(self) -> str:
-        lines = ["| 指标 | 值 |", "| --- | --- |"]
+        lines = ["| metric | value |", "| --- | --- |"]
         for key, value in self.metrics.items():
             lines.append(f"| {key} | {value:.3f} |")
 
         if self.uncovered:
-            lines += ["", "**未覆盖的必需概念**", ""]
+            lines += ["", "**required concepts not covered**", ""]
             lines += [f"- {item}" for item in self.uncovered]
         if self.out_of_graph:
-            lines += ["", "**图谱外或禁用概念**", ""]
+            lines += ["", "**out-of-graph or forbidden concepts**", ""]
             lines += [f"- {item}" for item in self.out_of_graph]
         if self.background_terms:
-            lines += ["", "**作为背景回顾的概念（允许但有比例上限）**", ""]
+            lines += ["", "**concepts used as background review (allowed, but capped)**", ""]
             lines += [f"- {item}" for item in self.background_terms]
         if self.violated_pairs:
-            lines += ["", "**先修顺序违例**", ""]
-            lines += [f"- {a} 出现在 {b} 之后，但 {a} 是 {b} 的先修" for a, b in self.violated_pairs]
+            lines += ["", "**prerequisite-order violations**", ""]
+            lines += [
+                f"- {a} appears after {b}, but {a} is a prerequisite of {b}"
+                for a, b in self.violated_pairs
+            ]
 
         if self.findings:
-            lines += ["", "**检查结果**", ""]
+            lines += ["", "**findings**", ""]
             lines += [f"- `{f.level}` {f.code}: {f.message}" for f in self.findings]
         return "\n".join(lines)
 
@@ -473,38 +476,38 @@ def evaluate(
     # ----------------------------------------------------------- findings
     if report.uncovered:
         report.findings.append(
-            Finding("error", "MISSING_CONCEPT", f"{len(report.uncovered)} 个必需概念未覆盖")
+            Finding("error", "MISSING_CONCEPT", f"{len(report.uncovered)} required concepts not covered")
         )
     if oog_total:
-        names = "、".join(sorted(report.out_of_graph))
+        names = ", ".join(sorted(report.out_of_graph))
         report.findings.append(
-            Finding("warning", "OUT_OF_GRAPH", f"出现图谱外或禁用概念：{names}")
+            Finding("warning", "OUT_OF_GRAPH", f"out-of-graph or forbidden concepts present: {names}")
         )
     if background_rate > constraints.allowed_background_ratio:
         report.findings.append(
             Finding(
                 "warning",
                 "BACKGROUND_OVERUSE",
-                f"背景回顾占比 {background_rate:.0%}，超过上限 "
-                f"{constraints.allowed_background_ratio:.0%}",
+                f"background review is {background_rate:.0%} of the deck, above the "
+                f"{constraints.allowed_background_ratio:.0%} cap",
             )
         )
     if violations:
         report.findings.append(
-            Finding("error", "PREREQ_VIOLATION", f"{len(violations)} 处先修顺序倒置")
+            Finding("error", "PREREQ_VIOLATION", f"{len(violations)} prerequisite-order inversions")
         )
     if mc_items and mc_coverage < 1.0:
         report.findings.append(
-            Finding("warning", "MISCONCEPTION_MISS", "存在未处理的典型误区")
+            Finding("warning", "MISCONCEPTION_MISS", "a required misconception was not addressed")
         )
     if abs(page_ratio - 1.0) > 0.34:
         report.findings.append(
             Finding(
                 "warning",
                 "PAGE_BUDGET",
-                f"生成 {len(slides)} 页，预算 {constraints.slide_budget} 页",
+                f"{len(slides)} slides generated against a budget of {constraints.slide_budget}",
             )
         )
     if not report.findings:
-        report.findings.append(Finding("info", "OK", "全部约束满足"))
+        report.findings.append(Finding("info", "OK", "all constraints satisfied"))
     return report
