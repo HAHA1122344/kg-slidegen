@@ -386,7 +386,45 @@ crashed on `.get()`, and all 18 cells were lost along with the CSV. Fixed:
 normalises at the entry point, and `bench` wraps rendering and scoring in try/except so one bad
 cell no longer takes down the whole table.
 
-## 8. Reproduction commands
+## 8. Repair loop
+
+The main table reports a pass rate, not a first-pass pass rate by accident: nothing acted on
+the validator's findings. `paper/repair_loop.py` adds the missing step and is run on stored
+payloads, so no new condition enters any comparison.
+
+**Policy.** For a run with an error-level finding, append the validator's error findings to the
+same condition prompt and regenerate the whole deck; up to `--rounds` attempts (3 used). A run
+that passed first time is untouched, so the repaired count has the same denominator as the
+first-pass count. `validator.repair_instruction` renders the findings, and lists **only**
+error-level ones: warnings (out-of-graph, missed misconception, background overuse) do not fail
+a run, so repairing them would hold the second attempt to a stricter bar than the first.
+
+**Why only `full`.** The feedback names the concepts a deck missed. For `full` that list is
+already in the prompt, so the finding restates a requirement instead of adding one. For
+`zero_shot` or `rag` the same sentence hands over the syllabus those conditions exist to lack,
+and the repaired baseline is no longer a baseline. Whether a repair loop is fair is a property
+of the condition, not of the loop — this is the reason the script refuses to be pointed at the
+baselines for a headline number.
+
+**Result (agnes-2.5-flash, the row-3 cell of §7d).** Six runs, first-pass 4/6. Of the two
+failures: the one with `MISSING_CONCEPT` was fixed in a single round (the feedback named
+`C1106 循环队列的实现`; the model added the page) and the other, with `PREREQ_VIOLATION`, was not
+fixed in three (violation rate 0.048 → 0.048 → 0.381 — worse on the third attempt). Four model
+calls for six runs, mean coverage 0.972 → 1.000.
+
+Two readings, neither a rate:
+
+1. The loop closes the failure that is a **missing slot** and does not close the failure that is
+   a **wrong order** — the same distinction §7d and the ordering ablation draw, now seen from
+   the repair side. An ordering requirement is not a page that can be inserted.
+2. Three attempts produced three different decks and no convergence, so a repair budget cannot
+   rest on "it will converge"; it has to be set by cost.
+
+With two failures this is a mechanism, not an effect size. The main grid (DeepSeek) is
+**unrepaired**: its key had no balance when the loop was ready, and 67% there remains a
+first-pass figure.
+
+## 9. Reproduction commands
 
 ```bash
 export DEEPSEEK_API_KEY=sk-xxxx
@@ -429,6 +467,10 @@ python paper/tables.py --sweep "DeepSeek V4|Python|outputs/main_v1;Kimi K3|Pytho
 # concept-level pairing (§5.4, supplementary S5; no API calls)
 python paper/concept_pairs.py            # print the per-baseline pairing tables
 python paper/concept_pairs.py --latex    # write paper/latex/concept_pairs.tex
+
+# repair loop (§8): re-prompts the failing runs of one condition, then counts again
+PYTHONPATH=src python paper/repair_loop.py --source outputs/bench_py_agnes \
+  --modes full --provider agnes --out outputs/repair_agnes --rounds 3 --max-calls 6
 ```
 
 Every cell leaves three files behind: `.pptx` (the artefact), `.json` (the raw model output)

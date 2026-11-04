@@ -425,6 +425,48 @@ class LLMClient:
         self.last_usage["model"] = self.config.model
         return self._parse(raw)
 
+    def repair_slides(
+        self, constraints: UnitConstraints, mode: str, feedback: str
+    ) -> dict[str, Any]:
+        """Regenerate a deck that failed acceptance, with the findings attached.
+
+        The prompt is the *same* condition prompt, with the validator's findings
+        appended: nothing the model was not already given is added, so the
+        repair loop cannot smuggle in a constraint that the condition withheld.
+        That is why this is only meaningful for a condition whose prompt already
+        contains the requirement being reported -- see ``paper/repair_loop.py``.
+
+        The findings are stated as what failed, not as what to write: the output
+        format, page budget and rules are unchanged, and the model still has to
+        produce a whole deck.
+        """
+        if self.mock:
+            self.last_usage = {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "reasoning_tokens": 0,
+                "latency_s": 0.0,
+                "model": "mock",
+            }
+            return self._mock_payload(constraints, mode)
+
+        prompt = (
+            f"{_build_prompt(constraints, mode)}\n\n"
+            f"## 上一版课件未通过自动验收\n{feedback}\n\n"
+            "请针对以上问题重做整套课件。除这些问题之外的所有要求保持不变，"
+            "页数与输出格式与上次相同，仍然只返回 JSON 对象本身。"
+        )
+        started = time.monotonic()
+        raw = self._chat(
+            [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ]
+        )
+        self.last_usage["latency_s"] = round(time.monotonic() - started, 2)
+        self.last_usage["model"] = self.config.model
+        return self._parse(raw)
+
     # ------------------------------------------------------------ private
     def _chat(self, messages: list[dict[str, str]]) -> str:
         """Call the model and return an object that parses as slide JSON.

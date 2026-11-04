@@ -303,8 +303,9 @@ kg-slidegen/
 │   ├── tables.py             # build the paper tables from results.csv
 │   ├── human_eval.csv        # raw teacher blind-review scores (10 decks × 3 raters)
 │   ├── human_eval.py         # blind-review analysis: descriptives, ICC(2,3), bootstrap CIs
+│   ├── repair_loop.py        # re-prompts the runs that failed acceptance, and counts again
 │   └── figures/              # framework, graph_contract, graphical_abstract
-├── tests/                    # 40 tests, seven of them one per measurement defect
+├── tests/                    # 44 tests, seven of them one per measurement defect
 ├── config/default.yaml
 └── schema.yaml               # formal schema definition
 ```

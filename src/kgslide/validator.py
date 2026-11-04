@@ -348,6 +348,39 @@ def _mention_positions(
     return positions
 
 
+def repair_instruction(report: Report, constraints: UnitConstraints) -> str:
+    """Render error-level findings as something a model can act on.
+
+    Only the two error codes are listed.  Warnings (out-of-graph content, a
+    missed misconception, background overuse) do not fail a run, so reporting
+    them here would ask for work that the acceptance criterion does not require
+    and would make the repaired pass rate incomparable with the first-pass one.
+
+    The wording names the concept and says what is wrong with it.  A generic
+    "the deck did not meet the specification" teaches the model nothing; a
+    concept id it can find in the contract does.
+    """
+    lines: list[str] = []
+    if report.uncovered:
+        lines.append("未覆盖的必讲概念（每个都必须在某一页的 concept_ids 中出现并实际讲解）：")
+        for item in report.uncovered:
+            # ``uncovered`` stores "ID name"; keep the name as it was recorded
+            # rather than looking it up again, since concept names contain
+            # spaces ("用 Python 列表实现队列").
+            node_id, _, name = item.partition(" ")
+            lines.append(f"- {node_id} {name or constraints.name_of(node_id)}")
+    if report.violated_pairs:
+        lines.append("先修顺序颠倒（先修概念被放到了后修概念之后）：")
+        for later, earlier in report.violated_pairs:
+            lines.append(
+                f"- {later} {constraints.name_of(later)} 是 {earlier} "
+                f"{constraints.name_of(earlier)} 的先修，却出现在它之后"
+            )
+    if not lines:
+        lines.append("没有 error 级问题。")
+    return "\n".join(lines)
+
+
 def evaluate(
     payload: dict[str, Any],
     constraints: UnitConstraints,

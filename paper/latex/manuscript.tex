@@ -1757,23 +1757,46 @@ same axis---misconception handling and coverage---while rating every condition a
 factually accurate. A larger review with raters from other institutions is the
 obvious next step and the place where our evidence is thinnest.
 
-\subsection{The missing repair loop}
+\subsection{A repair loop, and what it does not fix}
 \label{sec:repair}
 
 The validator emits findings, and in the deployed workflow a teacher acts on
-them; in the experiment nothing acts on them. There is no automatic
-re-prompting, no targeted repair of a failing page, and therefore no
-post-regeneration pass rate to report. This matters because one third of the
-\id{full} runs contain at least one error-level finding (\S\ref{sec:results}),
-and a reader is entitled to ask how many of those a second pass would fix.
+them; in the main experiment nothing did. One third of the \id{full} runs contain
+at least one error-level finding (\S\ref{sec:results}), so a reader is entitled to
+ask how many of those a second pass would fix. We ran that loop on the
+\id{agnes-2.5-flash} cell of Table~\ref{tab:sweep} (row~3) rather than on the main
+grid, because the main grid's endpoint had no credit left when the loop was
+ready; the cell is the one where the slot's advantage disappears, so it is the
+harder place to ask the question.
 
-We cannot answer that from the data we have and do not want to guess. What the
-answer would require is a repair policy (which finding triggers which
-intervention: re-prompt the deck, re-prompt the failing page with the finding
-text, or edit the page), a fixed budget of attempts, and a per-attempt pass rate
-with cost. Findings are already typed, page-indexed and machine-readable, so the
-experiment is contained---but it is a separate experiment, and reporting 67\% as a
-first-pass figure without saying so would have been misleading.
+The policy is fixed and deliberately plain. For a run with an error-level
+finding, the validator's error findings are appended to the same condition prompt
+and the whole deck is regenerated, up to three attempts; a run that passed first
+time is not touched, so the repaired count shares its denominator with the
+first-pass count. The appended text names the uncovered concepts and the inverted
+pairs and adds nothing else---for \id{full} those names are already in the
+contract, so a finding restates a requirement instead of supplying one. The same
+loop on \id{zero\_shot} would hand over the syllabus that condition exists to
+lack, which is why it is not run there: whether a repair loop is fair is a
+property of the condition, not of the loop.
+
+Of the two failing runs, one was fixed in a single round and one was not fixed in
+three. The repaired run had missed a required concept; the feedback named it and
+the model added the page, taking coverage for the cell from 0.972 to 1.000. The
+unrepaired run had an ordering violation, and across three attempts the violation
+rate went $0.048 \to 0.048 \to 0.381$: re-prompting did not fill the sequence, and
+the third attempt was worse than the first. Four model calls for six runs.
+
+Two observations, neither of them a rate. First, \textbf{the loop closes the
+failure that is a missing slot and does not close the failure that is a wrong
+order}, which is the same distinction \S\ref{sec:boundary} draws from the ablation
+and \S\ref{sec:second-course} finds on a second syllabus: an ordering requirement
+is not a page that can be inserted. Second, three attempts on one deck produced
+three different decks and no convergence, so a repair budget cannot be justified
+by the expectation that it will converge; it has to be set by cost. With two
+failures this establishes a mechanism, not an effect size. The main grid remains
+unrepaired, and 67\% there is a first-pass figure which we do not report as
+anything else.
 
 \subsection{Evaluation independence}
 \label{sec:independence}

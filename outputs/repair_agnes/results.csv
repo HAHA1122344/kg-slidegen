@@ -1,0 +1,7 @@
+unit,mode,rep,first_pass,final_pass,rounds_used,coverage_first,coverage_rate,oog_rate,background_rate,prerequisite_violation,misconception_coverage,latency_s
+U10,full,1,True,True,0,1.0,1.0,0.0,0.007,0.0,0.0,0
+U10,full,2,False,True,1,0.8333,1.0,0.0,0.0085,0.0,1.0,16.9
+U11,full,1,False,False,3,1.0,1.0,0.0,0.015,0.381,1.0,16.29
+U11,full,2,True,True,0,1.0,1.0,0.0,0.017,0.0,1.0,0
+U12,full,1,True,True,0,1.0,1.0,0.0,0.0537,0.0,1.0,0
+U12,full,2,True,True,0,1.0,1.0,0.0,0.0731,0.0,1.0,0
