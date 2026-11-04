@@ -1,6 +1,6 @@
 % Highlights for the Knowledge-Based Systems submission.
 % Elsevier requires 3-5 bullet points, at most 85 characters each (incl. spaces).
-% Lengths below: 76, 73, 82, 74, 77.
+% Lengths below: 76, 82, 81, 82, 75 (en dash counted as one character).
 % Compiled separately by build.sh -> highlights.pdf
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
@@ -22,10 +22,10 @@ Graph Constraints for Slide Generation in Two Vocational-Education Courses}
 
 \begin{itemize}[leftmargin=1.4em,itemsep=10pt]
   \item Course-level knowledge is absent from pretraining data; it must be supplied.
-  \item One contract is prompt and acceptance test; two courses replicate the direction.
-  \item Coverage rises from 0.61--0.70 to 0.98; a length-matched placebo rules out length.
-  \item Misconceptions 1.000 (0.000) vs 0.556 (0.527): reliability, not mean gain.
-  \item Ordering is a boundary: its ablation deletes a duplicate, not the constraint.
+  \item One contract is prompt and acceptance test, so requirement and check cannot drift.
+  \item Coverage rises from 0.61--0.70 to 0.98; a matched placebo rules out prompt length.
+  \item Misconceptions 1.000 (0.000) vs 0.556 (0.527), but 0.833 (0.408) on a third model.
+  \item Ordering marks the representation's edge; its ablation deletes a duplicate.
 \end{itemize}
 
 \end{document}

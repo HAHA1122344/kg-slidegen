@@ -67,29 +67,32 @@ Graph Constraints for Slide Generation in Two Vocational-Education Courses}
 \cortext[cor1]{Corresponding author.}
 
 \begin{abstract}
-Evaluating generated teaching material raises a question benchmarks do not pose:
-does the artefact satisfy its course specification? We make it computable. Course-level knowledge---what a session must cover, what this cohort
-keeps mislearning, what must not be introduced yet---is compiled from a curriculum
-knowledge graph into an executable contract that doubles as the acceptance
-criterion, so requirement and check cannot drift.
+Evaluating generated teaching material raises a question benchmarks do not:
+does the artefact satisfy its course specification? We make it
+computable. Course-level knowledge---what a session must cover, what this cohort
+mislearns, what must not appear yet---is compiled from a curriculum graph into
+an executable contract that doubles as the acceptance criterion, so requirement
+and check cannot drift.
 
-We study the queue module of a higher-vocational \emph{Python Data Structures}
-course across three backbones, three ablations and a second course in another
-language. What changes is not average quality but its reliability:
-misconception handling reaches 1.000 with zero dispersion against
-0.556 $\pm$ 0.527 for a text-matched control, surviving session clustering.
-Coverage rises from 0.61--0.70 to 0.98; a length-matched placebo excludes prompt
-length, while a three-cluster interval includes zero. Ablation attributes each
-gain: deleting the misconception slot takes that metric to 0.167, the forbidden
-list buys 0.083 of out-of-graph control.
+We study the queue module of a vocational \emph{Python Data Structures} course
+across three backbones, three ablations and a second course in another language.
+The change is reliability, not average quality: misconception handling reaches
+1.000 with zero dispersion against 0.556 $\pm$ 0.527 for a text-matched control,
+surviving session clustering. Coverage rises from 0.61--0.70 to 0.98 where the
+backbone follows structural instructions; a length-matched placebo excludes
+prompt length, though a three-cluster interval includes zero. Ablation prices
+each block: removing the misconception slot takes it to 0.167, the
+forbidden list buys 0.083 of out-of-graph control.
 
-The second course reproduces both directions but not the collapse of variance,
-and re-running the first course under that backbone alone reproduces the loss,
-placing the condition on the model rather than the syllabus: a contract can
-require a slot, but only a backbone that will fill one does so every time. Ordering marks where the
-representation stops---expressible in the graph, not withholdable by the
-interface---so its null ablation is a boundary, not a failed effect. Seven
-measurement defects favouring the constraint-based condition are documented. A blind teacher review reproduces the ranking (ICC(2,3)~=~0.92).
+The second course keeps the sign of that contrast but not its reliability, and
+its coverage gain over that control shrinks. Re-running the first course
+under that backbone alone removes the advantage, placing the condition on
+the model, not the syllabus: a contract can require a slot; only a compliant
+backbone fills it every time. Ordering is where the representation
+stops---expressible in the graph, not withholdable by the interface---so its
+null ablation is a boundary, not a failure. Seven measurement defects favouring
+the constrained condition are documented; a blind review matches the
+automatic ranking (ICC(2,3)~=~0.92).
 \end{abstract}
 
 \begin{keyword}
@@ -234,9 +237,9 @@ before and after generation.
   $\times$ three resamplings (54 runs), three ablations (18 runs) and a
   length-matched placebo, in one course, with the claim-bearing conditions re-run
   on a second vendor's model and the two contrasts replicated on a second course
-  in another language (\S
-ef{sec:second-course}). Misconception handling differs in the mean \emph{and}
-  in the variance ($1.000 \pm 0.000$ against $0.556 \pm 0.527$), and the collapse
+  in another language (\S\ref{sec:second-course}). Misconception handling differs
+  in the mean \emph{and} in the variance ($1.000 \pm 0.000$ against
+  $0.556 \pm 0.527$), and the collapse
   of dispersion is the result, because a preparation workflow cannot absorb a coin
   flip; coverage improves by about 0.3 with the length explanation excluded by the
   placebo. The ablation then prices each block separately
@@ -859,8 +862,10 @@ structural element (Table~\ref{tab:conditions}).
 U11, in characters.}
 \label{tab:conditions}
 \footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabularx}{\linewidth}{@{}L{1.5cm}cccccc@{}}
+% 2.2cm not 1.8cm: at 1.8cm the widest condition name and the longest header
+% cell both broke mid-word.
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabularx}{\linewidth}{@{}L{2.2cm}cccccc@{}}
 \toprule
 Condition & Course/ & Page & Concept names & Topological & Misconceptions & Forbidden
 \\
@@ -872,9 +877,12 @@ Condition & Course/ & Page & Concept names & Topological & Misconceptions & Forb
 \id{rag} & \checkmark & \checkmark & \checkmark & -- & -- & -- \\
 \id{placebo} & \checkmark & \checkmark & -- & -- & -- & -- \\
 \id{cot} & \checkmark & \checkmark & -- & -- & -- & -- \\
-\id{zero\_shot} & \checkmark & \checkmark & -- & -- & -- & -- \\
+\mbox{\id{zero\_shot}} & \checkmark & \checkmark & -- & -- & -- & -- \\
 \midrule
-Prompt length (U11) & \multicolumn{6}{r}{1997 / 1122 / 997 / 2195 / 625 / 585} \\
+% The prompt lengths are a spanning note rather than a seventh row: in the
+% 2.2cm label column "Prompt length" broke after "Prompt" and stranded its
+% six values on the first line.
+\multicolumn{7}{@{}l}{Prompt length, U11 \quad 1997 / 1122 / 997 / 2195 / 625 / 585} \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -1027,7 +1035,9 @@ violation; warnings do not fail a run (\S\ref{sec:results}). Editability is 1.00
 for every condition and is therefore omitted.}
 \label{tab:main}
 \scriptsize
-\setlength{\tabcolsep}{3pt}
+% 2.4pt rather than 3pt: at 3pt the seven-column body ran 2.18pt past the text
+% width once the widest condition name was set in bold.
+\setlength{\tabcolsep}{2.4pt}
 \begin{tabularx}{\linewidth}{@{}L{2.55cm}cccccc@{}}
 \toprule
 Condition & Cov. $\uparrow$ & OOG $\downarrow$ & Bg. $\downarrow$
@@ -2004,8 +2014,8 @@ per deck--rater pair, and \id{paper/human\_eval.py} regenerates
 Table~\ref{tab:human}, the ICC values and their bootstrap intervals from it.
 
 % ===============================================================
-\section*{References}
-% ===============================================================
+% No \section*{References} here: elsarticle's \bibliography already emits the
+% heading from \refname, and adding one printed "References" twice.
 \bibliographystyle{elsarticle-num}
 \bibliography{refs}
 
