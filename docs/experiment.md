@@ -504,10 +504,11 @@ export DEEPSEEK_API_KEY=sk-xxxx
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,zero_shot,rag,cot --repeat 3 --out outputs/bench_main
 
-# ablations
+# ablations (repeat 3: resampling 3 was added as a top-up, so the batch is
+# 4 conditions x 3 lectures x 3 resamplings = 36 runs)
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,no_order,no_misconception,no_forbidden \
-  --repeat 2 --out outputs/bench_ablation
+  --repeat 3 --out outputs/bench_ablation
 
 # re-score after a metric change, without calling the API
 # (cheaper, and guaranteed to correspond exactly to the original outputs)

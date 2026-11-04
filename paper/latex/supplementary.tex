@@ -48,12 +48,12 @@ must be removed together with the data---deleting only the data while keeping a
 rule that says ``you must follow the given order'' forces the model to guess an
 order, and the ablation is no longer clean; a unit test guards this. All four
 rows come from the ablation batch in \id{outputs/bench\_ablation/}---three
-sessions $\times$ resamplings~1 and~2, $n=6$ per arm---whose own six \id{full}
+sessions $\times$ three resamplings, $n=9$ per arm---whose own nine \id{full}
 re-runs anchor the table. This batch is \emph{separate} from the main
-experiment, so the \id{full} row is not directly comparable with the main
-results table row by row (its coverage reads 1.000 here rather than 0.981,
-because the single 0.833 run is resampling~3 of U10 in the main batch); only
-within-table comparisons are made.
+experiment, and comparisons are made within the table; on coverage and on
+misconception coverage its \id{full} arm nonetheless lands on the same values as
+the main batch (0.981 and 1.000), which is the agreement the main text relies on
+when it places this arm beside the $2\times2$.
 
 One arm in this table is a \emph{null manipulation} and is kept only for
 completeness. Deleting the ordering block leaves the required-concept list, which
@@ -66,7 +66,7 @@ of the constraint would have to shuffle the concept list, which we did not do.
 \begin{table}[htbp]
 \centering
 \caption{Ablations; each removes exactly one part of the graph. Mean (standard
-deviation) over six runs, all from the ablation batch.}
+deviation) over nine runs, all from the ablation batch.}
 \label{tab:s-ablation}
 \footnotesize
 \setlength{\tabcolsep}{5pt}
@@ -75,11 +75,11 @@ deviation) over six runs, all from the ablation batch.}
 Condition & Coverage $\uparrow$ & Out-of-graph $\downarrow$ & Order viol. $\downarrow$
 & Misconception $\uparrow$ \\
 \midrule
-\id{full} & 1.000 (0.000) & 0.000 (0.000) & 0.032 (0.078) & 1.000 (0.000) \\
-$-$ ordering & 1.000 (0.000) & 0.000 (0.000) & 0.000 (0.000) & 1.000 (0.000) \\
-$-$ misconceptions & 0.944 (0.086) & 0.000 (0.000) & 0.040 (0.064)
-& \textbf{0.167} (0.408) \\
-$-$ forbidden terms & 1.000 (0.000) & \textbf{0.083} (0.129) & 0.000 (0.000)
+\id{full} & 0.981 (0.056) & 0.000 (0.000) & 0.026 (0.063) & 1.000 (0.000) \\
+$-$ ordering & \textbf{1.000} (0.000) & 0.000 (0.000) & 0.000 (0.000) & 1.000 (0.000) \\
+$-$ misconceptions & 0.944 (0.083) & 0.000 (0.000) & 0.043 (0.065)
+& \textbf{0.111} (0.333) \\
+$-$ forbidden terms & \textbf{1.000} (0.000) & \textbf{0.083} (0.125) & 0.000 (0.000)
 & 1.000 (0.000) \\
 \bottomrule
 \end{tabularx}

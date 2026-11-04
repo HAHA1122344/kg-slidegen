@@ -3,12 +3,12 @@
 \documentclass[10pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[margin=2.0cm]{geometry}
+\usepackage[margin=1.8cm]{geometry}
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{3.4pt}
+\setlength{\parskip}{2.4pt}
 
 \begin{document}
 
@@ -50,8 +50,8 @@ dimensions of a syllabus can be compiled into requirements that are simultaneous
 generation constraints and acceptance criteria is a measurable property of the
 representation rather than a matter of taste---and that boundary depends jointly
 on the representation and on the backbone's willingness to execute a structural
-instruction. The second claim is the one we expect to outlive the course, and it
-is why the generator is treated as a commodity and swapped for other models.
+instruction. The second is the claim we expect to outlive the course, and it is why
+the generator is swapped for other models.
 
 \textbf{The knowledge-engineering claim.} Course-level knowledge---the concepts a
 session must cover, the misconception this cohort keeps committing, what must not
@@ -65,7 +65,7 @@ argument: presence, absence and a corrective slot admit hard constraints; order 
 expressible in the graph but cannot be withheld by the interface.
 
 \textbf{What the evidence supports.} The study is a six-condition experiment in
-one higher-vocational course (54 runs), with three one-factor ablations (18 runs),
+one higher-vocational course (54 runs), with three one-factor ablations (27 runs),
 a length-matched placebo, a blind review by three teachers, the claim-bearing
 conditions replicated on two further models and on a second course in another
 language, and a run that holds the course fixed while changing only the endpoint,
@@ -75,8 +75,12 @@ change is in the \emph{reliability} of output rather than in its average quality
 misconception handling reaches $1.000 \pm 0.000$ against $0.556 \pm 0.527$ for a
 control given the same text as flat passages. The ablation attributes each gain to
 a named knowledge component---removing the misconception slot alone returns that
-metric to 0.167, and the forbidden-term list buys 0.083 of out-of-graph control
-while moving nothing else. Seven measurement defects that had favoured
+metric to 0.111, and the forbidden-term list buys 0.083 of out-of-graph control
+while moving nothing else. Two revision analyses bear on the mechanism: crossing
+structure against the misconception text gives an interaction of $+0.556$ (that
+text is worth $+0.889$ with the contract, $+0.334$ without), and a bounded repair
+loop takes the main grid from 6/9 to 9/9 in three calls while the weakest backbone
+moves only from 4/6 to 5/6. Seven measurement defects that had favoured
 constraint-based methods are documented with their fixes; the paper states plainly
 that it is a two-course case study with no learning-outcome measurement.
 

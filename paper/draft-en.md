@@ -4,6 +4,11 @@
 Draft v0.1 (EN). Target: Knowledge-Based Systems (Elsevier).
 Numbers are transcribed from the executed experiments recorded in results.csv;
 see docs/experiment.md for how each figure was produced.
+
+SUPERSEDED. The submission is paper/latex/manuscript.tex. This draft is kept for
+the prose history and is not maintained: its ablation numbers date from the n=6
+batch (18 runs), before resampling 3 was added, and it predates the 2x2 and the
+repair loop. Do not quote figures from here.
 -->
 
 ## Highlights

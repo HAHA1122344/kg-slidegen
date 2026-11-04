@@ -268,7 +268,7 @@ python -m kgslide.bench --units U10,U11,U12 \
 # ablation: remove one part of the graph, see whether the matching metric drops
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,no_order,no_misconception,no_forbidden \
-  --repeat 2 --out outputs/bench_ablation
+  --repeat 3 --out outputs/bench_ablation
 
 # re-score existing payloads after a metric change, without calling the API
 # (cheaper, and strictly paired with the original outputs)

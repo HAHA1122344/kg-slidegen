@@ -235,7 +235,7 @@ before and after generation.
 
   \item \textbf{An empirical study whose headline is a second moment, with every
   gain attributed to a named component.} Six conditions $\times$ three sessions
-  $\times$ three resamplings (54 runs), three ablations (18 runs) and a
+  $\times$ three resamplings (54 runs), three ablations (27 runs) and a
   length-matched placebo, in one course, with the claim-bearing conditions re-run
   on a second vendor's model and the two contrasts replicated on a second course
   in another language (\S\ref{sec:second-course}). Misconception handling differs
@@ -1012,13 +1012,14 @@ the reported advantage should be read as a lower bound rather than a best case.
 \label{sec:results}
 
 Each condition runs three sessions $\times$ three resamplings (nine
-generations); each ablation arm runs three sessions $\times$ two (six). The
-ablation file also holds six re-runs of \id{full}, which is where the total of 78
-comes from---54 $+$ 18 $+$ 6. We report 54 and 18 as the experimental counts and
-treat 78 as the number of API calls, not of independent units of evidence. Runs
-are nested in three sessions, so the intervals below resample runs within a
-condition and the three session means are printed beside each; no mixed model is
-fitted, because three clusters cannot support one.
+generations), and so does each ablation arm; the ablation file also holds its own
+nine re-runs of \id{full}, which is where 90 API calls come from---54 $+$ 27 $+$
+9. We report 54 and 27 as the experimental counts, and 90 as calls rather than as
+independent units of evidence. Runs are nested in three sessions, so the
+intervals below resample runs within a condition and the three session means are
+printed beside each; no mixed model is fitted, because three clusters cannot
+support one, and a cluster-robust standard error over three clusters would be
+estimated from three numbers---it would narrow the interval without earning it.
 
 \emph{Pass rate} is the share of runs with no \emph{error-level} finding---a
 missing required concept (\id{MISSING\_CONCEPT}) or a prerequisite violation
@@ -1129,7 +1130,7 @@ interval too wide to exclude a small effect in either direction. The ablation do
 not narrow it, because the arm we built to remove the order does not remove it.
 The required-concept block is emitted in topological order---the same order the
 deleted block restates---so \id{no\_order} still tells the model what comes
-first, and six runs of a duplicate cannot price the original.
+first, and nine runs of a duplicate cannot price the original.
 
 This is the dimension \S\ref{sec:boundary} marked in advance, and the result
 matches the prediction rather than revising it: no baseline is disadvantaged by
@@ -1167,13 +1168,13 @@ its target in place.}
 
 \begin{table}[t]
 \caption{Attribution by ablation: each block is deleted alone and all four
-metrics re-measured in the same batch ($n=6$ per arm). $\Delta$ is the arm minus
+metrics re-measured in the same batch ($n=9$ per arm). $\Delta$ is the arm minus
 \id{full}; a block's contribution is the movement in the metric it governs.
-Secondary movement above 0.04 is shown as a side effect. The ordering row is a
+Secondary movement above 0.03 is shown as a side effect. The ordering row is a
 null manipulation rather than a measurement of the constraint
-(\S\ref{sec:boundary}); the full arm of this batch carries one order-violating
-run, which is why every other arm reads 0.000. Mean (standard deviation) over
-resamplings.}
+(\S\ref{sec:boundary}); the full arm of this batch carries two order-violating
+runs, both on U11, which is why every other arm reads 0.000. Mean (standard
+deviation) over resamplings.}
 \label{tab:attribution}
 \centering
 \small
@@ -1789,7 +1790,7 @@ a constrained deck. Every metric, including the teacher review, scores the
 artefact; the chain from artefact quality to learning gain is untested, and it is
 the chain a teacher cares about.
 
-\emph{Under-powered ablations, one of them null.} Six runs per arm separate a
+\emph{Under-powered ablations, one of them null.} Nine runs per arm separate a
 metric that moves from 0.000 to 0.083 and cannot resolve one that moves by 0.026;
 and the ordering arm removes less than its name claims, since the concept list it
 leaves behind is already topological, so the order survives its own deletion

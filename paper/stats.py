@@ -141,7 +141,7 @@ def main() -> None:
             row.append(f"{c}={cliffs_delta(a, b):+.2f}")
         print(f"  {m:<24} " + "  ".join(row))
 
-    print("\n== equivalence test: ordering constraint (ablation, n=6 each) ==")
+    print("\n== equivalence test: ordering constraint (ablation, n=9 each) ==")
     a = [float(r["prerequisite_violation"]) for r in abl_rows["full"]]
     b = [float(r["prerequisite_violation"]) for r in abl_rows["no_order"]]
     lo, hi = diff_ci(a, b)
