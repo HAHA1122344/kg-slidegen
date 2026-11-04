@@ -304,7 +304,7 @@ kg-slidegen/
 │   ├── human_eval.csv        # raw teacher blind-review scores (10 decks × 3 raters)
 │   ├── human_eval.py         # blind-review analysis: descriptives, ICC(2,3), bootstrap CIs
 │   └── figures/              # framework, graph_contract, graphical_abstract
-├── tests/                    # 33 tests
+├── tests/                    # 40 tests, seven of them one per measurement defect
 ├── config/default.yaml
 └── schema.yaml               # formal schema definition
 ```
@@ -417,7 +417,9 @@ tests themselves.
 Coverage: graph structural validity, cycle detection, topological order, constraint
 partitioning, mock rendering, metric edge cases, order-violation and omission detection, plus
 **seven regression guards** that pin down the seven defects documented in
-`docs/experiment.md` which would otherwise bias the metrics toward the constrained method
+`docs/experiment.md` which would otherwise bias the metrics toward the constrained method.
+Those seven live in `tests/test_measurement_defects.py`, one test per row of the defect table
+in section 6.1 of the manuscript, each built from the deck that used to fool the metric.
 (self-reported IDs, preview pages, forward references, cross-line cancellation, verbatim
 matching, misconception anchors, off-graph detection).
 

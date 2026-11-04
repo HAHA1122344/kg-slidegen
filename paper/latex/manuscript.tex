@@ -1305,9 +1305,19 @@ the second course used (\id{agnes-2.5-flash}): three sessions, two resamplings,
 and in the same way: $0.833 \pm 0.408$ against $0.833 \pm 0.408$ for the control
 that receives the same misconception text, a difference of $0.000$ where the same
 course produced $+0.444$ under DeepSeek and $+0.333$ under Kimi. Only the
-endpoint changed, so \textbf{the precondition is a property of the model rather
-than of the course}; the second course's failure was this behaviour, encountered
-on a different syllabus.
+endpoint changed, so \textbf{the precondition tracks the model rather than the
+course}; the second course's failure was most plausibly this behaviour,
+encountered on a different syllabus.
+
+That sentence is the strongest inference in the paper and it should not be read
+as more than it is. Table~\ref{tab:sweep} is four cells with two resamplings
+each, compared descriptively; nothing here is an interaction test, and a
+three-cluster interval on any of those differences would include zero. What the
+comparison establishes is that the contrast is \emph{absent} when the endpoint
+changes and everything else is held fixed---it removes the syllabus as the
+explanation without identifying which model property took its place. We therefore
+report a pattern over four cells, consistent with a backbone that does not fill a
+required slot reliably, and leave the mechanism open.
 
 \begin{table}[t]
 \caption{The same two paired contrasts on every (backbone, course) cell we have.
@@ -1638,6 +1648,15 @@ Count only non-existent IDs matching the graph's ID format \\
 The common structure across all seven is that \textbf{the representation the
 constrained method receives is exactly the representation the metric uses.} Any
 metric that scores against the list in the prompt encounters this problem.
+
+Each row of Table~\ref{tab:defects} is now pinned by a regression test, one per
+defect, in \id{tests/test\_measurement\_defects.py}; the suite stands at 40
+tests. Each test builds the deck that used to fool the metric and asserts the
+value it should produce---and, where the wrong arithmetic can be written down,
+asserts that arithmetic as well, so the test records what it is guarding against
+rather than only what it expects. A defect table without such guards documents a
+past bug instead of preventing its return, and all seven of these were silent
+when they were live.
 
 One caution about reading the tables with defect~5 in mind. The 0.833 reported
 for \id{full}/U10/r3 in Table~\ref{tab:main} is \emph{not} a surviving instance of
