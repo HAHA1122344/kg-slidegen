@@ -98,7 +98,7 @@ acceptance criterion, so requirement and check cannot drift.
 
 We study one queue module across three backbones, three ablations and a second
 course in another language. The change is reliability, not average quality: the
-same misconception text, supplied as flat passages, is covered in five runs of
+same misconception text, given as flat passages, is covered in five runs of
 nine ($0.556 \pm 0.527$); inside the contract's slot, in all nine ($1.000 \pm
 0.000$). Coverage rises from 0.61--0.70 to 0.98 where the backbone follows
 structural instructions; a length-matched placebo excludes prompt length, though
@@ -106,14 +106,14 @@ a three-cluster interval includes zero. Ablation prices each block---misconcepti
 slot 0.889, forbidden list 0.083 of out-of-graph control---and the slot's factors
 interact rather than add: the contract makes its text land.
 
-The second course keeps the sign but not the reliability, and its coverage gain
-shrinks. Re-running the first course under that backbone alone removes the
+The second course keeps the sign but not the reliability, on either endpoint;
+its coverage gain shrinks. Re-running the first course under that backbone alone removes the
 advantage, placing the condition on the model, not the syllabus: a contract can
 require a slot; only a compliant backbone fills it every time. Ordering is where
 the representation stops---expressible in the graph, not withholdable by the
 interface---so its null ablation is a boundary, not a failure. Seven measurement
 defects favouring the constrained condition are documented; a blind review
-matches the automatic ranking (ICC(2,3)~=~0.92).
+matches the automatic ranking (ICC(2,3)~0.92).
 
 \end{abstract}
 
@@ -1367,12 +1367,22 @@ a different language and a different backbone.
 $1.000 \pm 0.000$; here it produces $0.625 \pm 0.479$---two runs of four fill the
 slot and two do not, and the matched control has the same dispersion. The
 contract still moves the mean, and still beats the control that carries the same
-text, but it does not make the outcome certain. Two explanations are available
-and this design does not separate them: the backbone is weaker on the task (its
-zero-shot coverage is 0.35 against 0.64, and it is the only condition here that
-imports out-of-graph content), and the misconceptions are documented difficulties
-rather than measured ones, so the prompt states what students get wrong without
-stating how often. We report both and adopt neither.
+text, but it does not make the outcome certain. Two explanations were available:
+the backbone is weaker on the task (its zero-shot coverage is 0.35 against 0.64,
+and it is the only condition here that imports out-of-graph content), or the
+misconceptions of this course are documented difficulties rather than measured
+ones, so the prompt states what students get wrong without stating how often.
+
+The mirror cell separates them, and not in the direction the first explanation
+predicts. On this course under DeepSeek the slot reaches $0.875 \pm 0.250$ in
+four runs: better than under \id{agnes-2.5-flash}, and still not certain, where the same
+endpoint returns $1.000 \pm 0.000$ in nine runs out of nine on the first course.
+\textbf{The residual variance travels with the syllabus, not only with the
+model:} a compliant backbone fills the slot on the course whose misconception
+counts the graph records, and fills it in most runs rather than all on the course
+where those counts are assumed. That is a narrower condition than ``a good model
+suffices'', and a more useful one, because a course's misconception inventory is
+something an instructor can fix.
 
 Ordering is the third thing to check, because that is where the scope claim makes
 a prediction. Violations are 0.042 (0.083) for \id{full} and 0.042 (0.083) for
@@ -1383,11 +1393,13 @@ to separate conditions here too, and for the same structural reason
 
 What the second course buys is therefore narrower and more useful than ``it
 generalises''. The \emph{direction} of both claim-bearing contrasts is
-course-independent. The \emph{reliability} claim is conditional on a backbone able
-to execute a structural instruction: a contract can require a slot, but only a
-model that follows structural requirements will fill it every time. That
-condition is not visible inside one course, and it is the kind of statement a
-reader can check against their own model.
+course-independent. The \emph{reliability} claim is conditional twice over: on a
+backbone able to execute a structural instruction, and on a course whose
+misconceptions are counted rather than assumed. A contract can require a slot;
+only a compliant model fills it every time, and only a measured misconception
+inventory makes every time the right expectation. Neither condition is visible
+inside one course, and both are the kind of statement a reader can check against
+their own model and their own syllabus.
 
 \textbf{Which of the two changed.} The second course moves syllabus, language and
 endpoint at once, so the failure above has two candidate explanations and its own
@@ -1822,12 +1834,13 @@ the failure of variance replication unattributable to either.
 \S\ref{sec:second-course} closes that hole from one side: re-running the first
 course unchanged under the second course's backbone reproduces the failure, so the
 condition sits with the model. The reverse cell is now in
-Table~\ref{tab:sweep}---the second course under DeepSeek keeps the contrast
-($+0.500$ for misconceptions, $+0.200$ for coverage)---so the syllabus is not what
-produced it either. What four runs per condition cannot do is estimate the
-interaction: whether the slot is filled reliably on a course whose misconceptions
-are recorded rather than documented, under a backbone that has so far filled it in
-every run, is answered here in sign and not in size.
+Table~\ref{tab:sweep}. It splits the two readings rather than repeating one: the
+second course under DeepSeek keeps the contrast ($+0.500$ for misconceptions,
+$+0.200$ for coverage), so the syllabus did not produce the contrast---and it still
+does not reach zero dispersion ($0.875 \pm 0.250$ against $1.000 \pm 0.000$ on the
+first course), so the syllabus does carry part of the residual variance. What four
+runs per condition cannot do is estimate either effect: the interaction is
+answered in sign, not in size.
 
 \emph{Two courses, two modules.} Both modules are unusually misconception-rich
 (empty/full, false overflow and BFS semantics in the first; 1-based indexing and
