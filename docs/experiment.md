@@ -406,23 +406,38 @@ and the repaired baseline is no longer a baseline. Whether a repair loop is fair
 of the condition, not of the loop — this is the reason the script refuses to be pointed at the
 baselines for a headline number.
 
-**Result (agnes-2.5-flash, the row-3 cell of §7d).** Six runs, first-pass 4/6. Of the two
-failures: the one with `MISSING_CONCEPT` was fixed in a single round (the feedback named
-`C1106 循环队列的实现`; the model added the page) and the other, with `PREREQ_VIOLATION`, was not
-fixed in three (violation rate 0.048 → 0.048 → 0.381 — worse on the third attempt). Four model
-calls for six runs, mean coverage 0.972 → 1.000.
+**Result: two cells, opposite outcomes.**
 
-Two readings, neither a rate:
+| Cell | n | first pass | after repair | calls | what happened |
+| --- | :-: | :-: | :-: | :-: | --- |
+| DeepSeek V4, `full` (main grid) | 9 | 6/9 | **9/9** | 3 | all three fixed in one round each |
+| agnes-2.5-flash, `full` (§7d row 3) | 6 | 4/6 | 5/6 | 4 | missing concept fixed; ordering violation not fixed in three |
 
-1. The loop closes the failure that is a **missing slot** and does not close the failure that is
-   a **wrong order** — the same distinction §7d and the ordering ablation draw, now seen from
-   the repair side. An ordering requirement is not a page that can be inserted.
-2. Three attempts produced three different decks and no convergence, so a repair budget cannot
-   rest on "it will converge"; it has to be set by cost.
+The three main-grid repairs are substantive, not metric artefacts, and the two failure types were
+repaired differently:
 
-With two failures this is a mechanism, not an effect size. The main grid (DeepSeek) is
-**unrepaired**: its key had no balance when the loop was ready, and 67% there remains a
-first-pass figure.
+- `MISSING_CONCEPT` → give the concept the page it lacked. U10/r2 mentioned the prerequisite
+  `C1002 队头与队尾` only inside a later summary bullet; the repair made it its own page.
+- `PREREQ_VIOLATION` → split a page that merged two concepts. U11/r3 had put `C1105 队列长度计算`
+  and `C1106 循环队列的实现` on one code page whose title named the second first; the repair
+  split them and ordered them correctly.
+
+In both cases the repaired deck has **more** content, not less: page count unchanged (6/6/7),
+coverage 1.000, misconception coverage not lower. The metric did not get satisfied by deletion.
+
+On Agnes the same policy fixed the missing-concept failure in one round and did not fix the
+ordering failure in three (violation rate 0.048 → 0.048 → 0.381 — worse on the third attempt).
+
+**Reading.** The split is the paper's own precondition for the third time: the loop closes every
+failure on the backbone that fills a required slot and one of two on the backbone that does not.
+A repair loop is not a separate capability that rescues a weak condition; it inherits the
+contract's dependence on the backbone.
+
+**Cautions.** 3/3 is a count, not a rate — its exact 95% lower bound is `0.05^(1/3) ≈ 0.37`.
+And three attempts on one deck produced three different decks with no convergence, so a repair
+budget cannot rest on "it will converge"; it has to be set by cost. Table 4 keeps 67% as a
+first-pass figure; 9/9 is a bounded, costed repair outcome on nine decks, not the method's pass
+rate.
 
 ## 9. Reproduction commands
 
