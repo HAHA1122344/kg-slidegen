@@ -488,7 +488,15 @@ top-up the attribution table is internally consistent:
 | Misconception slot | Misconception ↑ | 1.000 (0.000) | 0.111 (0.333) | −0.889 |
 | Misconception slot | Coverage ↑ (side effect) | 0.981 (0.056) | 0.944 (0.083) | −0.037 |
 | Forbidden list | Out-of-graph ↓ | 0.000 (0.000) | 0.083 (0.125) | +0.083 |
-| Ordering block | Order violations ↓ | 0.026 (0.063) | 0.000 (0.000) | −0.026 |
+| Ordering block† | Order violations ↓ | 0.026 (0.063) | 0.000 (0.000) | −0.026 |
+
+† The ordering row is the null manipulation. Read literally its Δ says deleting
+the block improves order (0.026 against 0.000), and that reading is wrong twice
+over: the deleted line duplicates an order the prompt still carries, so the
+manipulation removes nothing, and the −0.026 is not the block being harmful but
+the batch's two order-violating runs (U11/r1 0.191, U11/r3 0.048) sitting in the
+`full` arm. The row prices nothing; it shows the interface cannot withhold the
+order.
 
 `tables.attribution_latex` takes a `floor` below which a difference is not printed. It is 0.03,
 not 0.04: 0.04 would swallow the slot's real 0.037 spillover into coverage, while 0.03 sits above

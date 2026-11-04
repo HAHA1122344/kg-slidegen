@@ -294,7 +294,9 @@ def attribution_latex(rows: list[dict], floor: float = 0.03) -> str:
     name = {
         "no_misconception": "Misconception slot",
         "no_forbidden": "Forbidden list",
-        "no_order": "Ordering block",
+        # dagger: the row is a null manipulation, not a measurement -- the
+        # caption says so, and the mark makes the exception visible at a glance.
+        "no_order": "Ordering block$^{\\dagger}$",
     }
     base = {key: statistics.mean(r[key] for r in buckets["full"]) for key in header}
     lines = [

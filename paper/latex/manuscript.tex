@@ -1157,9 +1157,14 @@ corrective content that names the concept and its failure mode organises the key
 points by the way. The forbidden-term list is worth $0.083$ of out-of-graph
 control and moves nothing else---a clean single-responsibility attribution. The
 ordering block moves its own metric and no other, which is the exception already
-discussed: the deleted line duplicates an order the prompt still carries, and the
-$0.026$ it costs is two of the nine runs, both on U11 (0.191 and 0.048, amortised
-over the batch). \textbf{The positive
+discussed. Read literally, its row says that deleting the block improves order
+($0.026$ against $0.000$), and that is the reading to refuse: \textbf{the row
+does not price the ordering constraint}, because the deleted line duplicates an
+order the prompt still carries, so the manipulation removes nothing---and the
+$-0.026$ is not the block being harmful but two of the nine runs violating order,
+both on U11 (0.191 and 0.048, amortised over the batch). The row exists to show
+that the interface cannot withhold the order, and it prices nothing.
+\textbf{The positive
 gains in this paper are attributable to named components rather than to the
 pipeline as a whole: each block moves the metric it governs and leaves the others
 at their floor or ceiling, with one spillover---the slot also carries $0.037$ of
@@ -1172,8 +1177,10 @@ metrics re-measured in the same batch ($n=9$ per arm). $\Delta$ is the arm minus
 \id{full}; a block's contribution is the movement in the metric it governs.
 Secondary movement above 0.03 is shown as a side effect. The ordering row is a
 null manipulation rather than a measurement of the constraint
-(\S\ref{sec:boundary}); the full arm of this batch carries two order-violating
-runs, both on U11, which is why every other arm reads 0.000. Mean (standard
+(\S\ref{sec:boundary}), and its $-0.026$ must not be read as ``deleting the block
+helps'': the two order-violating runs of this batch both sit in the \id{full} arm
+(on U11), which is also why every other arm reads 0.000. The row prices nothing;
+it shows only that the interface cannot withhold the order. Mean (standard
 deviation) over resamplings.}
 \label{tab:attribution}
 \centering
