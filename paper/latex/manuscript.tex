@@ -18,6 +18,12 @@
 \usepackage{caption}
 \usepackage{lineno}
 \usepackage{url}
+% xurl is not in a minimal TinyTeX. The repository URL in the data-availability
+% statement happens to fit on one line as typeset, but a break after each slash
+% keeps it inside the margin if the surrounding text moves.
+\makeatletter
+\g@addto@macro\UrlBreaks{\do\/}
+\makeatother
 \usepackage[hidelinks]{hyperref}
 
 \captionsetup{font=small,labelfont=bf,justification=raggedright,singlelinecheck=false}
@@ -1868,7 +1874,11 @@ public, commercial, or not-for-profit sectors.
 % this comment. A named repository without a resolvable identifier is one of
 % the fastest desk rejects at this journal; do not submit with the placeholder.
 Code, both curriculum graphs, prompts, experimental protocol and all raw model
-outputs are archived at \url{https://doi.org/10.5281/zenodo.XXXXXXX}. Each
+outputs are archived at \url{https://doi.org/10.5281/zenodo.XXXXXXX}. The same
+material, together with its development history and the scripts that regenerate
+every table and figure in this paper, is public at
+\url{https://github.com/HAHA1122344/kg-slidegen}; the archive is a packaged
+snapshot of that repository for citation, not a separate copy. Each
 experimental cell retains three artefacts: the rendered deck, the raw model
 output, and an itemised validation report. Every table in this paper and in the
 supplementary material is regenerated from that archive by the scripts in
