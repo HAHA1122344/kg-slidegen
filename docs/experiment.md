@@ -348,9 +348,15 @@ same validator, same metric code) and move it to the second course's backbone,
 PYTHONPATH=src python -m kgslide.bench --provider agnes \
   --kg data/kg_pyds_m4.json --units U10,U11,U12 \
   --modes full,rag_mc,zero_shot --repeat 2 --out outputs/bench_py_agnes
+
+# the mirror cell: second course, first endpoint
+PYTHONPATH=src python -m kgslide.bench --provider deepseek \
+  --kg data/kg_cpp_m4.json --units U41,U42 \
+  --modes full,rag_mc --repeat 2 --out outputs/bench_cpp_ds
 ```
 
-18 cells, about 8 minutes. Only the endpoint changed.
+18 cells in the first run, 8 in the second, about 11 minutes together. In the first, only the
+endpoint changed; in the second, only the course did.
 
 ### Results
 
@@ -359,14 +365,20 @@ PYTHONPATH=src python -m kgslide.bench --provider agnes \
 | DeepSeek V4 | Python | 9 | +0.283 | +0.444 | 1.000 (0.000) |
 | Kimi K3 | Python | 6 | +0.266 | +0.333 | 1.000 (0.000) |
 | agnes-2.5-flash | Python | 6 | +0.052 | **+0.000** | **0.833 (0.408)** |
+| DeepSeek V4 | C++ | 4 | +0.200 | **+0.500** | 0.875 (0.250) |
 | agnes-2.5-flash | C++ | 4 | +0.200 | +0.250 | 0.625 (0.479) |
 
-In the first three rows the course, graph, prompt, validator and metric code are all fixed and
-only the endpoint varies. In row 3 the misconception slot's advantage **goes to zero**, and
-`full`'s dispersion moves from 0.000 to 0.408 — the same phenomenon seen on the second course.
-Therefore: **the precondition sits with the model, not with the course.** The failure of the
-second course is not a peculiarity of that course; it is this backbone's behaviour observed
-once more on a different syllabus.
+Rows 1–3 fix the course, graph, prompt, validator and metric code and vary only the endpoint.
+Row 3 is where the misconception slot's advantage **goes to zero** and `full`'s dispersion moves
+from 0.000 to 0.408 — the same phenomenon the second course showed. Rows 4 and 5 are the mirror
+cells: endpoint fixed, course changed, and the contrast does **not** disappear (row 4 against
+row 1: +0.500 against +0.444; row 5 against row 3: +0.250 against +0.000).
+
+Read by endpoint, the misconception contrast is +0.444 / +0.500 (DeepSeek), +0.333 (Kimi),
++0.000 / +0.250 (agnes). Read by course, the two C++ cells straddle the Python ones. **The
+endpoint orders the cells; the course does not** — which is the direction the precondition
+predicts, without naming which model property does the work. Four runs per condition make this
+an ordering and not an estimate, and no cell supports an interaction test.
 
 Two details that cannot be omitted:
 
@@ -542,7 +554,7 @@ PYTHONPATH=src python -m kgslide.bench --provider agnes \
 python paper/tables.py --course-b outputs/bench_cpp
 
 # backbone × course sweep (Table 7 in the paper)
-python paper/tables.py --sweep "DeepSeek V4|Python|outputs/main_v1;Kimi K3|Python|outputs/bench_kimi;agnes-2.5-flash|Python|outputs/bench_py_agnes;agnes-2.5-flash|C++|outputs/bench_cpp"
+python paper/tables.py --sweep "DeepSeek V4|Python|outputs/main_v1;Kimi K3|Python|outputs/bench_kimi;agnes-2.5-flash|Python|outputs/bench_py_agnes;DeepSeek V4|C++|outputs/bench_cpp_ds;agnes-2.5-flash|C++|outputs/bench_cpp"
 
 # concept-level pairing (§5.4, supplementary S5; no API calls)
 python paper/concept_pairs.py            # print the per-baseline pairing tables

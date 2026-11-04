@@ -53,10 +53,21 @@
 \title{The Model Knows the Textbook but Not Your Class: Curriculum Knowledge
 Graph Constraints for Slide Generation in Two Vocational-Education Courses}
 
-\author[a1]{Suxing Liu\corref{cor1}}
+\author[a1,a2]{Suxing Liu\corref{cor1}}
 \ead{bentondoucet@gmail.com}
 
-\affiliation[a1]{organization={School of Digital Media Technology, Jiangxi Arts
+\author[a1]{Byungwon Min}
+
+\author[a3]{Zhijian Zheng}
+
+\author[a4]{Jiahao Wang}
+
+\affiliation[a1]{organization={Department of IT Engineering, Mokwon University},
+  city={Daejeon},
+  postcode={35349},
+  country={Republic of Korea}}
+
+\affiliation[a2]{organization={School of Digital Media Technology, Jiangxi Arts
 \& Ceramics Technology Institute},
   addressline={538 Xinchang West Road, Zhushan District},
   city={Jingdezhen},
@@ -64,36 +75,46 @@ Graph Constraints for Slide Generation in Two Vocational-Education Courses}
   state={Jiangxi},
   country={China}}
 
+\affiliation[a3]{organization={University of Alabama},
+  city={Tuscaloosa},
+  postcode={35487},
+  state={AL},
+  country={USA}}
+
+\affiliation[a4]{organization={School of Computer Sciences, Universiti Sains
+Malaysia},
+  city={Minden Heights, Penang},
+  postcode={11800},
+  country={Malaysia}}
+
 \cortext[cor1]{Corresponding author.}
 
 \begin{abstract}
 Evaluating generated teaching material raises a question benchmarks do not:
-does the artefact satisfy its course specification? We make it
-computable. Course-level knowledge---what a session must cover, what this cohort
-mislearns, what must not appear yet---is compiled into an executable contract
-that doubles as the acceptance criterion, so requirement
-and check cannot drift.
+does the artefact satisfy its course specification? We make that computable.
+Course-level knowledge---what a session must cover, what this cohort mislearns,
+what must not appear yet---is compiled into a contract that is also the
+acceptance criterion, so requirement and check cannot drift.
 
-We study the queue module of a vocational \emph{Python Data Structures} course
-across three backbones, three ablations and a second course in another language.
-The change is reliability, not average quality: misconception handling reaches
-1.000 $\pm$ 0.000 against 0.556 $\pm$ 0.527 for a text-matched control,
-surviving session clustering. Coverage rises from 0.61--0.70 to 0.98 where the
-backbone follows structural instructions; a length-matched placebo excludes
-prompt length, though a three-cluster interval includes zero. Ablation prices
-each block---misconception slot 0.889, forbidden list 0.083 of out-of-graph
-control---and the slot's factors interact rather than add: the contract makes
-its text land.
+We study one queue module across three backbones, three ablations and a second
+course in another language. The change is reliability, not average quality: the
+same misconception text, supplied as flat passages, is covered in five runs of
+nine ($0.556 \pm 0.527$); inside the contract's slot, in all nine ($1.000 \pm
+0.000$). Coverage rises from 0.61--0.70 to 0.98 where the backbone follows
+structural instructions; a length-matched placebo excludes prompt length, though
+a three-cluster interval includes zero. Ablation prices each block---misconception
+slot 0.889, forbidden list 0.083 of out-of-graph control---and the slot's factors
+interact rather than add: the contract makes its text land.
 
-The second course keeps the sign but not the reliability; its coverage gain over
-that control shrinks. Re-running the first course
-under that backbone alone removes the advantage, placing the condition on
-the model, not the syllabus: a contract can require a slot; only a compliant
-backbone fills it every time. Ordering is where the representation
-stops---expressible in the graph, not withholdable by the interface---so its
-null ablation is a boundary, not a failure. Seven measurement defects favouring
-the constrained condition are documented; a blind review matches the
-automatic ranking (ICC(2,3)~=~0.92).
+The second course keeps the sign but not the reliability, and its coverage gain
+shrinks. Re-running the first course under that backbone alone removes the
+advantage, placing the condition on the model, not the syllabus: a contract can
+require a slot; only a compliant backbone fills it every time. Ordering is where
+the representation stops---expressible in the graph, not withholdable by the
+interface---so its null ablation is a boundary, not a failure. Seven measurement
+defects favouring the constrained condition are documented; a blind review
+matches the automatic ranking (ICC(2,3)~=~0.92).
+
 \end{abstract}
 
 \begin{keyword}
@@ -139,6 +160,13 @@ failures recur.
 None of the three is a generation-capability problem. The model can write this
 content; it does not know what \emph{this course} requires, where \emph{this
 cohort} errs, and how \emph{this institution} sequences its sessions.
+
+The size of that gap is measurable, and one number previews the paper. The
+misconception above, handed to the model as a flat passage, is covered in five
+runs out of nine; placed in the contract's misconception slot it is covered in
+all nine (\S\ref{sec:results}). The text is identical in both cases, so what the
+contract adds is not information. \S\ref{sec:factorial} crosses the two and shows
+they are not additive: the contract is what makes the text land.
 
 \subsection{Thesis}
 \label{sec:thesis}
@@ -1246,12 +1274,16 @@ return no smaller two-sided $p$ than $2/8 = 0.25$, and it returns exactly that:
 the pattern is consistent and the design cannot certify it. Two further
 limits are worth stating. The structured arm differs from the unstructured one in
 the layout instruction as well as the text, so the factor is the
-\emph{requirement}---text plus ``dedicate a page to it''---not the text alone; and
-\id{no\_misconception} comes from the ablation batch rather than the main one,
-which is why Table~\ref{tab:attribution} now reports that batch's \id{full} arm
-beside it: the two batches agree to three decimals on this metric
-($1.000 \pm 0.000$ in both), so a between-batch difference is not what produces
-the interaction.
+\emph{requirement}---text plus ``dedicate a page to it''---not the text alone.
+And the four cells are four conditions that were run for other purposes, not a
+crossing randomised inside one batch: \id{no\_misconception} comes from the
+ablation batch while the other three come from the main one, which is why
+Table~\ref{tab:attribution} reports that batch's \id{full} arm beside it. The two
+batches agree to three decimals on this metric ($1.000 \pm 0.000$ in both), so a
+between-batch difference is not what produces the interaction---but agreement on
+one arm is not a common batch. \textbf{Running the four cells together is the
+clean version of this design, and it is not what we did; what the table supports
+is a mechanism, not a significance claim.}
 
 \subsection{A second backbone replicates the contrast}
 \label{sec:second-backbone}
@@ -1314,7 +1346,7 @@ Table~\ref{tab:main}.
 \caption{Second course (\emph{C++ Programming}, arrays chapter), three conditions
 $\times$ two sessions $\times$ two resamplings ($n=4$ per condition), a different
 backbone and endpoint from Table~\ref{tab:main}. Mean (standard deviation).
-Generated by \id{paper/tables.py --course-b outputs/bench\_cpp}.}
+Generated by \id{paper/tables.py -{}-course-b outputs/bench\_cpp}.}
 \label{tab:course-b}
 \centering
 \small
@@ -1372,21 +1404,32 @@ course}; the second course's failure was most plausibly this behaviour,
 encountered on a different syllabus.
 
 That sentence is the strongest inference in the paper and it should not be read
-as more than it is. Table~\ref{tab:sweep} is four cells with two resamplings
-each, compared descriptively; nothing here is an interaction test, and a
-three-cluster interval on any of those differences would include zero. What the
-comparison establishes is that the contrast is \emph{absent} when the endpoint
-changes and everything else is held fixed---it removes the syllabus as the
-explanation without identifying which model property took its place. We therefore
-report a pattern over four cells, consistent with a backbone that does not fill a
-required slot reliably, and leave the mechanism open.
+as more than it is. Table~\ref{tab:sweep} is five cells with two resamplings
+each---four runs per condition---compared descriptively; nothing here is an
+interaction test, and a three-cluster interval on any of those differences would
+include zero.
+
+The fifth cell is the one that was missing, and it points the same way. Holding
+the endpoint fixed and changing the course, the contrast does not disappear: on
+the second course under DeepSeek it is $+0.500$ for misconceptions and $+0.200$
+for coverage, against $+0.444$ and $+0.283$ on the course it was found on. Read
+the cells by endpoint and the misconception contrast is $+0.444$ and $+0.500$
+under DeepSeek, $+0.333$ under Kimi, $+0.000$ and $+0.250$ under
+\id{agnes-2.5-flash}; read them by course and the two C++ cells straddle the
+Python ones. The endpoint orders the cells and the course does not, which is the
+direction the precondition predicts---but with four runs per condition this is an
+ordering, not an estimate, and it does not say which model property does the
+work. What the comparison establishes is that the contrast is weakest exactly
+where the endpoint resists a structural instruction, on either syllabus, and that
+it removes the syllabus as the explanation without naming its replacement.
 
 \begin{table}[t]
 \caption{The same two paired contrasts on every (backbone, course) cell we have.
 Rows 1--3 hold course, graph, prompts, validator and metric code fixed and vary
-only the endpoint; row~4 holds the endpoint fixed and varies the course. $\Delta$
-is \id{full} minus \id{rag\_mc}; the last column is the distribution the
-reliability claim is about. Generated by \id{paper/tables.py --sweep}.}
+only the endpoint; rows 4 and 5 hold the endpoint fixed and vary the course (row~4
+against row~1, row~5 against row~3). $\Delta$ is \id{full} minus \id{rag\_mc}; the
+last column is the distribution the reliability claim is about. Two resamplings
+per cell, four runs per condition. Generated by \id{paper/tables.py -{}-sweep}.}
 \label{tab:sweep}
 \centering
 \small
@@ -1754,7 +1797,10 @@ fixed (\id{full} vs \id{rag\_mc} holds text and varies structure; \id{full} vs
 \S\ref{sec:factorial}, and there the two factors turn out not to be additive at
 all: the interaction is $+0.556$, so the marginal reading we would otherwise have
 given---that both controls are individually null and the effects add---is wrong
-for that component. For every other block no interaction is estimated, and the
+for that component. That crossing is also post hoc: it is assembled from
+conditions run for other reasons and split across two batches
+(\S\ref{sec:factorial}), so it is a mechanism check rather than a pre-registered
+contrast. For every other block no interaction is estimated, and the
 same caution applies to those as before. It also remains true that structure is
 not one thing: the structured arm changes the concept list, the ordering, the
 forbidden terms and the layout instruction together, so a ``structure'' main
@@ -1770,16 +1816,18 @@ too, or stronger ones, where the misconception gap already narrowed from 0.444 t
 hosted endpoint may retire a model without notice, and Kimi K3 already refuses the
 temperature the main table uses.
 
-\emph{Course and backbone, now separated but not crossed.} The second course
+\emph{Course and backbone, separated and only partly crossed.} The second course
 changes syllabus, language and endpoint together, which on its own would leave
-the failure of variance replication unattributable to either. \S\ref{sec:second-course}
-closes that hole from one side: re-running the first course unchanged under the
-second course's backbone reproduces the failure, so the condition sits with the
-model. What remains open is the fourth cell of the $2\times2$---the second course
-under DeepSeek---which we could not run because that endpoint's balance was
-exhausted on the day, and the interaction it would measure: whether the slot is
-reliable on a course whose misconceptions are measured rather than documented,
-under a backbone that has so far filled it in every run.
+the failure of variance replication unattributable to either.
+\S\ref{sec:second-course} closes that hole from one side: re-running the first
+course unchanged under the second course's backbone reproduces the failure, so the
+condition sits with the model. The reverse cell is now in
+Table~\ref{tab:sweep}---the second course under DeepSeek keeps the contrast
+($+0.500$ for misconceptions, $+0.200$ for coverage)---so the syllabus is not what
+produced it either. What four runs per condition cannot do is estimate the
+interaction: whether the slot is filled reliably on a course whose misconceptions
+are recorded rather than documented, under a backbone that has so far filled it in
+every run, is answered here in sign and not in size.
 
 \emph{Two courses, two modules.} Both modules are unusually misconception-rich
 (empty/full, false overflow and BFS semantics in the first; 1-based indexing and

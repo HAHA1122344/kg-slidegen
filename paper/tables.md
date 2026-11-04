@@ -137,4 +137,5 @@ Ordering block$^{\dagger}$ & Order viol. $\downarrow$ & 0.026 (0.063) & 0.000 (0
 | DeepSeek V4 | Python | 9 | +0.283 | +0.444 | 1.000 (0.000) |
 | Kimi K3 | Python | 6 | +0.266 | +0.333 | 1.000 (0.000) |
 | agnes-2.5-flash | Python | 6 | +0.052 | +0.000 | 0.833 (0.408) |
+| DeepSeek V4 | C++ | 4 | +0.200 | +0.500 | 0.875 (0.250) |
 | agnes-2.5-flash | C++ | 4 | +0.200 | +0.250 | 0.625 (0.479) |
