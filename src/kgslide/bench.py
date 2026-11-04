@@ -48,6 +48,18 @@ USAGE_KEYS = ["prompt_tokens", "completion_tokens", "reasoning_tokens", "latency
 DEFAULT_KG = Path(__file__).resolve().parents[2] / "data" / "kg_pyds_m4.json"
 
 
+def _default_out_dir(provider: str) -> Path:
+    """One directory per backbone.
+
+    The cross-model check must not land in the same ``results.csv`` as the
+    main table: the two runs differ in model, date and prompt-rendering
+    details, and silently mixing rows is how a paper ends up with two
+    incompatible denominators for the same claim.
+    """
+    root = DEFAULT_KG.parent.parent / "outputs"
+    return root / "bench" if provider == "deepseek" else root / f"bench_{provider}"
+
+
 def _coerce(row: dict) -> dict:
     """CSV gives back strings; the summary code needs numbers again."""
     out = dict(row)
@@ -110,8 +122,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repeat", type=int, default=1, help="每个单元格重采样次数")
     parser.add_argument("--thinking", default="default", choices=("default", "disabled"))
     parser.add_argument("--temperature", type=float, default=0.3)
-    parser.add_argument("--out", default=str(DEFAULT_KG.parent.parent / "outputs" / "bench"))
-    parser.add_argument("--model", default="deepseek-v4-flash")
+    parser.add_argument(
+        "--out",
+        default=None,
+        help="输出目录；留空则 deepseek 写 outputs/bench，其它 provider 写 outputs/bench_<provider>",
+    )
+    parser.add_argument(
+        "--provider",
+        default="deepseek",
+        choices=("deepseek", "kimi", "agnes", "mock"),
+        help="模型提供方；kimi 用于第二骨干的跨模型复核",
+    )
+    parser.add_argument(
+        "--model",
+        default="",
+        help="模型 ID；留空则使用该 provider 的默认值",
+    )
     parser.add_argument("--mock", action="store_true")
     parser.add_argument(
         "--append",
@@ -122,6 +148,11 @@ def main(argv: list[str] | None = None) -> int:
         "--reuse",
         action="store_true",
         help="复用已有的 .json 原始输出重新算指标，不调用 API（改指标时用，省钱且结果可比）",
+    )
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="已存在 .json 的单元格直接评分不重跑（低配额账号下断点续跑用）",
     )
     args = parser.parse_args(argv)
 
@@ -135,10 +166,11 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"unknown modes: {unknown}")
 
     client = None
+    provider = "mock" if args.mock else args.provider
     if not args.reuse:
         client = LLMClient(
             LLMConfig(
-                provider="mock" if args.mock else "deepseek",
+                provider=provider,
                 model=args.model,
                 temperature=args.temperature,
                 thinking=args.thinking,
@@ -146,10 +178,11 @@ def main(argv: list[str] | None = None) -> int:
             force_mock=args.mock,
         )
 
-    out_dir = Path(args.out)
+    out_dir = Path(args.out) if args.out else _default_out_dir(provider)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rows: list[dict[str, Any]] = []
+    failures: list[str] = []
     for unit in units:
         constraints = build_constraints(graph, unit)
         for mode in modes:
@@ -163,10 +196,24 @@ def main(argv: list[str] | None = None) -> int:
                         continue
                     payload = json.loads(payload_path.read_text(encoding="utf-8"))
                     usage = {}
+                elif args.skip_existing and payload_path.exists():
+                    # Resume, not re-bill: the vendor's concurrency cap turns a
+                    # 54-cell sweep into an hour, and losing it to one 429 at
+                    # cell 50 means paying for the first 49 twice.
+                    payload = json.loads(payload_path.read_text(encoding="utf-8"))
+                    usage = {}
+                    print(f"{tag} 已有输出，直接评分", flush=True)
                 else:
                     assert client is not None
                     print(f"{tag} ...", flush=True)
-                    payload = client.generate_slides(constraints, mode=mode)
+                    try:
+                        payload = client.generate_slides(constraints, mode=mode)
+                    except Exception as exc:  # noqa: BLE001 - one bad cell must not
+                        # kill a 54-cell sweep: record it and carry on, so the
+                        # table has an explicit hole instead of no table.
+                        failures.append(f"{unit}/{mode}#{rep}: {type(exc).__name__}: {exc}")
+                        print(f"  !! {type(exc).__name__}: {str(exc)[:200]}", flush=True)
+                        continue
                     usage = client.last_usage
 
                 pptx = out_dir / f"{unit}__{mode}__r{rep}.pptx"
@@ -176,10 +223,17 @@ def main(argv: list[str] | None = None) -> int:
                     payload_path.write_text(
                         json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
                     )
-                rendered = render(payload, pptx, unit_name=constraints.unit_name)
-                report = evaluate(
-                    payload, constraints, graph, native_ratio=rendered.native_ratio
-                )
+                try:
+                    rendered = render(payload, pptx, unit_name=constraints.unit_name)
+                    report = evaluate(
+                        payload, constraints, graph, native_ratio=rendered.native_ratio
+                    )
+                except Exception as exc:  # noqa: BLE001 - a payload that parses as
+                    # JSON but renders or scores badly is a result, not a reason to
+                    # abandon the remaining cells and lose the table with them.
+                    failures.append(f"{unit}/{mode}#{rep}: {type(exc).__name__}: {exc}")
+                    print(f"  !! {type(exc).__name__}: {str(exc)[:200]}", flush=True)
+                    continue
                 (out_dir / f"{unit}__{mode}__r{rep}.report.md").write_text(
                     f"# {unit} / {mode} / r{rep}\n\n{report.to_markdown()}\n",
                     encoding="utf-8",
@@ -189,6 +243,12 @@ def main(argv: list[str] | None = None) -> int:
                     "unit": unit,
                     "mode": mode,
                     "repeat": rep,
+                    "provider": provider,
+                    # Sampling settings travel with the row: Kimi pins
+                    # temperature to 1.0, so a table that omits it invites the
+                    # question of whether the two backbones were run alike.
+                    "model": client.config.model if client else "",
+                    "temperature": client.config.temperature if client else "",
                     "pages": rendered.slide_count,
                     "passed": report.passed,
                     **report.metrics,
@@ -203,6 +263,11 @@ def main(argv: list[str] | None = None) -> int:
                     f"tok={usage.get('completion_tokens', 0)} "
                     f"{usage.get('latency_s', 0)}s"
                 )
+
+    if failures:
+        print(f"\n{len(failures)} 个单元格失败（未计入表格）：")
+        for item in failures:
+            print(f"  - {item}")
 
     if not rows:
         print(f"{out_dir} 下没有可评估的输出，先跑一次生成。")
@@ -220,18 +285,29 @@ def main(argv: list[str] | None = None) -> int:
         ]
         rows = kept + rows
 
+    # Union of keys, in first-seen order: a table written before ``provider``
+    # existed still appends cleanly, and the new column is not lost.
+    fieldnames: list[str] = []
+    for row in rows:
+        for key in row:
+            if key not in fieldnames:
+                fieldnames.append(key)
     with csv_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
 
+    # Record the *resolved* model, not the flag: ``--model`` defaults to an
+    # empty string so that it can follow the provider preset, and a table that
+    # says ``model=`` is a table nobody can reproduce.
+    resolved_model = client.config.model if client is not None else (args.model or "reuse")
     md = "\n\n".join(
         [
             "# 基线对比（各条件均值，括号内为标准差）",
             _summary_table(rows),
             "## 逐条明细",
             _detail_table(rows),
-            f"配置：model={args.model} thinking={args.thinking} "
+            f"配置：provider={provider} model={resolved_model} thinking={args.thinking} "
             f"temperature={args.temperature} repeat={args.repeat}",
         ]
     )

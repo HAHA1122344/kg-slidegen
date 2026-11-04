@@ -1,0 +1,104 @@
+% Cover letter for the Knowledge-Based Systems submission.
+% Compile: pdflatex cover-letter.tex   (no bibtex, no second pass needed)
+\documentclass[10pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.0cm]{geometry}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3.4pt}
+
+\begin{document}
+
+\begin{flushright}
+Suxing Liu\\
+School of Digital Media Technology\\
+Jiangxi Arts \& Ceramics Technology Institute\\
+538 Xinchang West Road, Zhushan District\\
+Jingdezhen 333001, Jiangxi, China\\
+\href{mailto:bentondoucet@gmail.com}{bentondoucet@gmail.com}
+\end{flushright}
+
+\vspace{4pt}
+\today
+
+\vspace{4pt}
+The Editors-in-Chief\\
+\emph{Knowledge-Based Systems}
+
+\vspace{2pt}
+\textbf{Re: submission of ``The Model Knows the Textbook but Not Your Class:
+Curriculum Knowledge Graph Constraints for Slide Generation in Two
+Vocational-Education Courses''}
+
+\vspace{2pt}
+Dear Editors,
+
+I am submitting the manuscript above for consideration as a research article in
+\emph{Knowledge-Based Systems}.
+
+\textbf{Where the paper sits in the journal's scope.} The journal's stated topics
+include \emph{knowledge presentation and engineering}, and its objectives ask for
+work that balances theory with practical study and develops knowledge-based
+models, methods and tools with applications in education. This manuscript is a
+knowledge-representation paper before it is a generation paper, and it makes two
+claims of different kinds. An \emph{effect} claim: a graph-compiled contract
+improves generated decks along named dimensions. A \emph{scope} claim: which
+dimensions of a syllabus can be compiled into requirements that are simultaneously
+generation constraints and acceptance criteria is a measurable property of the
+representation rather than a matter of taste---and that boundary depends jointly
+on the representation and on the backbone's willingness to execute a structural
+instruction. The second claim is the one we expect to outlive the course, and it
+is why the generator is treated as a commodity and swapped for other models.
+
+\textbf{The knowledge-engineering claim.} Course-level knowledge---the concepts a
+session must cover, the misconception this cohort keeps committing, what must not
+be introduced yet---is represented as a curriculum knowledge graph and compiled,
+before generation, into an executable contract that then serves as the acceptance
+criterion, so requirement and check are one data object and cannot drift. This
+differs from retrieval: a retrieved passage decides what the model \emph{reads},
+whereas a compiled contract decides what the output \emph{owes}, and an unmet
+obligation is a defect by construction. Section~1.5 gives the representational
+argument: presence, absence and a corrective slot admit hard constraints; order is
+expressible in the graph but cannot be withheld by the interface.
+
+\textbf{What the evidence supports.} The study is a six-condition experiment in
+one higher-vocational course (54 runs), with three one-factor ablations (18 runs),
+a length-matched placebo, a blind review by three teachers, the claim-bearing
+conditions replicated on two further models and on a second course in another
+language, and a run that holds the course fixed while changing only the endpoint,
+which is what places the reliability condition on the model rather than on the
+syllabus. The reported
+change is in the \emph{reliability} of output rather than in its average quality:
+misconception handling reaches $1.000 \pm 0.000$ against $0.556 \pm 0.527$ for a
+control given the same text as flat passages. The ablation attributes each gain to
+a named knowledge component---removing the misconception slot alone returns that
+metric to 0.167, and the forbidden-term list buys 0.083 of out-of-graph control
+while moving nothing else. Seven measurement defects that had favoured
+constraint-based methods are documented with their fixes; the paper states plainly
+that it is a two-course case study with no learning-outcome measurement.
+
+\textbf{Reproducibility.} Code, both curriculum graphs, prompts, the protocol and
+all raw outputs are archived in a public repository (Zenodo DOI:
+\url{https://doi.org/10.5281/zenodo.XXXXXXX}); every table here and in the
+supplementary material is regenerated from it by the included scripts. No
+proprietary or licensed textbook content is redistributed.
+
+\textbf{Declarations.} The manuscript is original, is not under consideration
+elsewhere, and has a single author responsible for all parts of the work. No
+competing interests; no specific grant from funding agencies in the public,
+commercial or not-for-profit sectors. The course data are aggregate classroom
+statistics; no student-level record is included.
+
+I would be glad to provide any further information the editors require, and I
+thank you for considering the manuscript.
+
+\vspace{6pt}
+Yours sincerely,
+
+\vspace{4pt}
+Suxing Liu
+
+\end{document}

@@ -363,3 +363,66 @@ def test_forbidden_terms_are_out_of_graph_only(graph: Graph) -> None:
         assert not set(constraints.forbidden) & set(constraints.siblings), unit
         for term in constraints.forbidden:
             assert term not in names, f"{term} 在图谱内，应走 siblings 而非 forbidden"
+
+
+def test_provider_presets_do_not_leak_across_vendors() -> None:
+    """Switching vendor must not inherit the previous vendor's key or model."""
+    deepseek = LLMConfig(provider="deepseek")
+    kimi = LLMConfig(provider="kimi")
+    assert deepseek.api_key_env != kimi.api_key_env
+    assert deepseek.model != kimi.model
+
+
+def test_vendor_pinned_temperature_is_applied() -> None:
+    """Kimi K3 rejects any temperature but 1.0, so the preset wins.
+
+    Recorded rather than assumed: a cross-model table that silently ran one
+    backbone at 0.3 and the other at 1.0 would be indefensible without saying
+    so, and this test is what makes "the vendor pinned it" checkable.
+    """
+    kimi = LLMConfig(provider="kimi", temperature=0.3)
+    assert kimi.temperature == 1.0
+    assert LLMConfig(provider="deepseek", temperature=0.3).temperature == 0.3
+
+
+def test_ablated_order_survives_in_the_concept_list(graph: Graph) -> None:
+    """Why the ``no_order`` arm is a null manipulation, pinned as a test.
+
+    The paper reports that deleting the ordering block leaves the order in
+    place, because the required-concept list is itself emitted in topological
+    order.  If that ever stops being true -- the list is re-sorted, the graph
+    is re-ordered -- the claim in Section 5.4 and in the supplementary becomes
+    wrong, and this test is what fails.
+    """
+    for unit_id in ("U10", "U11", "U12"):
+        constraints = build_constraints(graph, unit_id)
+        listed = [c["id"] for c in constraints.required]
+        order = [c for c in constraints.order if c in set(listed)]
+        assert listed == order, (
+            f"{unit_id}: the required list no longer follows the declared order, "
+            "so the no_order ablation is no longer null"
+        )
+
+
+def test_a_bare_string_slide_does_not_kill_the_batch(
+    graph: Graph, mock_client: LLMClient, tmp_path: Path
+) -> None:
+    """A model occasionally emits a string where a slide object belongs.
+
+    Observed once in 18 runs of the second course; it used to raise four frames
+    down a generator expression and take the whole batch, and the CSV, with it.
+    The renderer and the scorer now agree on the same substitution, so the deck
+    is written with its page count intact and the degenerate page simply covers
+    nothing.
+    """
+    constraints = build_constraints(graph, "U11")
+    payload = mock_client.generate_slides(constraints)
+    payload["slides"][2] = "顺序队列的入队与出队（模型写成了裸字符串）"
+
+    out = tmp_path / "U11.pptx"
+    result = render(payload, out, unit_name=constraints.unit_name)
+    assert out.exists()
+    assert result.slide_count == len(payload["slides"])
+
+    report = evaluate(payload, constraints, graph, native_ratio=result.native_ratio)
+    assert 0.0 <= report.metrics["coverage_rate"] <= 1.0

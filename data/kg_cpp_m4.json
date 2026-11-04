@@ -1,0 +1,636 @@
+{
+  "meta": {
+    "schema_version": "0.1",
+    "course_id": "CPP-2026",
+    "course_name": "C++语言",
+    "module_scope": "第4章 数组",
+    "language": "C++",
+    "generated_for": "second-course replication (course-boundary check)",
+    "schema_ref": "../kg-design/schema.yaml",
+    "source": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）"
+  },
+  "nodes": [
+    {
+      "id": "COURSE-CPP",
+      "type": "Course",
+      "name": "C++语言",
+      "total_hours": 48,
+      "major": "动漫制作技术",
+      "level": "higher_vocational"
+    },
+    {
+      "id": "M4CPP",
+      "type": "Module",
+      "name": "数组",
+      "order": 4,
+      "hours": 8,
+      "objective": "掌握一维与二维数组的定义、初始化与下标访问，理解数组的连续存储与地址传递语义，能用数组完成排序与查找，并能说明越界与字符串结束标志的后果"
+    },
+    {
+      "id": "U41",
+      "type": "Unit",
+      "name": "一维数组与字符数组",
+      "order": 5,
+      "hours": 4,
+      "slide_budget": 6,
+      "objective": "能定义并初始化一维数组，用从 0 开始的下标访问元素，说明越界的后果，并处理字符数组的字符串结束标志",
+      "forbidden_terms": [
+        "动态内存分配",
+        "vector 容器",
+        "指针算术",
+        "快速排序",
+        "归并排序"
+      ]
+    },
+    {
+      "id": "U42",
+      "type": "Unit",
+      "name": "数组作函数参数与排序查找",
+      "order": 6,
+      "hours": 4,
+      "slide_budget": 6,
+      "objective": "能解释数组名作函数参数时的地址传递，写出冒泡排序并在有序数组上实现二分查找",
+      "forbidden_terms": [
+        "递归",
+        "快速排序",
+        "归并排序",
+        "std::sort",
+        "哈希表"
+      ]
+    },
+    {
+      "id": "C4101",
+      "type": "Concept",
+      "name": "数组的定义与连续存储",
+      "definition": "数组是一组同类型元素的连续存储，数组名代表首元素地址，元素在内存中依次排列",
+      "importance": "理解",
+      "aliases": [
+        "数组定义",
+        "连续存储",
+        "int a[10]"
+      ]
+    },
+    {
+      "id": "C4102",
+      "type": "Concept",
+      "name": "一维数组的初始化",
+      "definition": "可在定义时全部初始化、部分初始化（其余补 0）或省略长度由初值个数决定",
+      "importance": "掌握",
+      "aliases": [
+        "数组初始化",
+        "部分初始化",
+        "省略长度"
+      ]
+    },
+    {
+      "id": "C4103",
+      "type": "Concept",
+      "name": "下标访问与从 0 开始",
+      "definition": "数组元素用 a[i] 访问，下标从 0 开始，合法范围是 0 到 长度-1",
+      "importance": "掌握",
+      "aliases": [
+        "下标",
+        "a[0]",
+        "索引从0开始"
+      ]
+    },
+    {
+      "id": "C4104",
+      "type": "Concept",
+      "name": "下标越界的危害",
+      "definition": "越界访问不会报错，会读写相邻内存，可能覆盖其他变量或触发运行时崩溃",
+      "importance": "理解",
+      "aliases": [
+        "越界",
+        "数组越界",
+        "off-by-one"
+      ]
+    },
+    {
+      "id": "C4105",
+      "type": "Concept",
+      "name": "字符数组与字符串",
+      "definition": "字符数组存放字符序列；以 '\\0' 结尾的字符数组才构成 C 风格字符串",
+      "importance": "掌握",
+      "aliases": [
+        "字符数组",
+        "char 数组",
+        "字符串"
+      ]
+    },
+    {
+      "id": "C4106",
+      "type": "Concept",
+      "name": "字符串结束标志 '\\0'",
+      "definition": "字符串以 '\\0' 作为结束标志，所有按字符串处理的函数都靠它判断结尾",
+      "importance": "掌握",
+      "aliases": [
+        "'\\0'",
+        "结束标志",
+        "空字符"
+      ]
+    },
+    {
+      "id": "C4107",
+      "type": "Concept",
+      "name": "strlen 与 sizeof 的区别",
+      "definition": "strlen 数到 '\\0' 为止的字符个数，sizeof 给出数组占用的字节数（含 '\\0'）",
+      "importance": "理解",
+      "aliases": [
+        "strlen",
+        "sizeof",
+        "长度与容量"
+      ]
+    },
+    {
+      "id": "C4201",
+      "type": "Concept",
+      "name": "数组名作为函数参数",
+      "definition": "数组名作实参会退化为指向首元素的指针，形参是地址的副本，对元素的修改作用于原数组",
+      "importance": "掌握",
+      "aliases": [
+        "数组传参",
+        "地址传递",
+        "退化为指针"
+      ]
+    },
+    {
+      "id": "C4202",
+      "type": "Concept",
+      "name": "数组长度的传递",
+      "definition": "形参中无法用 sizeof 求得数组长度，必须由调用方把长度作为另一个参数传入",
+      "importance": "掌握",
+      "aliases": [
+        "传长度",
+        "长度参数",
+        "sizeof 失效"
+      ]
+    },
+    {
+      "id": "C4203",
+      "type": "Concept",
+      "name": "冒泡排序",
+      "definition": "相邻元素两两比较并交换，每轮把当前最大值送到末尾，n 个元素最多 n-1 轮",
+      "importance": "掌握",
+      "aliases": [
+        "bubble sort",
+        "冒泡",
+        "相邻交换"
+      ]
+    },
+    {
+      "id": "C4204",
+      "type": "Concept",
+      "name": "二分查找及其有序前提",
+      "definition": "在有序数组上反复比较中点并折半收缩区间，时间复杂度 O(log n)，前提是数组有序",
+      "importance": "掌握",
+      "aliases": [
+        "折半查找",
+        "binary search",
+        "有序前提"
+      ]
+    },
+    {
+      "id": "C4205",
+      "type": "Concept",
+      "name": "二维数组的定义与行列遍历",
+      "definition": "二维数组按行优先存储，用双重循环按行、按列遍历，a[i][j] 中 i 为行、j 为列",
+      "importance": "理解",
+      "aliases": [
+        "二维数组",
+        "行列遍历",
+        "按行优先"
+      ]
+    },
+    {
+      "id": "S4101",
+      "type": "Skill",
+      "name": "用一维数组统计成绩",
+      "description": "输入 10 个成绩存入数组，输出平均分、最高分与最低分，并按下标从 0 开始访问",
+      "importance": "熟练",
+      "verifiable": true,
+      "aliases": [
+        "统计成绩",
+        "求最高分",
+        "求平均分"
+      ]
+    },
+    {
+      "id": "S4201",
+      "type": "Skill",
+      "name": "实现冒泡排序",
+      "description": "写出双重循环的冒泡排序并正确设定边界，对 10 个整数升序排序后输出",
+      "importance": "熟练",
+      "verifiable": true,
+      "aliases": [
+        "写冒泡排序",
+        "双重循环排序",
+        "升序排序"
+      ]
+    },
+    {
+      "id": "L41",
+      "type": "Lab",
+      "name": "数组与排序上机实验",
+      "objective": "完成成绩统计与冒泡排序两个任务，并用越界用例观察未定义行为",
+      "instruments": [
+        "g++ 13",
+        "Visual Studio Code"
+      ],
+      "steps": [
+        "读入 10 个成绩到 int 数组，输出平均分、最高分、最低分",
+        "实现冒泡排序并输出升序结果，打印每轮结束后的数组",
+        "把循环条件故意写成 i <= n，观察输出异常并记录现象"
+      ],
+      "expected_output": "排序结果升序且每轮末尾元素就位；越界版本出现乱码或结果被破坏",
+      "difficulty": 2
+    },
+    {
+      "id": "EX41",
+      "type": "Exercise",
+      "name": "数组下标范围选择题",
+      "type_detail": "选择题",
+      "difficulty": 1,
+      "answer": "C（a[5] 越界，合法下标为 0..4）",
+      "source": "第4章教案 课堂练习"
+    },
+    {
+      "id": "EX42",
+      "type": "Exercise",
+      "name": "冒泡排序轮数与比较次数填空",
+      "type_detail": "填空题",
+      "difficulty": 2,
+      "answer": "n 个元素最多 n-1 轮；第 i 轮比较 n-i 次",
+      "source": "第4章教案 课堂练习"
+    },
+    {
+      "id": "EX43",
+      "type": "Exercise",
+      "name": "数组传参为何还要传长度简答",
+      "type_detail": "简答题",
+      "difficulty": 2,
+      "answer": "形参中的数组名已退化为指针，sizeof 得到的是指针大小而非数组长度，故须另传长度",
+      "source": "第4章教案 教学难点"
+    },
+    {
+      "id": "EX44",
+      "type": "Exercise",
+      "name": "sizeof 与 strlen 结果填空",
+      "type_detail": "填空题",
+      "difficulty": 2,
+      "answer": "char s[] = \"hello\" 时 sizeof(s) 为 6，strlen(s) 为 5",
+      "source": "第4章教案 教学反思（结束标志为薄弱环节）"
+    },
+    {
+      "id": "MC41",
+      "type": "Misconception",
+      "statement": "C++ 数组下标从 1 开始，a[1] 才是第一个元素",
+      "correction": "下标从 0 开始，第一个元素是 a[0]，最后一个合法下标是 长度-1；按 1 起访问会整体错位并在末尾越界",
+      "frequency": "中频",
+      "evidence": "第4章教案「教学重难点」明确列出“下标从 0 开始与越界的危害”；未量化错误率"
+    },
+    {
+      "id": "MC42",
+      "type": "Misconception",
+      "statement": "字符数组就是字符串，遍历到数组长度就行，不必管 '\\0'",
+      "correction": "只有以 '\\0' 结尾的字符数组才是字符串；按数组长度遍历会把结束标志之后的未初始化字节当字符输出，strlen 数到 '\\0' 为止而 sizeof 计全部字节",
+      "frequency": "高频",
+      "evidence": "第4章教案「教学反思」原文：“字符数组与字符串处理是薄弱环节，学生容易忽略结束标志”"
+    },
+    {
+      "id": "MC43",
+      "type": "Misconception",
+      "statement": "数组作函数参数是值传递，函数里改了形参也不影响实参",
+      "correction": "数组名作实参会退化为指向首元素的指针，形参拿到的是地址副本，对元素的修改作用于原数组；但形参上 sizeof 求不到长度，所以必须另传长度",
+      "frequency": "中频",
+      "evidence": "第4章教案「教学重难点」列出“数组名作为地址传递的本质”；未量化错误率"
+    }
+  ],
+  "edges": [
+    {
+      "type": "is_part_of",
+      "source": "M4CPP",
+      "target": "COURSE-CPP"
+    },
+    {
+      "type": "is_part_of",
+      "source": "U41",
+      "target": "M4CPP"
+    },
+    {
+      "type": "is_part_of",
+      "source": "U42",
+      "target": "M4CPP"
+    },
+    {
+      "type": "appears_in",
+      "source": "C4101",
+      "target": "U41",
+      "sequence": 1
+    },
+    {
+      "type": "appears_in",
+      "source": "C4102",
+      "target": "U41",
+      "sequence": 2
+    },
+    {
+      "type": "appears_in",
+      "source": "C4103",
+      "target": "U41",
+      "sequence": 3
+    },
+    {
+      "type": "appears_in",
+      "source": "C4104",
+      "target": "U41",
+      "sequence": 4
+    },
+    {
+      "type": "appears_in",
+      "source": "C4105",
+      "target": "U41",
+      "sequence": 5
+    },
+    {
+      "type": "appears_in",
+      "source": "C4106",
+      "target": "U41",
+      "sequence": 6
+    },
+    {
+      "type": "appears_in",
+      "source": "C4107",
+      "target": "U41",
+      "sequence": 7
+    },
+    {
+      "type": "appears_in",
+      "source": "C4201",
+      "target": "U42",
+      "sequence": 1
+    },
+    {
+      "type": "appears_in",
+      "source": "C4202",
+      "target": "U42",
+      "sequence": 2
+    },
+    {
+      "type": "appears_in",
+      "source": "C4203",
+      "target": "U42",
+      "sequence": 3
+    },
+    {
+      "type": "appears_in",
+      "source": "C4204",
+      "target": "U42",
+      "sequence": 4
+    },
+    {
+      "type": "appears_in",
+      "source": "C4205",
+      "target": "U42",
+      "sequence": 5
+    },
+    {
+      "type": "appears_in",
+      "source": "S4101",
+      "target": "U41",
+      "sequence": 8
+    },
+    {
+      "type": "appears_in",
+      "source": "S4201",
+      "target": "U42",
+      "sequence": 6
+    },
+    {
+      "type": "appears_in",
+      "source": "L41",
+      "target": "U41",
+      "sequence": 9
+    },
+    {
+      "type": "appears_in",
+      "source": "EX41",
+      "target": "U41",
+      "sequence": 10
+    },
+    {
+      "type": "appears_in",
+      "source": "EX44",
+      "target": "U41",
+      "sequence": 11
+    },
+    {
+      "type": "appears_in",
+      "source": "EX42",
+      "target": "U42",
+      "sequence": 7
+    },
+    {
+      "type": "appears_in",
+      "source": "EX43",
+      "target": "U42",
+      "sequence": 8
+    },
+    {
+      "type": "appears_in",
+      "source": "MC41",
+      "target": "U41",
+      "sequence": 12
+    },
+    {
+      "type": "appears_in",
+      "source": "MC42",
+      "target": "U41",
+      "sequence": 13
+    },
+    {
+      "type": "appears_in",
+      "source": "MC43",
+      "target": "U42",
+      "sequence": 9
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C4101",
+      "target": "C4102",
+      "strength": "强依赖",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：先有定义与存储模型，才谈初始化"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C4102",
+      "target": "C4103",
+      "strength": "强依赖",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：初始化后按下标逐个访问"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C4103",
+      "target": "C4104",
+      "strength": "强依赖",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：知道合法范围才能理解越界"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C4101",
+      "target": "C4105",
+      "strength": "强依赖",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：字符数组是元素类型为 char 的数组"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C4105",
+      "target": "C4106",
+      "strength": "强依赖",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：字符串的判定依赖结束标志"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C4106",
+      "target": "C4107",
+      "strength": "强依赖",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：strlen 停在 '\\0'，sizeof 计全部字节"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C4103",
+      "target": "C4201",
+      "strength": "强依赖",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：传参本质是传首元素地址，需先懂下标与地址"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C4201",
+      "target": "C4202",
+      "strength": "强依赖",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：形参退化后 sizeof 失效，故须传长度"
+    },
+    {
+      "type": "prerequisites_for",
+      "source": "C4203",
+      "target": "C4204",
+      "strength": "强依赖",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：二分查找要求数组有序，排序是其前提"
+    },
+    {
+      "type": "is_a",
+      "source": "C4105",
+      "target": "C4101",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：字符数组是数组的特例"
+    },
+    {
+      "type": "relates_to",
+      "source": "C4106",
+      "target": "C4107",
+      "relation": "对照",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：结束标志与长度计算是一对易混概念"
+    },
+    {
+      "type": "relates_to",
+      "source": "C4203",
+      "target": "C4204",
+      "relation": "对照",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班）：排序为查找准备前提，两者常同堂讲授"
+    },
+    {
+      "type": "implements",
+      "source": "S4201",
+      "target": "C4203",
+      "language": "C++",
+      "api": [
+        "for",
+        "if",
+        "swap"
+      ],
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班） 实践任务：写出双重循环冒泡排序"
+    },
+    {
+      "type": "implements",
+      "source": "S4101",
+      "target": "C4103",
+      "language": "C++",
+      "api": [
+        "int[]",
+        "for"
+      ],
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班） 实践任务 1：用下标遍历统计成绩"
+    },
+    {
+      "type": "verified_by",
+      "source": "S4201",
+      "target": "L41",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班） 上机任务"
+    },
+    {
+      "type": "verified_by",
+      "source": "S4101",
+      "target": "L41",
+      "evidence": "第4章 数组教案（2025-2026-2，第2周第5次，24动漫制作技术4班） 上机任务"
+    },
+    {
+      "type": "assessed_by",
+      "source": "C4103",
+      "target": "EX41",
+      "weight": 0.05
+    },
+    {
+      "type": "assessed_by",
+      "source": "C4203",
+      "target": "EX42",
+      "weight": 0.05
+    },
+    {
+      "type": "assessed_by",
+      "source": "C4201",
+      "target": "EX43",
+      "weight": 0.05
+    },
+    {
+      "type": "assessed_by",
+      "source": "C4106",
+      "target": "EX44",
+      "weight": 0.05
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "U41",
+      "target": "MC41",
+      "strategy": "反例对比"
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "C4103",
+      "target": "MC41",
+      "strategy": "代码演示"
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "U41",
+      "target": "MC42",
+      "strategy": "边界测试"
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "C4106",
+      "target": "MC42",
+      "strategy": "代码演示"
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "U42",
+      "target": "MC43",
+      "strategy": "反例对比"
+    },
+    {
+      "type": "addresses_misconception",
+      "source": "C4201",
+      "target": "MC43",
+      "strategy": "代码演示"
+    }
+  ]
+}

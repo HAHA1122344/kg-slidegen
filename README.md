@@ -31,15 +31,30 @@
 | cot（思维链） | 0.614 (0.185) | 0.019 (0.056) | 0.089 (0.183) | 0.389 (0.486) | 2638 |
 | zero_shot（直出） | 0.643 (0.248) | 0.019 (0.056) | 0.037 (0.089) | 0.222 (0.441) | 2330 |
 
-三件值得注意的事：
+四件值得注意的事：
 
 1. **覆盖率增益不是「提示更长」造成的。** 等长的 `placebo` 组把提示撑到与 `full` 相当
    （U11 上 2195 对 1997 字符）但只填通用写作建议，覆盖率仍是 0.675。
 2. **误区这一项，方差比均值更重要。** `rag_mc` 拿到了同样的误区文本，均值 0.556、
    标准差 0.527——9 次里只稳定成功一半。`full` 是 1.000 ± 0.000。
    知识图谱改变的不是平均质量，而是可靠性。
-3. **顺序约束没有可靠贡献。** `full` 0.020 对 `zero_shot` 0.037，消融甚至方向相反。
-   强模型对教科书内容的顺序本来就有把握。这是负结果，照实报。
+3. **增益可归因到具体知识组件。** 一次只删一个块再全量重测：删掉误区槽位，
+   该指标从 1.000 掉到 0.167（−0.833），覆盖率顺带 −0.056；删掉禁列词表，
+   跑题率从 0.000 升到 0.083（+0.083），其余指标一格不动。见正文 Table 5。
+4. **顺序是表征的边界，不是方法的失败。** `full` 0.020 对 `zero_shot` 0.037，
+   消融也测不出来——因为「必讲概念」清单本身就按拓扑序输出，删掉顺序块等于
+   删掉一句重复的话。图谱能*表达*顺序，但提示词这个接口无法*扣留*它；
+   这条边界在正文 §1.5 事先说明，不留给审稿人当成漏洞来发现。
+5. **第二门课：方向复现，可靠性不复现。** 换一门课（C++ 数组）、换一种语言、
+   换一个骨干重跑 12 格：覆盖 0.800 对 zero-shot 0.350、对同文本对照 0.600；
+   误区 0.625 对 0.000。方向全都在。但误区槽在这门课上是 **0.625 ± 0.479**
+   ——四次里两次没填。
+6. **把「课变了」和「骨干变了」拆开。** 第二门课同时换了三样，本身分不清原因。
+   于是把第一门课**原封不动**换到第二门课的骨干上再跑 18 格：误区槽的优势同样
+   消失（0.833 ± 0.408 对同文本对照 0.833 ± 0.408，差 0.000；同一门课在
+   DeepSeek 上是 +0.444、Kimi 上 +0.333）。只有端点变了，所以**前置条件在模型
+   一侧，不在课程一侧**。同一批运行里禁列词表仍然生效（跑题 0.097 → 0.000），
+   说明这个骨干不是不服从结构，而是不填「指定类型的页」（正文 Table 7）。
 
 完整表格、消融、成本与逐讲次数据见 [`paper/tables.md`](paper/tables.md)，
 实验口径见 [`docs/experiment.md`](docs/experiment.md)。
@@ -101,8 +116,11 @@ kgslide generate --unit all --out outputs --summary outputs/summary.json
 | --- | --- | --- |
 | `deepseek-v4-flash` | 默认，单价低 | 批量生成、日常迭代 |
 | `deepseek-v4-pro` | 推理更强，单价约为 flash 的 3 倍 | 复杂讲次、终稿 |
+| `kimi-k3`（`--provider kimi`） | 第二厂商骨干，`temperature` 被厂商锁定为 1.0 | 跨模型复核，见 `docs/experiment.md` §7b |
 
 > `deepseek-chat` 与 `deepseek-reasoner` 已于 2026-07-24 废弃，现仅作为兼容别名保留。旧代码里写这两个名字仍能跑，但新项目建议直接用 v4 系列。
+
+**跨模型复核**：`--provider kimi` 换厂商重跑同一套提示词，只用来问「`full − rag_mc` 的符号是否复现」，不做跨模型均值比较（两家 temperature 不同，Kimi K3 只接受 1.0）。切换 provider 时密钥变量与模型 ID 都随 preset 一起换，不会继承上一家的配置；`results.csv` 每行记录 `provider`、`model`、`temperature`。
 
 **关于「思考模式」**：实测（2026-11）`deepseek-v4-flash` **默认会产生 `reasoning_tokens`**，即调用本身就带一轮内部推理。这一点必须显式记录——否则 CoT 基线会被污染（模型本来就在做 CoT，你再让它写推理步骤就测不出差别）。配置 `LLMConfig(thinking="disabled")` 可关闭，`bench` 会用 `--thinking` 参数把该设置写进结果文件。
 
@@ -240,10 +258,12 @@ cd paper/latex && ./build.sh
 
 | 文件 | 用途 |
 | --- | --- |
-| `manuscript.pdf` | 审稿版：`[review,12pt]`，双倍行距 + 行号，43 页（含 2 页前置） |
-| `manuscript-preprint.pdf` | 预印本版：`[preprint,12pt]`，单倍行距无行号，31 页（含 2 页前置） |
+| `manuscript.pdf` | 审稿版：`[review,12pt]`，双倍行距 + 行号，70 页（无前置页，从标题页开始） |
+| `manuscript-preprint.pdf` | 预印本版：`[preprint,12pt]`，单倍行距无行号，49 页（无前置页，从标题页开始） |
 | `highlights.pdf` | Highlights 独立页，5 条、每条 ≤85 字符（Elsevier 硬性要求） |
+| `supplementary.pdf` | 补充材料 S1–S5：消融结果、图校验变异测试、行为探针、跨模型复核、概念级配对分析（正文各以 2–3 句概括并指向这里） |
 | `graphical_abstract.pdf` | 图形摘要，由 `paper/figures/make_graphical_abstract.py` 生成后自动复制进来 |
+| `cover-letter.pdf` | 投稿信（1 页），把稿件的知识表示主张锚定到 KBS 的 knowledge presentation and engineering 范围，随稿件单独上传 |
 
 依赖：TeX Live / TinyTeX，需含 `elsarticle`、`elsarticle-num.bst`、`tabularx`、
 `ragged2e`、`lineno`、`booktabs`、`caption`。参考文献用 BibTeX（`refs.bib`），
@@ -252,10 +272,38 @@ cd paper/latex && ./build.sh
 论文含教师盲评（10 份课件 × 3 位评分者），原始评分在 `paper/human_eval.csv`，
 `python paper/human_eval.py` 复算 ICC 与描述统计，`--latex` 输出论文表格。
 
-正文里用 `elsarticle` 自带的 `highlights` 与 `graphicalabstract` 环境，
-`\maketitle` 会把它们排成两页前置页（图形摘要 → Highlights），然后由类文件把
-页码重置为 1，所以正文仍从第 1 页开始。这两个环境的内容与独立文件
-`highlights.pdf`、`graphical_abstract.pdf` 一致，改一处记得同步另一处。
+另有四个核对脚本，对应审稿意见里的「度量约定是否决定结论」与「图谱是不是只是查找表」：
+
+```bash
+python paper/coverage_sensitivity.py   # 覆盖率在三种前置页约定下、以及去掉别名匹配后的变化
+python paper/tables.py --cross outputs/bench_kimi   # 跨模型表（生成 paper/latex/cross_model.tex）
+python paper/tables.py --course-b outputs/bench_cpp # 第二门课的表（生成 paper/latex/course_b.tex）
+python paper/tables.py --sweep "DeepSeek V4|Python|outputs/main_v1;Kimi K3|Python|outputs/bench_kimi;agnes-2.5-flash|Python|outputs/bench_py_agnes;agnes-2.5-flash|C++|outputs/bench_cpp"  # 骨干×课程扫描表
+python paper/concept_pairs.py --latex  # 概念级配对（生成 paper/latex/concept_pairs.tex，并打印 S6 的 LOO）
+python paper/code_check.py             # 逐块 ast.parse 全部代码块（判据饱和：117/117 全部通过）
+python paper/behavior_check.py         # 行为探针：37/117 块可测，36 块全部行为通过
+python paper/graph_checks.py           # 图校验的变异测试：12 个错误码各注入一个缺陷，12/12 命中
+```
+
+`graph_checks.py` 的意义：出厂图 10 项检查 0 发现，本身不构成证据——不报警的检查器
+与不会报警的检查器无法区分。因此对每个错误码注入一个最小缺陷，看对应检查是否响。
+12/12 全部命中，只有 1 例连带触发（未落地 Skill 同时违反 NOT_GROUNDED，属正确裁定）。
+
+`paper/make_deposit.py` 生成投稿用归档（`paper/deposit/`），字节可复现：两次构建
+sha256 相同，便于在论文里给出可核验的 DOI。
+
+`coverage_sensitivity.py` 的结果：只放开 title 页时 54 次里只有 2 次变化、条件排序不变
+（ρ=1.00），`full` 与 `rag_mc` 的差值反而从 +0.283 升到 +0.302；去掉别名匹配时基线
+掉到 0.325–0.389 而 `full` 仅降到 0.963，即别名是在**收紧**而不是放宽结论。
+
+**正文不含任何前置页**：`highlights` 与 `graphicalabstract` 两个环境都已从
+`manuscript.tex` 里删掉，第 1 页就是标题页。这两个都是 EES 的**独立上传项**，
+分别由 `highlights.tex` → `highlights.pdf`、`paper/figures/graphical_abstract.pdf`
+提供，不必也不应再嵌进正文（否则稿件开头先是图、再是一页要点，正文被推到第 3 页）。
+
+**文末顺序**：附录 A–C → 参考文献，参考文献是全文最后一节（其后不再有任何文字）。
+Table 9 体量接近整页，用 `[tp]` 而不是 `[t]` 才能在正文就近落版；否则它会被推迟到
+参考文献之后，让全文以一张表收尾。
 
 ## 图形摘要
 

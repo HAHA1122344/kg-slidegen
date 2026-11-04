@@ -235,6 +235,13 @@ def render(payload: dict[str, Any], output_path: str | Path, unit_name: str = ""
     total = len(slides)
     for position, data in enumerate(slides, start=1):
         slide = presentation.slides.add_slide(blank)
+        # A model occasionally emits a bare string where a slide object belongs
+        # (once in 18 runs of the second course). Letting that crash the run
+        # loses every cell after it, so the string becomes a one-line concept
+        # page: the deck keeps its page count, the page covers nothing, and the
+        # validator scores it as the degenerate page it is.
+        if not isinstance(data, dict):
+            data = {"layout": "concept", "title": str(data), "bullets": []}
         layout = data.get("layout", "concept")
         renderer = RENDERERS.get(layout, _render_concept)
         renderer(slide, data, None)

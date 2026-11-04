@@ -39,6 +39,10 @@ class UnitConstraints:
     objective: str
     slide_budget: int
     course_name: str = ""
+    # Programming language of the course, so the output contract asks for the
+    # right kind of code block.  A second course in another language would
+    # otherwise be silently asked for Python.
+    language: str = "Python"
     unit_order: int = 0
     required: list[dict[str, Any]] = field(default_factory=list)
     optional: list[dict[str, Any]] = field(default_factory=list)
@@ -209,6 +213,7 @@ def build_constraints(graph: Graph, unit_id: str) -> UnitConstraints:
         objective=unit.get("objective", ""),
         slide_budget=int(unit.get("slide_budget", 6)),
         course_name=str(graph.meta.get("course_name", "")),
+        language=str(graph.meta.get("language", "Python")),
         unit_order=int(unit.get("order", 0)),
         required=required,
         optional=optional,

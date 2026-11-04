@@ -35,6 +35,7 @@
 
 \graphicspath{{../figures/}}
 
+
 \newcommand{\id}[1]{\texttt{#1}}
 
 \journal{Knowledge-Based Systems}
@@ -44,17 +45,10 @@
 \begin{frontmatter}
 
 \title{The Model Knows the Textbook but Not Your Class: Curriculum Knowledge
-Graph Constraints for Slide Generation in Vocational Education}
+Graph Constraints for Slide Generation in Two Vocational-Education Courses}
 
-% ---------------------------------------------------------------
-% TODO(author): confirm the official English name of the institution.
-%   The 2022 university charter gives "Jiangxi Ceramic Fine Arts Profession
-%   Academy"; the current domain (jacti.edu.cn) and Xinhua (2025) use
-%   "Jiangxi Arts & Ceramics Technology Institute". The latter is used here.
-% ---------------------------------------------------------------
 \author[a1]{Suxing Liu\corref{cor1}}
-\ead{suxing.liu@example.edu.cn}
-% \ead[url]{https://github.com/HAHA12345677888}
+\ead{bentondoucet@gmail.com}
 
 \affiliation[a1]{organization={School of Digital Media Technology, Jiangxi Arts
 \& Ceramics Technology Institute},
@@ -64,51 +58,32 @@ Graph Constraints for Slide Generation in Vocational Education}
   state={Jiangxi},
   country={China}}
 
-% TODO(author): enable if a second affiliation is required.
-% \author[a2]{Suxing Liu}
-% \affiliation[a2]{organization={School of Computer Sciences, Universiti Sains Malaysia},
-%   city={Gelugor}, postcode={11800}, state={Penang}, country={Malaysia}}
-
 \cortext[cor1]{Corresponding author.}
 
 \begin{abstract}
-Large language models can now produce a plausible-looking deck of lecture
-slides in minutes, yet the output rarely survives a teacher's review: a skill
-explicitly required by the syllabus is missing, the misconception that this
-year's cohort keeps committing is repeated rather than corrected, or material
-reserved for a later session is disclosed early. These failures are not defects
-of generation capability. They arise because the relevant information is absent
-from the model's parameters: course-level misconception inventories,
-institution-specific sequencing decisions, and the code-level landing point of
-a skill have never appeared in pretraining corpora.
+Evaluating generated teaching material raises a question benchmarks do not pose:
+does the artefact satisfy its course specification? We make it computable. Course-level knowledge---what a session must cover, what this cohort
+keeps mislearning, what must not be introduced yet---is compiled from a curriculum
+knowledge graph into an executable contract that doubles as the acceptance
+criterion, so requirement and check cannot drift.
 
-We propose modelling such knowledge explicitly as a curriculum knowledge graph
-and \emph{compiling} it, before generation, into an executable generation
-contract that is subsequently used, after generation, as the acceptance
-criterion. The central design decision is \emph{constraint-as-data}: the
-contract is simultaneously the source of the prompt and the ground truth of the
-validator, so that what is demanded and what is checked cannot drift apart. We
-conduct a controlled study on the queue module of a higher-vocational
-\emph{Python Data Structures} course (three sessions), covering six conditions
-$\times$ three resamplings, three ablations, and a length-matched placebo arm:
-78 independent generations in total.
+We study the queue module of a higher-vocational \emph{Python Data Structures}
+course across three backbones, three ablations and a second course in another
+language. What changes is not average quality but its reliability:
+misconception handling reaches 1.000 with zero dispersion against
+0.556 $\pm$ 0.527 for a text-matched control, surviving session clustering.
+Coverage rises from 0.61--0.70 to 0.98; a length-matched placebo excludes prompt
+length, while a three-cluster interval includes zero. Ablation attributes each
+gain: deleting the misconception slot takes that metric to 0.167, the forbidden
+list buys 0.083 of out-of-graph control.
 
-The results differ from intuition, which is why they are worth recording.
-Coverage rises from 0.61--0.70 at baseline to 0.98, and the length-matched
-placebo demonstrates that this is not an artefact of longer prompts. Mean
-misconception handling rises from 0.56 to 1.00, but the more informative change
-is in dispersion: the standard deviation falls from 0.53 to 0.00. A condition
-given the same misconception text without structure succeeds in roughly half of
-its generations. What the graph changes is therefore not average quality but
-\emph{reliability}. Ordering constraints, by contrast, show no reliable gain
-under a strong model, and we do not defend that negative result. A blind review
-by three teachers, who scored ten decks on five five-point items, reproduces the
-automatic ordering: agreement over the overall score is ICC(2,3)~=~0.92, and the
-rescaled misconception ratings track the automatic metric to within 0.09 on every
-condition. We further document seven measurement defects discovered and corrected
-during the study, each of which silently favours the constraint-based condition
-and none of which raises an error---a general trap for text-level automatic
-metrics in educational generation.
+The second course reproduces both directions but not the collapse of variance,
+and re-running the first course under that backbone alone reproduces the loss,
+placing the condition on the model rather than the syllabus: a contract can
+require a slot, but only a backbone that will fill one does so every time. Ordering marks where the
+representation stops---expressible in the graph, not withholdable by the
+interface---so its null ablation is a boundary, not a failed effect. Seven
+measurement defects favouring the constraint-based condition are documented. A blind teacher review reproduces the ranking (ICC(2,3)~=~0.92).
 \end{abstract}
 
 \begin{keyword}
@@ -116,21 +91,9 @@ curriculum knowledge graph \sep constrained generation \sep slide automation
 \sep misconception modelling \sep educational knowledge engineering
 \end{keyword}
 
-% elsarticle flushes these into preliminary pages (before p.1) and resets the
-% page counter after the highlights page, so the article opens on page 1.
-% The graphical abstract is generated by paper/figures/make_graphical_abstract.py;
-% the highlights are kept in step with highlights.tex (the standalone upload).
-\begin{highlights}
-  \item Course-level knowledge is absent from pretraining data; it must be supplied.
-  \item A curriculum knowledge graph compiles into one contract that prompts and checks.
-  \item Coverage rises from 0.61--0.70 to 0.98; a length-matched placebo rules out length.
-  \item Misconceptions: 1.000 (0.000) vs 0.556 (0.527) when the text lacks structure.
-  \item Order constraints give no reliable gain; seven metric defects are documented.
-\end{highlights}
-
-\begin{graphicalabstract}
-\includegraphics[width=\textwidth]{graphical_abstract.pdf}
-\end{graphicalabstract}
+% No preliminary pages: the manuscript opens on the title page.
+% Highlights are a separate upload (highlights.tex -> highlights.pdf) and are
+% not repeated here, so page 1 is text and nothing precedes it.
 
 \end{frontmatter}
 
@@ -142,136 +105,199 @@ curriculum knowledge graph \sep constrained generation \sep slide automation
 
 \subsection{A concrete failure}
 
-Asked to write the slides for a session on queues, a general-purpose large
-language model (LLM) will typically return a well-organised deck with accurate
-terminology and runnable code. A teacher skimming it will nod; a teacher reading
-it closely will frown. The failures look like this.
+Asked for the slides of a session on queues, a general-purpose large language
+model (LLM) returns a well-organised deck with accurate terminology and runnable
+code. A teacher skimming it nods; a teacher reading it closely frowns. Three
+failures recur.
 
 \begin{itemize}
-  \item The session objective states that students must \emph{implement}
-  enqueue and dequeue on a sequential queue using a Python list. Across the six
-  generated slides, however, the deck never shows \textbf{how to actually write
-  it}. It covers the definition, covers the false-overflow problem, and covers
-  the circular queue as the remedy---everything except the step the syllabus
+  \item The objective says students must \emph{implement} enqueue and dequeue on
+  a sequential queue using a Python list. The deck never shows \textbf{how to
+  write it}: it covers the definition, the false-overflow problem and the
+  circular queue as the remedy---everything except the step the syllabus
   requires students to perform.
   \item The session carries a misconception that more than 60\% of this cohort
   reproduces in the final exam: ``a Python \id{list} is a linked list
   underneath.'' The model does not mention it, because it is not a textbook
   topic but a property of \emph{these} students.
-  \item The model pushes the modular arithmetic of the circular queue into the
-  slide on the sequential queue. Framed as ``broadening the view,'' it in fact
-  violates the prerequisite order: students encounter \id{\% maxsize} before
-  they know what \id{rear} is.
+  \item The model moves the circular queue's modular arithmetic onto the
+  sequential-queue slide. Framed as ``broadening the view,'' it inverts the
+  prerequisite order: students meet \id{\% maxsize} before they know what
+  \id{rear} is.
 \end{itemize}
 
-What these three failures share is that \textbf{none of them is a
-generation-capability problem}. The model is perfectly able to write this
-content. It simply does not know what \emph{this course} requires, where
-\emph{this cohort} errs, and how \emph{this institution} sequences its sessions.
+None of the three is a generation-capability problem. The model can write this
+content; it does not know what \emph{this course} requires, where \emph{this
+cohort} errs, and how \emph{this institution} sequences its sessions.
 
 \subsection{Thesis}
+\label{sec:thesis}
 
-We argue that the bottleneck in LLM-based slide generation has shifted from
-\emph{knowledge acquisition} to the \textbf{representation and application of
-course-level knowledge}. A general model possesses disciplinary knowledge (what
-a queue is, why FIFO matters). Slide production requires \emph{situated}
-knowledge: this course, this cohort, this schedule.
+The bottleneck has shifted from \emph{knowledge acquisition} to the
+\textbf{representation and application of course-level knowledge}. A general
+model holds disciplinary knowledge (what a queue is, why FIFO matters); slide
+production needs \emph{situated} knowledge, of three kinds. It is
+\emph{cohort-specific}---this year's students confuse the empty and full
+conditions above 60\%, a fact that lives in teacher experience and assignment
+statistics and in no public corpus; \emph{institution-specific}---our department
+merges ``linked queue'' and ``introducing BFS'' into one session, a scheduling
+decision that varies by institution; and \emph{landing-point specific}---this
+course requires ``can write the code'', not ``can state the concept'', which the
+curriculum standard sets and the textbook does not. None can be obtained from a
+larger model or a better prompt; all must be \textbf{supplied from outside}. The question is in
+what form, such that the model can follow it \emph{and} the system can
+afterwards check whether it did.
 
-Situated knowledge has three properties, each of which happens to be a blind
-spot of current LLMs (Table~\ref{tab:properties}).
+Two claims are on offer here, and they have different lifespans. The first is an
+\emph{effect claim}: a graph-compiled contract improves generated decks along
+named dimensions (\S\ref{sec:results}). The second is a \emph{scope claim}: within
+a curriculum graph, only some dimensions can be compiled into requirements that
+are simultaneously generation constraints and acceptance criteria, and the
+boundary between the two sets is measurable rather than a matter of taste
+(\S\ref{sec:boundary}). The effect claim is bounded by two courses in one department and
+will need replication; the scope claim is not, because it is a property of the
+representation rather than of the syllabus. We try to keep the two apart
+throughout, and where a result belongs to the first we say so.
 
-\begin{table}[t]
-\caption{Three properties of situated course knowledge and why they cannot be
-acquired from pretraining.}
-\label{tab:properties}
-\footnotesize
-\setlength{\tabcolsep}{5pt}
-\begin{tabularx}{\linewidth}{@{}L{2.6cm}L{4.6cm}X@{}}
-\toprule
-Property & Example & Why the model cannot learn it \\
-\midrule
-Cohort-specific & This year's students confuse \emph{empty} and \emph{full}
-conditions at a rate above 60\% &
-Exists only in teacher experience and assignment statistics, in no public
-corpus \\
-Institution-specific & Our department merges ``linked queue'' and ``introducing
-BFS'' into one session &
-A teaching-office scheduling decision that varies by institution \\
-Landing-point specific & This course requires ``can write the code,'' not merely
-``can state the concept'' &
-Set by the curriculum standard, not by the textbook \\
-\bottomrule
-\end{tabularx}
-\end{table}
 
-None of these can be obtained through a larger model or a better prompt; they
-must be \textbf{supplied from outside}. The question then becomes: in what form
-should they be supplied, such that the model can follow them \emph{and} the
-system can afterwards check whether it did?
 
 \subsection{Our answer}
+\label{sec:answer}
 
-A \textbf{knowledge graph}. The justification is not fashion but the fact that
-it satisfies four requirements at once.
-
-\begin{enumerate}
-  \item \textbf{Expressiveness.} Misconceptions, skills, prerequisite relations,
-  and competence levels are heterogeneous entities; a graph accommodates them
-  naturally.
-  \item \textbf{Orderability.} \id{prerequisites\_for} is a directed edge, so a
-  topological sort directly yields a legal teaching order.
-  \item \textbf{Compilability.} The subgraph of one session can be mechanically
-  compiled into a generation contract (concept inventory, order, misconceptions,
-  forbidden terms).
-  \item \textbf{Reusability as ground truth.} The same contract can be used to
-  validate the output---\textbf{what is demanded and what is checked share one
-  source, and cannot drift}.
-\end{enumerate}
-
-Point~4 is the essential difference from ``writing the key points into the
-prompt.'' A prompt is discarded once written, and there is no way afterwards to
-determine whether the model complied. A contract is a data object, readable by
-programs both before and after generation.
+A \textbf{knowledge graph}, because it satisfies four requirements at once. It is
+\emph{expressive} enough for heterogeneous entities (misconceptions, skills,
+competence levels); \id{prerequisites\_for} is a directed edge, so a topological
+sort \emph{is} a legal teaching order; one session's subgraph \emph{compiles}
+mechanically into a generation contract; and that contract is \emph{reusable as
+ground truth}, so what is demanded and what is checked share one source and
+cannot drift. The fourth is the difference from ``writing the key points into the
+prompt'': a prompt is discarded once written and compliance cannot be recovered
+from it afterwards, whereas a contract is a data object readable by programs both
+before and after generation.
 
 \subsection{Contributions}
 
 \begin{enumerate}
-  \item \textbf{A curriculum-graph schema for vocational programming courses.}
-  We extend the seven node types of K12-KGraph~\cite{liang2026k12kgraph} by
-  promoting \id{Misconception} to a first-class node, and add two edge types:
-  \id{implements} (concept $\to$ executable code) and
-  \id{addresses\_misconception} (teaching unit $\to$ misconception). The former
-  makes ``can write it'' a checkable property; the latter makes corrective
-  content a constrainable generation target.
+  \item \textbf{A curriculum-graph schema for vocational programming courses.} We
+  extend the node skeleton of K12-KGraph~\cite{liang2026k12kgraph} by promoting
+  \id{Misconception} to a first-class node, and add two edge types:
+  \id{addresses\_misconception}, which generates the misconception section of
+  the contract and is scored by \id{misconception\_coverage}; and
+  \id{implements}, which today supplies only the evidence anchor the prompt
+  cites for a concept and is read by no headline metric
+  (\S\ref{sec:code}). The two are not used symmetrically, and the asymmetry is
+  stated rather than glossed.
 
-  \item \textbf{A constraint-as-data generation framework.} \id{UnitConstraints}
-  drives both prompt construction and post-hoc validation; topological order,
-  required/optional partitioning, sibling-session background caps, and
-  forbidden-term lists are all derived mechanically from the subgraph, with no
-  hand-written rules.
+  \item \textbf{Constraint-as-data: one object for the demand and for the check.}
+  \id{UnitConstraints} drives both prompt construction and post-hoc validation:
+  order, required/optional split, sibling-recap caps and forbidden-term lists are
+  derived mechanically from the subgraph. No \emph{session-specific} rule is
+  hand-written---the seven layout rules, the JSON schema and the importance
+  threshold are authored once, held constant across every condition, and listed in
+  Table~\ref{tab:contract}. What this buys is not tidiness, and the difference from
+  ``one schema for the prompt and one for the validator'' is testable: if the two
+  are merely co-located, a mistake introduced into the checker is invisible,
+  whereas here the requirement and the check are one data structure read twice, so
+  a mistake has one place to live and the ablation can price it. The observable
+  consequence is empirical rather than aesthetic---we found \textbf{seven}
+  measurement defects in our own pipeline, each written independently of the
+  contract and each silently favouring the constrained condition
+  (\S\ref{sec:defects}), and the ablation then attributes the surviving gains to
+  named components one at a time (Table~\ref{tab:attribution}).
 
-  \item \textbf{A reproducible six-metric acceptance protocol}, two of whose
-  metrics are redefined for this task: prerequisite order is judged by
-  \emph{where a concept is named in a slide title} (not by model-reported IDs),
-  and coverage is matched against \emph{graph synonyms} (so that a condition
-  copying the source wording gains no advantage).
+  \item \textbf{A scope claim for constraint-as-data, and the method that measures
+  its edge.} Only those dimensions of a curriculum graph that compile into
+  requirements on the \emph{structure} of the output---presence, absence, a
+  corrective slot---can serve at once as generation constraint and acceptance
+  criterion. Order is representable in the graph but, in the interface tested
+  here, not withholdable from the model, so it falls outside the method's range.
+  The edge is not asserted but measured: the same ablation that prices a component
+  also identifies the dimension on which the representation runs out
+  (\S\ref{sec:boundary}, \S\ref{sec:results}). This is the claim we expect to
+  outlive the course, because it is a property of the representation rather than of
+  the syllabus.
 
-  \item \textbf{An honest empirical study.} Six conditions $\times$ three
-  sessions $\times$ three resamplings, plus three ablations and a length-matched
-  placebo: 78 independent generations. We report gains \emph{and} the absence of
-  gain: misconception handling differs decisively in both mean and variance;
-  coverage improves by about 0.3 with the length explanation excluded by the
-  placebo; and ordering constraints show no reliable contribution under a strong
-  model. We also document \textbf{seven} measurement defects that systematically
-  favour constraint-based methods, together with their fixes (\S\ref{sec:defects}).
+  \item \textbf{A reproducible six-metric acceptance protocol}, two metrics of
+  which are redefined for this task: prerequisite order is judged by \emph{where
+  a concept is named} rather than by model-reported identifiers, and coverage is
+  matched against \emph{graph synonyms} so that a condition copying the source
+  wording gains no advantage.
+
+  \item \textbf{An empirical study whose headline is a second moment, with every
+  gain attributed to a named component.} Six conditions $\times$ three sessions
+  $\times$ three resamplings (54 runs), three ablations (18 runs) and a
+  length-matched placebo, in one course, with the claim-bearing conditions re-run
+  on a second vendor's model and the two contrasts replicated on a second course
+  in another language (\S
+ef{sec:second-course}). Misconception handling differs in the mean \emph{and}
+  in the variance ($1.000 \pm 0.000$ against $0.556 \pm 0.527$), and the collapse
+  of dispersion is the result, because a preparation workflow cannot absorb a coin
+  flip; coverage improves by about 0.3 with the length explanation excluded by the
+  placebo. The ablation then prices each block separately
+  (Table~\ref{tab:attribution}): $0.833$ of misconception coverage for the slot,
+  $0.083$ of out-of-graph control for the forbidden list, and one documented side
+  effect, the slot's $0.056$ of coverage.
+  \textbf{Seven} measurement defects that systematically favour
+  constraint-based methods are documented together with their fixes
+  (\S\ref{sec:defects}). Two courses bound what can be generalised, and
+  \S\ref{sec:external} says where.
 
   \item \textbf{A blind teacher review that independently reproduces the automatic
   ordering.} Three teachers scored ten decks on five five-point items and an
-  overall score, yielding ICC(2,3)~=~0.92 for the overall rating. Rescaled to
-  $[0,1]$, their misconception ratings fall within 0.09 of the automatic metric on
-  all four conditions, and they place the difference between conditions on the
-  same axis: misconception handling and coverage, not factual accuracy.
+  overall score, yielding ICC(2,3)~=~0.92; rescaled to $[0,1]$, their
+  misconception ratings fall within 0.09 of the automatic metric on all four
+  conditions, and they place the difference between conditions on the same axis:
+  misconception handling and coverage, not factual accuracy.
 \end{enumerate}
+
+\subsection{The scope of the claim: what compiles into a criterion}
+\label{sec:boundary}
+
+Constraint-as-data is not a claim about curriculum knowledge in general. It is a
+claim about the part of a syllabus that can be compiled into a hard requirement on
+the \emph{structure} of an artefact, and the edge of that part is a result of this
+paper rather than a caveat attached to it. Three dimensions compile.
+\emph{Presence}: a required concept is named, with graph synonyms counted.
+\emph{Absence}: a term belonging to a later session does not appear.
+\emph{Slot}: corrective content for a named misconception occupies a page of a
+particular kind. Each becomes an inequality over the finished deck, and each is
+falsifiable without a human in the loop.
+
+A fourth dimension is representable but not compilable in the interface we tested.
+Order lives in the graph as a directed \id{prerequisites\_for} edge, and a
+topological sort \emph{is} a legal teaching order, so the requirement is
+writeable. But the prompt must list the concepts, and listing them in topological
+order already carries the order; an arm that deletes the explicit ordering sentence
+deletes a restatement of what remains. What a graph can \emph{say} about a
+syllabus and what a prompt can \emph{withhold} are therefore different sets, and
+this paper reports the difference instead of the membership we would have
+preferred.
+
+The generalisation on offer is consequently narrower than ``graph constraints
+improve generated teaching material'' in one direction and wider in another. For a
+given professional specification, some of its dimensions yield requirements a
+program can both impose and verify, and some yield requirements that can only be
+imposed; which is which is an empirical property of the representation chosen, and
+it is measurable by exactly the ablation of \S\ref{sec:results}(5). A scope
+statement that predicts its own nulls is therefore more useful to the next system
+builder than a table of wins, and it is the part of this paper that would survive a
+change of course, textbook or model. It is also what keeps the positive results
+honest: a protocol that returned a win on all four dimensions would be reporting
+its own bias, and seven such biases had to be removed before any result could be
+stated at all (\S\ref{sec:defects}).
+
+One qualification belongs to the claim rather than to a caveat on it, and
+\S\ref{sec:second-course} is what forces it. The boundary is a property of the
+representation; its \emph{binding force} is not. A dimension can compile into a
+criterion and still fail to bind on a backbone that will not execute a structural
+instruction---on the third backbone we tested the set of compilable dimensions is
+unchanged while the reliability of one of them collapses. The scope claim is therefore
+stated for a backbone that follows structural requirements: \emph{given such a
+backbone}, which dimensions compile into criteria is fixed by the representation
+and measurable by the ablation above. Naming the executor is not a weakening. A
+boundary that silently assumed a compliant model would be the same error as a
+table of wins---a property of the experiment presented as a property of the
+method.
 
 \subsection{Why this belongs in \emph{Knowledge-Based Systems}}
 
@@ -279,27 +305,24 @@ The object of this paper is not ``a better slide generator'' but \textbf{how
 knowledge must be represented in order to be actionable by a machine}: what
 structure suffices to constrain generation, how it is compiled, how it is
 verified, and along which dimensions a knowledge base is genuinely
-irreplaceable. This matches the knowledge-representation, reasoning and
-system-evaluation loop that this journal serves.
-
-Three recent contributions in this journal form the immediate context. Dai et
-al.~\cite{dai2025kg} systematically compare how LLMs comprehend knowledge graphs
-presented in different prompt formats (linearised triples, fluent natural
-language, neighbourhood expansion), showing that \textbf{the presentation format
-itself changes performance}. Huang et al.~\cite{huang2025longtail} find that
-graph-triple prompting generally outperforms passage prompting on long-tail
-factual question answering, and that combining them markedly reduces
-hallucination, showing that \textbf{structure and text are not interchangeable}.
-Ma et al.~\cite{ma2026ledlcm} apply knowledge-enhanced LLMs to course
-recommendation, placing education among the journal's active application areas.
-We continue this line but move the question from \emph{how to put knowledge in}
-to \emph{whether the knowledge once inserted can also serve as the acceptance
-criterion}.
-
-We emphasise \textbf{negative results}: a knowledge graph is not superior to a
-strong model along every dimension, and identifying \emph{which} knowledge must
-be externalised is more valuable than a blanket claim that knowledge
+irreplaceable. Three recent papers in this journal set the context. Dai et
+al.~\cite{dai2025kg} show that the \emph{presentation format} of a graph changes
+what a model comprehends; Huang et al.~\cite{huang2025longtail} show that triples
+and passages are not interchangeable for long-tail facts, and that combining them
+reduces hallucination; Ma et al.~\cite{ma2026ledlcm} place education among the
+journal's active applications. We continue this line but move the question from
+\emph{whether knowledge improves output} to \emph{whether the same knowledge can
+serve as the acceptance criterion}. We also report where it does not help: a
+graph is not superior along every dimension, and identifying \emph{which}
+knowledge must be externalised is more useful than a blanket claim that
 augmentation works.
+
+The same move is being made from the other side of the field. Roschelle et
+al.~\cite{roschelle2025beyond} argue that responsible AI in education needs the
+learning sciences rather than benchmark scores, which is a claim about what the
+criterion should be \emph{about}; this paper is an attempt to say what the
+criterion should be \emph{computed from}, and to show what happens to a
+measurement once the two are the same object.
 
 % ===============================================================
 \section{Related work}
@@ -307,135 +330,181 @@ augmentation works.
 
 \subsection{Automatic slide generation}
 
-Three strands can be distinguished, each solving a different problem.
+Document-to-slide work measures \emph{fidelity to the input}.
+DOC2PPT~\cite{fu2022doc2ppt} formalised the task---summarisation, figure--text
+retrieval and layout arrangement at once---and released 5{,}873 paired examples
+with four metrics. Mondal et al.~\cite{mondal2024presentations} added end-user
+specifications, so that one paper yields different decks for different audiences
+or durations, and cut preparation time from about an hour to under thirty
+minutes, while stating that they do not address layout design.
+Instruction-to-slide work measures \emph{fidelity to editability}:
+AutoPresent~\cite{ge2025autopresent} released SlidesBench (7k training, 585 test
+examples) and found programmatic generation superior to image generation because
+the artefacts stay re-editable; PPTAgent~\cite{zheng2025pptagent} analyses
+reference decks and then emits editing actions, with PPTEval scoring content,
+design and coherence. Our rendering choices follow this strand.
 
-\paragraph{Document-to-slide: fidelity to the input}
-DOC2PPT~\cite{fu2022doc2ppt} first formalised the task, observing that it
-simultaneously demands document summarisation, figure--text retrieval and layout
-arrangement. It proposed a hierarchical sequence-to-sequence model and released
-5{,}873 paired document--slide examples drawn from computer-vision, ACL and ICML
-proceedings, together with four metrics (slide-level ROUGE, LC-FS, TFR, mIoU).
-Mondal et al.~\cite{mondal2024presentations} introduced \emph{end-user
-specifications}: the same paper should yield different decks for different
-audiences or durations. They built four persona configurations on SciDuet,
-fine-tuned an LLM on target-audience feedback, and cut preparation time from
-about one hour to under thirty minutes. Notably, the authors state in their
-limitations that they \textbf{do not address slide layout design}; the
-contribution is content and logical alignment only.
-
-\paragraph{Instruction-to-slide: fidelity to editability}
-AutoPresent~\cite{ge2025autopresent} released SlidesBench (7k training and 585
-test examples from 310 real decks across ten domains) and compared end-to-end
-image generation against program generation, concluding that
-\textbf{programmatic generation yields higher-quality slides} because the
-artefacts are interactive and re-editable; an 8B model trained on the benchmark
-matches GPT-4o. PPTAgent~\cite{zheng2025pptagent} adopts a two-stage edit-based
-approach: analyse reference decks to extract slide-level functional types and
-content schemas, then draft an outline and iteratively generate editing actions,
-with PPTEval assessing content, design and coherence. Our rendering decisions
-(native shapes, a mandatory JSON intermediate representation) follow this
-strand's conclusions.
-
-\paragraph{Evaluation: from ``does it look right'' to ``is it done''}
-PPTC~\cite{guo2024pptc} changes the question from whether slides look good to
-whether a model can modify a deck correctly under multi-turn instructions. Its
-279 multi-turn sessions come with PPTX-Match, which compares the resulting
-\id{.pptx} file state rather than the API sequence and therefore admits multiple
-valid solutions. GPT-4 reaches 75.1\% single-turn accuracy but only 6\% session
-accuracy, with errors traced to multi-turn accumulation, long template
-processing and multimodal perception.
+Evaluation has moved in two steps. PPTC~\cite{guo2024pptc} asks whether a model
+can modify a deck correctly, comparing file state rather than API calls, and
+finds GPT-4 at 75.1\% single-turn but 6\% session accuracy. More recently,
+evaluation has become itemised: PresentBench~\cite{presentbench2026} pairs 238
+instances with an average of 54.1 hand-written binary checklist items each,
+DeckBench~\cite{deckbench2026} applies the same logic to multi-agent academic
+decks, PPTBench~\cite{pptbench2025} isolates layout and design understanding,
+SlideSpawn~\cite{slidespawn2024} covers the research-paper pipeline, and Talk to
+Your Slides~\cite{jung2026talktoslides} treats editing as structured-data
+manipulation. This is where our evaluation belongs, one step short of our
+question: their rubrics are authored \emph{per instance, by an annotator reading
+the source material}, whereas ours must be authored \emph{per course, by the
+curriculum} and be identical for every deck of the same session---otherwise the
+criterion moves with the artefact.
 
 \paragraph{Our difference}
-The inputs to the above work are a \emph{document to be compressed} or \emph{a
-single instruction}; the criteria are resemblance to the source, visual appeal,
-or task completion. Our input is a \emph{course specification} (what to teach,
-in what order, which misconception to correct, what not to introduce), and the
-criterion is conformance to the syllabus. This is not a relabelling: neither the
-reference-based nor the reference-free protocol of SlidesBench can express ``the
-deck omits the skill the syllabus requires students to implement,'' which is
-precisely the most damaging class of failure in a teaching context.
+Their input is a document to compress or a single instruction, and the criterion
+is resemblance, appeal or task completion. Our input is a course specification
+(what to teach, in what order, which misconception to correct, what not to
+introduce), and the criterion is conformance. Neither SlidesBench protocol can
+express ``the deck omits the skill the syllabus requires students to
+implement,'' which is the most damaging class of failure in a teaching context.
 
 \subsection{Educational knowledge graphs}
 
-K12-KGraph~\cite{liang2026k12kgraph} is the closest knowledge-side work.
-Extracted from the official People's Education Press textbooks, it defines seven
-node types (Book, Chapter, Section, Concept, Skill, Experiment, Exercise) and
-nine relation types (\id{is\_a}, \id{prerequisites\_for}, \id{relates\_to},
-\id{verifies}, \id{tests\_concept}, \id{tests\_skill}, \id{appears\_in},
-\id{leads\_to}, \id{is\_part\_of}), covers 48 volumes across mathematics,
-physics, chemistry and biology, and yields 10{,}685 nodes and 23{,}278 edges.
-From it the authors derive K12-Bench (23{,}640 multiple-choice items in five task
-families: Ground, Prereq, Neighbor, Evidence, Locate) and K12-Train, a
-graph-guided supervised fine-tuning corpus. Its most telling number is not the
-overall score but the fact that \textbf{even the strongest proprietary model
-leaves more than 40\% of Prereq and Neighbor items unsolved}---evidence that
-structural curriculum cognition is a capability dimension independent of factual
-recall, and precisely the dimension we attempt to supply externally.
+K12-KGraph~\cite{liang2026k12kgraph} is the closest knowledge-side work: nine
+node types and fourteen relation types over the official People's Education
+Press textbooks, from which K12-Bench (23{,}640 items) and a graph-guided
+fine-tuning corpus are derived. Its most telling number is that even the
+strongest proprietary model reaches only 57\% exact match, with Prereq and
+Neighbor the hardest families---evidence that structural curriculum cognition is
+a capability dimension independent of factual recall.
+SciMKG~\cite{lu2026scimkg} builds a multimodal graph over open courseware
+(1{,}356 knowledge points, 34{,}630 concepts, 403{,}400 triples), and Ma et
+al.~\cite{ma2026ledlcm} apply knowledge-enhanced LLMs to course recommendation.
 
-SciMKG~\cite{lu2026scimkg} moves to multimodality: an LLM-driven
-extraction--verification--integration--augmentation pipeline builds a graph over
-text, images, video and audio from open courseware, yielding 1{,}356 knowledge
-points, 34{,}630 multimodal concepts and 403{,}400 triples, with
-concept-extraction F1 improved by 9\% over baselines. On the application side,
-Ma et al.~\cite{ma2026ledlcm} apply knowledge-enhanced LLMs to course
-recommendation, confirming sustained interest in the combination of knowledge
-structure and education.
+The centre of gravity in that literature is \emph{building} graphs; ours is
+\emph{using} them. The two are complementary, and we reuse the K12-KGraph
+skeleton rather than replace it. For vocational education a graph must
+additionally carry \textbf{competence level} (which decides mandatory versus
+optional) and \textbf{typical misconceptions} (which decide corrective content);
+K12-KGraph has an importance attribute it does not use to constrain generation,
+and no misconceptions at all. The retrieval side divides differently:
+GraphRAG~\cite{edge2024graphrag} and the wider RAG
+literature~\cite{huang2026ragsurvey,asai2024selfrag} treat a graph as a
+\emph{retrieval index} that decides what the model reads. Here it is an
+\emph{obligation structure} that decides what the output must contain. A wrong
+retrieval still permits a correct answer; a violated obligation is a defect by
+definition.
 
-The centre of gravity in this literature is \emph{building} graphs (extracting
-entities and relations from corpora, ensuring consistency). Ours is \emph{using}
-them (compiling a graph into generation constraints and validating against it).
-The two are complementary: our method can consume graphs produced by the above
-work directly, and indeed we reuse the K12-KGraph node and relation skeleton,
-adding to it rather than replacing it (\S\ref{sec:construction}).
+\subsection{Curriculum specifications as the criterion}
 
-In vocational education, a graph must additionally express two things that
-general subject-matter graphs do not emphasise: \textbf{competence level}
-(understand, comprehend, master, proficient, which decides whether a concept is
-mandatory or optional) and \textbf{typical misconceptions} (which decide
-corrective content). K12-KGraph carries an \id{importance} attribute on concepts
-but does not use it to constrain generation; misconceptions are absent entirely.
-This is the direct motivation for our schema extension.
+Judging a teaching artefact against the course's stated intentions is the central
+claim of constructive alignment, and the current statement of that claim is
+narrower than it is often taken to be: alignment is not the co-presence of
+outcomes, activities and assessment but the \emph{validity} of the inference from
+one to the next, which is why learning design and the evidence that
+operationalises it are treated as prerequisites rather than as
+decoration~\cite{santschi2026alignment,divjak2022learningdesign}. We take the
+demand literally and ask what changes when the aligned object must be
+\emph{computed} rather than written: if the criterion is a program, alignment stops
+being a property of a course design and becomes a property of each artefact.
+
+Encoding a unit of learning as an executable specification is an old ambition:
+learning-design formalisms described roles, activities and sequencing precisely
+enough for a conforming runtime. That line never met a generative model, for an
+instructive reason---the specification had to be authored by a human designer,
+because nothing else could write content against it. LLMs change the economics:
+the specification becomes cheap to satisfy but not to supply. We keep the
+ambition and narrow the scope to the subset a deck can be graded against. What
+distinguishes our use of a schema is not the schema but its provenance and its
+second life: it is compiled per session from a course graph, and then reused as
+the acceptance criterion rather than only as input.
+
+This also constrains what the contract may ask for. ICAP orders engagement from
+passive through active and constructive to interactive, and a synthesis of that
+line puts the learning-outcome advantage of the higher levels on a quantitative
+footing~\cite{wekerle2026icap}; a meta-analysis of college students in the
+humanities and social sciences finds the same direction for replacing lecture
+time with students doing something themselves~\cite{kozanitis2022active}. A deck
+is a passive artefact, which is why
+the contract carries a skill landing point and a lab rather than only a concept
+list---and why a deck can score 1.000 on every content metric and still be a poor
+lesson (\S\ref{sec:external}).
 
 \subsection{Constrained generation}
 
-Classical natural language generation separates \emph{what to say and in what
-order} (content planning) from \emph{how to say it} (surface
-realisation)~\cite{gatt2018survey}. Wiseman et al.~\cite{wiseman2017challenges}
-showed on RotoWire that end-to-end models produce fluent game reports while
-systematically erring on content selection and discourse order, in some metrics
-even being surpassed by template baselines. Puduppully et
-al.~\cite{puduppully2019datatotext} therefore model content planning explicitly:
-first predict which records to mention and in what order, then generate
-conditioned on that plan. What unites this line is that structure is injected
-into the \emph{training objective or the decoding process}.
+Survey accounts of natural language generation keep content planning and surface
+realisation apart~\cite{dong2022nlg}, and the hallucination literature documents
+what happens when the two collapse: generators produce fluent text whose content
+the input does not support, and the error is intrinsic rather than a matter of
+style~\cite{ji2023hallucination}. Knowledge-enhanced generation answers this by
+putting an explicit knowledge source into the pipeline, whether at training or in
+the prompt~\cite{yu2022knowledge}. What unites the line is that structure enters
+the training objective or the decoder.
+In the LLM era it enters the prompt, and the form matters: Dai et
+al.~\cite{dai2025kg} show that the same graph presented as triples, paragraphs or
+neighbourhoods is comprehended with markedly different effectiveness, and Huang
+et al.~\cite{huang2025longtail} show that triples generally beat passages on
+long-tail facts while combining them reduces hallucination.
 
-In the LLM era, structure is injected through prompts instead, and the question
-becomes \emph{in what form}. Dai et al.~\cite{dai2025kg} provide the most
-systematic evidence to date: the same graph, presented as linearised triples,
-fluent paragraphs or expanded neighbourhoods, is comprehended with markedly
-different effectiveness, and the difference is explicable from attention
-distributions. Huang et al.~\cite{huang2025longtail} offer a complementary
-result on long-tail factual question answering: triple-based prompting generally
-beats passage-based prompting, and combining both does not always improve
-coverage but does markedly reduce hallucination. In short, \textbf{structured
-knowledge is not simply ``text written differently.''}
+A stronger form acts on the decoder. Grammar-constrained
+decoding~\cite{geng2023grammar} intervenes at each step so that output cannot
+leave a formal language, and generalises well beyond parsing; we deliberately do
+not use it. A grammar can express that a slide has a title and at most four
+bullets, but not that this session must correct the false-overflow
+misconception. Those constraints are over \emph{content}, so enforcement happens
+after generation or in the prompt---which is why acceptance must be a computation
+over the finished deck. Where a constraint is genuinely syntactic (the JSON
+schema, the layout enumeration, the bullet cap) we enforce it structurally and
+the validator reports it as a structural finding, not a content defect.
 
-We differ from both lines deliberately: we neither train, nor modify decoding,
-nor rerank. We compile constraints into an \emph{executable data object}, use it
-to construct the prompt before generation, and use the same object to validate
-afterwards. Relative to~\cite{dai2025kg,huang2025longtail}, the question
-advances from ``how should a graph enter the prompt'' to ``can one graph
-simultaneously serve as the acceptance criterion''---if so, demand and check
-cannot drift (\S 1.3). The price is that we relinquish control over decoding and
-must bear the risk that the model disobeys; \S\ref{sec:qualitative} reports a
-real violation and \S\ref{sec:defects} reports seven metric traps that this
-permissiveness exposed.
+Evaluation has converged on reference-free metrics such as
+faithfulness~\cite{es2024ragas}, which ask whether every claim is supported by
+the retrieved context. That is the right question for ``is it grounded'' and
+silent on ours: a deck can be faithful to a passage and still omit the required
+skill, or reteach what the previous session covered. A parallel line replaces the
+metric with a judge---LLM-as-a-judge~\cite{zheng2023judging} and
+rubric-conditioned scoring~\cite{liu2023geval}---now correlated well enough with
+human preference to serve as a primary evaluation. We use a judge only for the
+qualitative pass and keep the headline numbers mechanical, because a fixed
+criterion must yield a fixed score and a judged score cannot promise that.
+
+We differ from both lines: we neither train, nor modify decoding, nor rerank. We
+compile constraints into a data object, use it to construct the prompt before
+generation, and use the same object to validate afterwards. The price is that we
+relinquish control over decoding and must bear the risk of disobedience;
+\S\ref{sec:qualitative} reports a real violation, and \S\ref{sec:defects} the
+seven traps this permissiveness exposed.
+
+\subsection{The same premise, industrialised}
+\label{sec:learningcommons}
+
+Learning Commons, an initiative of the Chan Zuckerberg Initiative, ships two of
+the components this paper argues for: a \emph{Knowledge Graph} of academic
+standards, skills and learning progressions for the four core K-12 subjects
+across all fifty US states, and \emph{Evaluators} that score AI-generated
+educational content against expert-authored rubrics~\cite{learningcommons2026}.
+More than seventy partners have integrated it, including several model providers.
+Two consequences follow: the question this paper asks is now an engineering need
+with users rather than a hypothetical, and the architecture chosen there is the
+one argued for here---a graph that holds the obligations, separated from an
+evaluator that checks against them, so that the two cannot drift.
+
+The difference is scope. A standards graph covers publicly codified expectations,
+where the mapping from standard to content is many-to-one and stable across
+districts. A vocational course's obligations are largely local: which skill
+\emph{this} cohort must implement at the end of \emph{this} session, which
+misconception \emph{this} class holds, what the previous session already covered.
+None of that is in a standards document and none can be purchased as a
+dataset---which is why the contract carries a skill landing point, a lab, a
+sibling set and a misconception assignment, and why the graph must be authored by
+the teacher. The layers are complementary: a standards graph could populate the
+upper part of our schema, and the local layer is what a teacher adds.
 
 % ===============================================================
 \section{Problem formulation}
 % ===============================================================
 
 \subsection{Curriculum knowledge graph}
+\label{sec:graph}
 
 A curriculum knowledge graph is a typed directed heterogeneous graph
 $G=(V,E,\tau)$, where $\tau: V \to T_V$ with
@@ -455,10 +524,13 @@ and selected edges carry an \id{evidence} field recording the provenance of the
 relation (textbook page, curriculum-standard clause, error-rate statistic).
 
 \paragraph{Constraint 1 (acyclicity)} The subgraph induced by
-\id{prerequisites\_for} must be a DAG. We detect violations with Kahn's
-algorithm: if the concept set of a session cannot be topologically ordered, the
-course design itself contains a circular prerequisite, and construction fails
-immediately rather than deferring the contradiction to generation time.
+\id{prerequisites\_for} must be a DAG. The graph layer enforces this: every cycle
+is reported as a \id{PREREQ\_CYCLE} error and the loader refuses a graph that
+fails validation, so a circular prerequisite stops the pipeline before any
+generation happens. The compiler retains a defensive branch that falls back to
+declaration order, unreachable for a validated graph and pinned by two unit
+tests; a compiler should not crash mid-run, but a curriculum error must never be
+compiled silently into a prompt.
 
 \subsection{Session contract}
 
@@ -496,15 +568,21 @@ $k_u$ & slide budget & \id{slide\_budget} on the Unit node \\
 \end{tabularx}
 \end{table}
 
-A critical distinction separates $B_u$ from $F_u$. The former means ``already
-covered, may be mentioned in one sentence''; the latter means ``not taught in
-this course at all.'' Conflating them makes two metrics fight each other (the
-same term counts both as legitimate recap and as out-of-scope), so the
-implementation enforces mutual exclusivity by assertion.
+$B_u$ and $F_u$ must not be conflated: the former means ``already covered, may
+be mentioned in one sentence'', the latter ``not taught in this course at all''.
+Conflating them makes two metrics fight over one term, so the implementation
+enforces mutual exclusivity by assertion and \S\ref{sec:graph-checks} checks it
+on the graph.
 
-Compilation is mechanical and lossless. Fig.~\ref{fig:contract} shows the actual
-U11 subgraph and the contract compiled from it: every edge in panel~(a) maps to a
-field in panel~(b), and nothing in panel~(b) is hand-written.
+Compilation adds no information; it selects and orders what the graph already
+contains. Fig.~\ref{fig:contract} shows the U11 subgraph and the contract
+compiled from it: every edge in panel~(a) maps to a field in panel~(b), and
+nothing in panel~(b) is typed by hand. ``Lossless'' is meant in this narrow
+sense, with two recorded exceptions: the required/optional split applies a policy
+constant (the \id{importance} level at which a concept becomes mandatory), and
+Kahn's algorithm breaks ties by declaration order, so the compiled order is one
+of several admissible topological orders. Both are visible in $C(u)$ but they
+are policy, not data.
 
 \subsection{Generation and acceptance}
 
@@ -517,14 +595,13 @@ m(D, C(u), G) = \langle \text{cov},\ \text{oog},\ \text{bg},\
 defined in \S\ref{sec:metrics}. Note that $C(u)$ appears on both sides: this is
 the formal statement of ``demand and check share one source.''
 
-The full pipeline is shown in Fig.~\ref{fig:framework}: graph $\to$ contract
-compilation $\to$ generation $\to$ rendering $\to$ validation against the same
-contract. One loop exists: pages that fail validation are sent back for
-regeneration. Its boundary is deliberately fixed---\textbf{the loop may change
-slides, but never the graph and never the contract}---and whether to regenerate
-is a teacher's decision, not an automatic optimisation. Were validation output
-allowed to reshape the contract, acceptance would degrade into an objective and
-the metrics would lose their meaning (\S\ref{sec:defects}).
+Fig.~\ref{fig:framework} shows the pipeline: graph $\to$ contract compilation
+$\to$ generation $\to$ rendering $\to$ validation against the same contract. One
+loop exists---pages that fail validation may be regenerated---and its boundary is
+fixed: \textbf{the loop may change slides, but never the graph and never the
+contract}. Whether to regenerate is a teacher's decision. Were validation output
+allowed to reshape the contract, acceptance would degrade into an objective
+(\S\ref{sec:defects}).
 
 \begin{figure}[t]
 \centering
@@ -556,17 +633,21 @@ one cross-session prerequisite edge from U10, one \id{implements} edge and one
 
 \subsubsection{Nodes and edges}
 
-We retain the seven node types of K12-KGraph~\cite{liang2026k12kgraph} (\id{Lab}
-corresponds to its \id{Experiment}) and promote \id{Misconception} to an eighth,
+We keep the pedagogical subset of K12-KGraph's node skeleton and rename it to
+match course structure: its \id{Book}/\id{Chapter}/\id{Section} become our
+\id{Course}/\id{Module}/\id{Unit}, and its \id{Experiment} is rendered as
+\id{Lab}. \id{Misconception} is promoted to a first-class node,
 with attributes \id{statement} (the erroneous claim itself, which must be
 concrete and decidable), \id{correction}, \id{frequency} (low, common, high) and
 \id{evidence} (exam error rate, assignment statistics, in-class questioning).
 
 Two edge types are added:
 \begin{itemize}
-  \item \id{implements}: Concept or Skill $\to$ executable code fragment. It makes
-  ``can write it'' a checkable property and supplies the generator with runnable
-  examples.
+  \item \id{implements}: Concept or Skill $\to$ executable code fragment. In the
+  current system it supplies the evidence anchor the prompt cites for a concept
+  and makes the intended code artifact addressable. No headline metric reads it,
+  and the only execution that touches it is the bounded probe of
+  \S\ref{sec:code}; it is not otherwise a scoring dimension.
   \item \id{addresses\_misconception}: Unit, Lab or Concept $\to$ Misconception,
   annotated with a strategy (counter-example, code demonstration, boundary test).
   This edge decides \textbf{which session is responsible} for correcting a given
@@ -583,15 +664,77 @@ textbook writes ``the full condition,'' and the code reads
 the graph cannot be aligned with real teaching language. Aliases also resolve a
 fairness problem in evaluation, as discussed in \S\ref{sec:defects}.
 
+\subsection{The graph is checked, not merely loaded}
+\label{sec:graph-checks}
+
+The contract is only as trustworthy as the graph that produces it, so the
+graph is validated on ten checks (twelve codes; checks~5 and~10 emit two
+each) every time it is loaded. There is no sampling step to weaken this: a
+load that raises stops the pipeline.
+
+Checks~1--6 belong to the schema: no dangling edge, no prerequisite cycle,
+every knowledge point grounded in a unit, evidence on every semantic edge,
+three to eight concepts per unit with at least one at mastery level, and no
+duplicate name within a module. Checks~7--10 are the ones this paper depends
+on, because they test whether the graph's own contract ingredients
+contradict one another rather than merely whether the file is well formed:
+
+\begin{itemize}
+  \item $\mathbf{F_u \cap R_u = \emptyset}$. A term may not be simultaneously
+  mandatory (a mastery-level concept of this session) and forbidden (a
+  declared out-of-scope term). If it were, the contract would ask the model
+  to cover and to avoid the same thing, and a coverage shortfall would be an
+  artefact of the graph.
+  \item $\mathbf{F_u \cap B_u = \emptyset}$. A term may not be forbidden here
+  and admissible as a one-sentence recap because a sibling session of the same
+  module taught it. $B_u$ is the sibling set \id{build\_constraints} actually
+  emits, so the check tests the contract as shipped, not an idealisation of it.
+  \item \textbf{No orphan misconception.} Every misconception node must be the
+  target of at least one \id{addresses\_misconception} edge. An orphan can
+  never enter any contract: the metric would have nothing to score, and the
+  0.556 reported for the control conditions would be a property of the graph
+  rather than of generation.
+  \item \textbf{\id{implements} is well typed and grounded.} The edge must
+  point at an executable artefact (Skill, Lab, Exercise, Concept) rather than
+  at a misconception or a unit, and its source must be taught in at least one
+  session.
+\end{itemize}
+
+The shipped graph (34 nodes, 75 edges) returns zero findings on all ten
+checks, and \id{pytest} asserts it. Zero findings is weak evidence on its own,
+because a checker that never fires cannot be distinguished from one that
+cannot fire. Each of the twelve codes is therefore exercised by mutation: one
+minimal defect is injected into a copy of the graph and we record whether the
+owning code responds. All twelve fire on their own mutant, and a single mutant
+triggers a second code---an ungrounded skill also violates check~3---which is
+the correct verdict rather than interference, so the checks are specific as
+well as sensitive. Table~S2 in the supplementary material lists every injected
+defect; the harness is \id{paper/graph\_checks.py}, and five unit tests pin the
+four new checks to mutants so that a regression fails the suite.
+
+What this buys is a weaker and more defensible claim than ``the graph
+reasons.'' The graph does not infer anything: the topological order, the
+required set and the misconception assignment are computed by deterministic
+graph algorithms, and their correctness is established by the checks above,
+not by the model. The reasoning that a knowledge-based system is supposed to
+contribute happens earlier---in how the course was decomposed into sessions,
+concepts and misconceptions, and in the decision that a session's obligations
+are a function of that decomposition. Section~\ref{sec:defects} is explicit
+about which of the resulting metric defects the graph can detect and which it
+cannot.
+
 \subsection{Constraint compilation}
 
-\id{build\_constraints} turns the subgraph into a \id{UnitConstraints} object
-with no hand-written rules:
+\id{build\_constraints} turns the subgraph into a \id{UnitConstraints} object.
+Every field below is a function of the graph; none is entered per session:
 \begin{enumerate}
   \item \textbf{Required/optional split.} Sort by \id{importance}; those at or
   above ``master'' enter $R_u$, the rest $O_u$.
-  \item \textbf{Topological order.} Run Kahn's algorithm over $S_u$; on
-  encountering a cycle, fall back to declaration order and raise a warning.
+  \item \textbf{Topological order.} Run Kahn's algorithm over $S_u$; ties are
+  broken by declaration order, so the result is deterministic. If a cycle reaches
+  the compiler it falls back to declaration order and warns, but this branch is
+  defensive only: a cyclic graph is rejected at load time (\S\ref{sec:graph}) and
+  never gets here.
   \item \textbf{Misconception assignment.} Collect the misconception nodes
   attached by \id{addresses\_misconception} edges.
   \item \textbf{Sibling sessions.} Concept names of other Units in the same
@@ -610,7 +753,10 @@ yields the same prompt block, which is a precondition for reproducibility.
 
 The prompt is assembled from four segments---a fixed skeleton, the contract
 block, a JSON contract, and a list of hard rules---and the experimental
-conditions of \S\ref{sec:conditions} replace only some of them.
+conditions of \S\ref{sec:conditions} replace only some of them. The assembled
+prompt for session U11 is rendered in full in Appendix~\ref{app:prompt}, and one
+raw response with its validator report in Appendix~\ref{app:response}; neither
+is summarised away, because the prompt is part of the method.
 
 Output is constrained to a single JSON object, each slide carrying \id{layout}
 (one of seven), \id{title}, \id{bullets}, \id{code}, \id{notes},
@@ -619,20 +765,26 @@ is a deliberate choice: layout selection is itself an instructional-design
 decision, and delegating it to the model makes both editability and slide budget
 uncontrollable.
 
-Two engineering realities, both observed rather than assumed:
-\begin{enumerate}
-  \item \textbf{JSON mode is not a validity guarantee.} Roughly once every ten
-  calls the response contains a trailing comma, or returns blank while reporting
-  \id{finish\_reason == "stop"} (the offending fragment replaced by whitespace).
-  The pipeline therefore implements \emph{call} $\to$ \emph{conservative repair}
-  (strip trailing commas, close truncated brackets) $\to$ \emph{parse}, and only
-  escalates by re-prompting with the concrete parse error when repair fails.
-  Blind retries reproduce the same error at the same cost.
-  \item \textbf{The model performs internal reasoning by default.} Every call in
-  our setup produced \id{reasoning\_tokens}, which contaminates a
-  chain-of-thought baseline (the model is already doing CoT). We record the
-  setting explicitly and provide a switch to disable it for a robustness check.
-\end{enumerate}
+The caps on bullets and characters are conventions rather than derived
+constants, though not arbitrary ones: cognitive load theory predicts that dense,
+split-attention material imposes extraneous load competing with the schema the
+lesson is building~\cite{sweller2025architecture}, and the same concern returns
+from the learning-sciences side as an argument that benchmark scores are the wrong
+criterion for educational AI, because what matters is whether the artefact
+supports the knowledge component being taught~\cite{roschelle2025beyond}. A
+four-bullet page is a rough operationalisation of both, and we treat it as a
+structural constraint the validator can check rather than as a claim about
+pedagogy.
+
+Two engineering realities, observed rather than assumed: JSON mode is not a
+validity guarantee---roughly one call in ten returns a trailing comma, or blank
+with \id{finish\_reason == "stop"}---so the pipeline repairs conservatively
+(strip trailing commas, close truncated brackets) and escalates by re-prompting
+with the concrete parse error only when repair fails, since blind retries
+reproduce the same error at the same cost; and the model emits
+\id{reasoning\_tokens} on every call, which contaminates a chain-of-thought
+baseline because the model is already reasoning. We record the setting and
+provide a switch to disable it.
 
 \subsection{Rendering}
 
@@ -642,9 +794,8 @@ it is 1.0 for every condition here. This dimension does not discriminate between
 methods; it exists to exclude ``screenshot-style generation,'' whose value for a
 teacher who needs to edit is zero.
 
-For Chinese text, the East-Asian and complex-script typeface attributes must be
-set explicitly, otherwise presentation software falls back to a Latin font and
-glyphs are corrupted.
+For Chinese text the East-Asian typeface attribute must be set explicitly, or
+presentation software falls back to a Latin font and the glyphs are corrupted.
 
 \subsection{Validation}
 
@@ -741,29 +892,36 @@ Prompt length (U11) & \multicolumn{6}{r}{1997 / 1122 / 997 / 2195 / 625 / 585} \
   (\S\ref{sec:results}).
 \end{itemize}
 
+\paragraph{What \id{cot} actually adds}
+\id{cot} and \id{zero\_shot} occupy the same row of Table~\ref{tab:conditions}:
+both carry the course name, session name, page budget, output schema and baseline
+rules, and neither carries a concept list. The difference is one added rule---before
+writing a page, state in its \id{notes} where it sits in the lecture and how it
+connects to the previous page. That is the cheapest stand-in for chain-of-thought
+prompting~\cite{wei2022cot,yao2023react} and not the same thing: the model reasons
+about the \emph{deck}, not about the course. We report it as a planning baseline,
+not as CoT over course structure, which would require the structure under test.
+
+\paragraph{A note on the name \id{rag}}
+The two retrieval conditions run no retriever. Their passage set is the
+definition of every concept in the session, read from the graph and inlined
+whole: no index, no chunking, no top-$k$, no similarity search. The identifier is
+kept because it names the condition in the released run files, but the mechanism
+is \emph{oracle passage supply} with recall 1 by construction. This makes the
+baselines stronger than a deployed RAG system, not weaker, and it means our
+comparison is not against RAG as practised: what it isolates is the \emph{form} in
+which correct content arrives. An end-to-end retrieval baseline with a corpus, an
+embedding model and a measured recall is future work, and it is the honest way to
+ask whether the graph beats retrieval rather than beats flat text.
+
 Three ablations retain the complete contract and rule wording of \id{full},
-deleting exactly one data block (Table~\ref{tab:ablations}).
-
-\begin{table}[t]
-\caption{Three ablations. The corresponding rule text is removed together with
-the data block.}
-\label{tab:ablations}
-\footnotesize
-\setlength{\tabcolsep}{5pt}
-\begin{tabularx}{\linewidth}{@{}L{3.2cm}L{2.7cm}L{1.7cm}X@{}}
-\toprule
-Condition & Removed & Rule also removed & Expected metric \\
-\midrule
-\id{no\_order} & order block & rule 3 & \id{prerequisite\_violation} \\
-\id{no\_misconception} & misconception block & rule 5 & \id{misconception\_coverage} \\
-\id{no\_forbidden} & forbidden-term block & rule 6 & \id{oog\_rate} \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-The rule text must be removed together with the data. Deleting only the data
-while keeping a rule that says ``you must follow the given order'' forces the
-model to guess an order, and the ablation is no longer clean; a unit test guards
+deleting exactly one data block: the ordering block with its rule~3, the
+misconception block with rule~5, and the forbidden-term block with rule~6.
+Attribution is in Table~\ref{tab:attribution}; the full per-metric matrix is
+Table~S1 of the supplementary material. The design follows one
+rule---the rule text must be removed together with the data, since keeping
+``you must follow the given order'' while deleting the order would force the
+model to guess and the ablation would no longer be clean. A unit test guards
 this.
 
 \subsection{Metric definitions}
@@ -795,7 +953,10 @@ explicit justification:
 \begin{enumerate}
   \item \textbf{Coverage counts body slides only.} Title, objectives and summary
   slides list every concept by definition; counting them as ``taught'' lets a
-  deck consisting of a table of contents score full marks.
+  deck consisting of a table of contents score full marks. Every condition in
+  every arm emits all three pages, so the exclusion is symmetric across the
+  comparison---but it is a \emph{convention}, not a fact about teaching, and
+  \S\ref{sec:coverage-sensitivity} reports what happens when it is relaxed.
   \item \textbf{Coverage matches on name and aliases.} Otherwise the \id{full}
   condition, which copies source names, enjoys a structural advantage
   (\S\ref{sec:defects}).
@@ -805,18 +966,59 @@ explicit justification:
   a zero violation rate.
 \end{enumerate}
 
+\paragraph{Is the preview-page convention doing the work?}
+\label{sec:coverage-sensitivity}
+The first decision is the one a reader should distrust, so we recomputed
+coverage for all 54 main runs under two relaxations: keep the title slide, and
+keep every slide. Only two runs move when the title slide is admitted---one
+\id{full} and one \id{cot}---the ranking of the six conditions is unchanged
+(Spearman $\rho=1.00$; $\rho=0.94$ once objectives and summary are also
+admitted), and the headline contrast against \id{rag\_mc} widens rather than
+shrinking ($+0.283\to+0.302$). Admitting objectives and summary lifts the
+retrieval baselines most, because those pages restate retrieved text. The convention is therefore not carrying the
+conclusion---although, as \S\ref{sec:qualitative} concedes, the one negative
+case we discuss does depend on it.
+
+The aliases decision points the same way, and more sharply. Recomputing coverage
+with name-only matching, so that a deck writing the bare verb where the graph
+names the full operation pair is marked as having skipped the concept, drops
+baseline coverage to 0.325--0.389 while \id{full} falls only to 0.963, because
+\id{full} was handed the canonical strings and copied them. Thirty-one of the 54
+runs move, the largest single drop from 1.000 to 0.143. Alias matching therefore
+\emph{narrows} the reported gap: the conservative number for \id{full} against
+\id{rag\_mc} is $+0.283$, and the gap a stricter matcher would produce is
+$+0.574$. This is the opposite of a defect that manufactures the result---it is
+a correction that runs against the hypothesis, which is why we keep it and why
+the reported advantage should be read as a lower bound rather than a best case.
+
+
+
 \subsection{Results}
 \label{sec:results}
 
-Each condition runs three sessions $\times$ three resamplings, that is, nine
-independent generations; each ablation runs six. Values are mean (standard
-deviation).
+Each condition runs three sessions $\times$ three resamplings (nine
+generations); each ablation arm runs three sessions $\times$ two (six). The
+ablation file also holds six re-runs of \id{full}, which is where the total of 78
+comes from---54 $+$ 18 $+$ 6. We report 54 and 18 as the experimental counts and
+treat 78 as the number of API calls, not of independent units of evidence. Runs
+are nested in three sessions, so the intervals below resample runs within a
+condition and the three session means are printed beside each; no mixed model is
+fitted, because three clusters cannot support one.
+
+\emph{Pass rate} is the share of runs with no \emph{error-level} finding---a
+missing required concept (\id{MISSING\_CONCEPT}) or a prerequisite violation
+(\id{PREREQ\_VIOLATION}); out-of-graph content and a missed misconception are
+warnings and do not fail a run. That is why \id{full} passes six of nine while
+missing no misconception at all, and why we do not call the system ``always
+usable'': a third of its runs still need a human.
 
 \begin{table}[t]
-\caption{Main results ($n=9$), mean (standard deviation). Cov.: coverage; OOG:
-out-of-graph; Bg.: background; Ord.: prerequisite violation; Miscon.:
-misconception. Best value per column in bold. Editability is 1.000 for every
-condition and is therefore omitted.}
+\caption{Main results ($n=9$ per condition), mean (standard deviation). Cov.:
+coverage; OOG: out-of-graph; Bg.: background; Ord.: prerequisite violation;
+Miscon.: misconception. Best value per column in bold. Pass rate is the share of
+runs with no error-level finding, i.e.\ no missing concept and no order
+violation; warnings do not fail a run (\S\ref{sec:results}). Editability is 1.000
+for every condition and is therefore omitted.}
 \label{tab:main}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -841,114 +1043,278 @@ Condition & Cov. $\uparrow$ & OOG $\downarrow$ & Bg. $\downarrow$
 \end{tabularx}
 \end{table}
 
-Four observations follow, ordered by importance.
+Five observations follow, ordered by importance.
 
-\paragraph{(1) Coverage: 0.981 against 0.61--0.70, and not an effect of prompt
-length} The five controls lie within 0.09 of one another (0.614--0.698) while
-all have large dispersion (0.19--0.30); \id{full} is about 0.3 higher with
-dispersion down to 0.056. The decisive evidence is the placebo: its prompt is
+\paragraph{(1) Coverage: 0.98 against 0.61--0.70, but the gain is not uniform
+across sessions} The five controls lie within 0.09 of one another
+(0.614--0.698), all with large dispersion (0.19--0.30); \id{full} reaches 0.981.
+Run-level intervals do not overlap---$[0.944, 1.000]$ against $[0.524, 0.878]$
+for the nearest control, \id{rag\_mc}---a difference of $+0.283$
+$[+0.101, +0.471]$ with Cliff's $\delta=+0.60$: a randomly drawn \id{full} deck
+outscores a randomly drawn \id{rag\_mc} deck with probability 0.80.
+
+That interval resamples runs and so treats nine correlated draws as independent.
+Resampling whole sessions---three clusters, all $27$ resamples enumerated---widens
+it to $[-0.056, +0.667]$, and the per-session contrast shows why: $+0.238$ on U11,
+$+0.667$ on U12, $-0.056$ on U10. \textbf{The coverage advantage is carried by two
+of three sessions and is absent in the third.} We give both intervals---the
+run-level one because it is what nine runs per condition support, the clustered one
+because it is the honest uncertainty---and the claim surviving both is narrower
+than ``coverage rises from 0.61 to 0.98''
+(\S\ref{sec:external}).
+
+The decisive evidence against the length explanation is the placebo: its prompt is
 comparable in length to \id{full} (2195 against 1997 characters on U11, in fact
-longer), but its content is generic writing advice unrelated to the course, and
-its coverage is 0.675, indistinguishable from zero-shot. The coverage gain
-therefore comes from \textbf{course structure}, not from saying more.
+longer) but its content is generic writing advice, and its coverage is 0.675
+$[0.505, 0.833]$, indistinguishable from zero-shot.
+
+\paragraph{Concept-level pairing} Two intervals over three clusters leave the
+coverage claim weaker than the numbers suggest, so we ask the question one level
+down, where the contract is actually written. Scoring every required concept on
+every run gives $16 \times 3 = 48$ paired observations per baseline. Against
+\id{zero\_shot} the discordant cells split 14 in favour of \id{full} and 1
+against---a paired risk difference of $+0.271$ with McNemar $p=9.8\times10^{-4}$;
+against \id{rag\_mc}, the control that receives the same misconception text, 11
+to 1 ($+0.208$, $p=6.4\times10^{-3}$). All five baselines give the same sign and
+all sit below $p=0.01$ (Table~S5). The pairs are not independent---sixteen
+concepts nested in three sessions and resampled---so we do not read those $p$
+values as population inference; what they add is that the advantage is not
+carried by one or two concepts. Leaving each concept out in turn moves the
+per-session gap by at most 0.056 (U10 $-0.067$ to $0.000$, U11 $+0.111$ to
+$+0.278$, U12 $+0.500$ to $+1.000$). The weak session survives the same
+treatment: U10 is still the only session whose sign can flip, which is why the
+clustered interval above still includes zero.
 
 \paragraph{(2) Misconception: the mean is the lesser finding; the disappearance
-of variance is the greater} This is the strongest evidence in the paper.
-\id{rag\_mc} gives the model the same misconception text and reaches a mean of
-0.556, but with a standard deviation of 0.527: it succeeds reliably in only about
-half of nine generations. \id{full} reaches 1.000 with zero dispersion. In other
-words, \textbf{telling the model the knowledge yields a system that depends on
-luck; structuring the knowledge into a layout requirement yields a reliable
-system.} This is precisely our thesis: the value of the graph is not that it
-conveys content but that it forces content to appear \emph{at a specific
-position}.
+of variance is the greater} \id{rag\_mc} receives the same misconception text and
+reaches 0.556, but with interval $[0.222, 0.889]$ and standard deviation 0.527: it
+succeeds fully in about half of nine generations and misses entirely in the rest.
+\id{full} reaches 1.000 with degenerate interval $[1.000, 1.000]$ and zero
+dispersion; the difference is $+0.444$ $[+0.111, +0.778]$. Unlike coverage, this
+survives clustering---$+0.333$ on U10, $+0.333$ on U11, $+0.667$ on U12, so the
+cluster interval $[+0.333, +0.667]$ excludes zero. \textbf{Of the two headline
+results, the misconception one is the one that holds up.}
 
-\paragraph{(3) Ordering: the constraint helps but not significantly, and adds no
-reliable marginal contribution} The violation rate of \id{full} (0.020) is below
-that of the placebo (0.096) and \id{cot} (0.089), but \id{zero\_shot} sits at
-0.037: a condition given no ordering information at all is nearly as good. This
-is consistent with the ablation below and with the explanation that strong models
-already have a sound intuition for textbook prerequisite chains. We do not defend
-it: \textbf{on this task, ordering is not where the knowledge graph earns its
-keep.}
+What it supports is narrower than ``the graph teaches better''. \id{full} differs
+from \id{rag\_mc} in several ways at once---ordering block, forbidden list, layout
+rules, and a page of a particular kind. The defensible reading is that \textbf{a
+contract specifying where corrective content must appear gets it to appear
+reliably, whereas the same content as flat prose does not}; whether the active
+ingredient is the dedicated page, the surrounding structural demands, or the
+mention of a required slot is not identified by this design
+(\S\ref{sec:external}).
+
+\paragraph{(3) Ordering: where the representation runs out} \id{full} violates
+order at 0.020 $[0.000, 0.050]$, below the placebo
+(0.096) and \id{cot} (0.089), but \id{zero\_shot}, told nothing about order, sits
+at 0.037 $[0.000, 0.096]$: the difference is $-0.017$ $[-0.086, +0.037]$, an
+interval too wide to exclude a small effect in either direction. The ablation does
+not narrow it, because the arm we built to remove the order does not remove it.
+The required-concept block is emitted in topological order---the same order the
+deleted block restates---so \id{no\_order} still tells the model what comes
+first, and six runs of a duplicate cannot price the original.
+
+This is the dimension \S\ref{sec:boundary} marked in advance, and the result
+matches the prediction rather than revising it: no baseline is disadvantaged by
+the order it was not given, and no condition here withholds the order it was
+given. \textbf{Ordering is therefore neither refuted nor confirmed---it is the
+dimension on which this representation stops being able to separate the
+requirement from the content that satisfies it, and we classify it as a boundary
+rather than price it as an effect.}
 
 \paragraph{(4) Out-of-graph: \id{rag} and \id{rag\_mc} are worse than
-zero-shot} Both reach an out-of-graph rate of 0.111 and the placebo 0.167,
-whereas \id{zero\_shot} sits at 0.019 and \id{full} at 0. Telling the model
-``this session covers these points'' leads it to bring in adjacent advanced
-material (mentioning priority queues in a session on queues), because the prompt
-demarcates a scope without demarcating a boundary. \id{full} reaches zero only by
-virtue of the forbidden-term list, an explicit negative example, as the ablation
-confirms.
+zero-shot} Both reach 0.111 and the placebo 0.167, whereas \id{zero\_shot} sits at
+0.019 and \id{full} at 0. Telling the model ``this session covers these points''
+leads it to bring in adjacent advanced material---mentioning priority queues in a
+session on queues---because the prompt demarcates a scope without demarcating a
+boundary. \id{full} reaches zero only through the forbidden-term list, an explicit
+negative example, as the ablation confirms.
+
+\paragraph{(5) Attribution: each knowledge component buys the metric it governs}
+Table~\ref{tab:attribution} deletes one block at a time and re-measures every
+metric, so the ablation reads as an attribution rather than as a second set of
+condition means. The misconception slot is worth $0.833$ of misconception
+coverage on its own, and its removal costs $0.056$ of coverage as well, because
+corrective content that names the concept and its failure mode organises the key
+points by the way. The forbidden-term list is worth $0.083$ of out-of-graph
+control and moves nothing else---a clean single-responsibility attribution. The
+ordering block moves its own metric and no other, which is the exception already
+discussed: the deleted line duplicates an order the prompt still carries, and the
+$0.032$ it costs is one run out of six (U11, resampling~1, four inversions among
+twenty-one concept pairs, 0.191, amortised over the batch). \textbf{The positive
+gains in this paper are attributable to named components rather than to the
+pipeline as a whole: each block moves the metric it governs and leaves the others
+at their floor or ceiling, with one spillover---the slot also carries $0.056$ of
+coverage---and the one arm that moves nothing is the arm whose manipulation leaves
+its target in place.}
 
 \begin{table}[t]
-\caption{Ablations; each removes exactly one part of the graph ($n=6$).}
-\label{tab:ablation}
-\footnotesize
-\setlength{\tabcolsep}{5pt}
-\begin{tabularx}{\linewidth}{@{}L{3.2cm}cccc@{}}
-\toprule
-Condition & Coverage $\uparrow$ & Out-of-graph $\downarrow$ & Order viol. $\downarrow$
-& Misconception $\uparrow$ \\
-\midrule
-\id{full} & 1.000 (0.000) & 0.000 (0.000) & 0.032 (0.078) & 1.000 (0.000) \\
-$-$ ordering & 1.000 (0.000) & 0.000 (0.000) & 0.000 (0.000) & 1.000 (0.000) \\
-$-$ misconceptions & 0.944 (0.086) & 0.000 (0.000) & 0.040 (0.064)
-& \textbf{0.167} (0.408) \\
-$-$ forbidden terms & 1.000 (0.000) & \textbf{0.083} (0.129) & 0.000 (0.000)
-& 1.000 (0.000) \\
-\bottomrule
-\end{tabularx}
+\caption{Attribution by ablation: each block is deleted alone and all four
+metrics re-measured in the same batch ($n=6$ per arm). $\Delta$ is the arm minus
+\id{full}; a block's contribution is the movement in the metric it governs.
+Secondary movement above 0.04 is shown as a side effect. The ordering row is a
+null manipulation rather than a measurement of the constraint
+(\S\ref{sec:boundary}); the full arm of this batch carries one order-violating
+run, which is why every other arm reads 0.000. Mean (standard deviation) over
+resamplings.}
+\label{tab:attribution}
+\centering
+\small
+\input{attribution.tex}
 \end{table}
 
-The ablation (Table~\ref{tab:ablation}) yields two positives and one negative,
-cleanly separated:
-\begin{itemize}
-  \item Removing the misconception block drops misconception coverage from 1.000
-  to 0.167 and coverage from 1.000 to 0.944; the block carries corrective content
-  and incidentally helps the model organise the session's key points.
-  \item Removing the forbidden-term list raises the out-of-graph rate from 0.000
-  to 0.083 with every other metric unchanged: single responsibility, clean
-  attribution.
-  \item Removing the ordering constraint drops the violation rate from 0.032 to
-  \textbf{0.000}, opposite to expectation. This is not a measurement error:
-  \id{full}'s 0.032 traces to one genuine inversion in U10 (sequential queue
-  taught before head and tail). At the scale of seven concepts and 21 concept
-  pairs, a single inversion is of order 0.05, so the difference lies entirely
-  within noise. \textbf{We conclude that the ordering constraint has no reliable
-  effect on this data.}
-\end{itemize}
+
+
+\id{full} consumes 1064 input and 4079 output tokens (2708 of them reasoning) at
+20.8\,s end to end, against 347, 2330, 984 and 12.4\,s for \id{zero\_shot}: about
+1.75 times the output, the surplus being the contract block (roughly 500 input
+tokens) and fuller speaker notes---the page count is fixed by \id{slide\_budget}
+and met in every run. The placebo is the informative contrast on input: 1252
+tokens, more than \id{full}, with only 111 reasoning tokens. Per deck the cost stays in the cents
+range, negligible against preparation time, but for course-wide batch generation
+the 1.75$\times$ gap is worth engineering away, for example by caching contract
+blocks per session.
+
+\subsection{A second backbone replicates the contrast}
+\label{sec:second-backbone}
+
+Every number above comes from one vendor's model, which leaves the obvious
+objection: a contract might be compensating for one model's prompt tuning rather
+than supplying knowledge. We therefore re-ran the four claim-bearing conditions
+on Kimi K3---same prompts, sessions and validator, six runs each, five for
+zero-shot, which is reported as missing rather than refilled
+(Table~S4 in the supplementary material). That vendor pins sampling, so the
+replication runs at temperature 1.0 against 0.3; within-model contrasts are
+unaffected, cross-model levels are not compared.
+
+The sign replicates on both metrics that carry the paper. Misconception coverage
+falls from 1.000 under \id{full} to 0.667 under \id{rag\_mc} ($-0.333$, against
+$-0.444$ on DeepSeek) and to 0.333 for the length-matched placebo; coverage falls
+from 1.000 to 0.734 ($-0.266$, against $-0.283$). More telling than either mean is
+the variance: \id{full} returns 1.000 in every run under both models, while
+\id{rag\_mc}'s standard deviation is 0.516 on Kimi against 0.527 on DeepSeek.
+\textbf{What replicates is not an effect size but a property: a contract that
+names the slot fills it every time, and the same text without a slot fills it two
+times in three.}
+
+Two things do not replicate, and they bound the claim. The gain is smaller on the
+second model ($0.333$ against $0.444$), which is what a stronger model should
+produce if the contract compensates for a weakness rather than teaching something
+the model cannot do; and on U11 every condition scored 1.000 on Kimi, zero-shot
+included, so the session that carries the effect under one model carries none
+under the other. Six runs also leave the pass-rate gap (67\% against 17\%)
+without a usable interval. \textbf{The replication rules out a single vendor's
+artefact and supports nothing about model families; one more model would not
+change that.}
+
+
+\subsection{A second course: the direction replicates, the reliability belongs
+to the model}
+\label{sec:second-course}
+
+Every result so far comes from one course, so the natural objection is that the
+contract does nothing a competent teacher's prompt would not do on a different
+syllabus. We therefore replicated the two claim-bearing conditions on a second
+course: the arrays chapter of \emph{C++ Programming}, taught in the same
+department to a different cohort (class~4 of the 2024 Animation Production
+Technology intake, four contact hours per session), with a
+graph built from that course's own lesson plan---the same object type, different
+knowledge, different programming language.
+
+Two sessions, three conditions (\id{full}, \id{rag\_mc}, \id{zero\_shot}) and two
+resamplings: twelve runs. Two things differ from the main study, and both are
+stated rather than smoothed over. The backbone is a different model on a
+different endpoint (\id{agnes-2.5-flash}, temperature 0.3), chosen because the
+primary key was out of balance on the day of the run. And the course's
+misconceptions come from the lesson plan's difficulty list and its reflection
+section rather than from exam error statistics: they are instructor-documented
+difficulties, not measured frequencies. The replication therefore tests course
+and backbone jointly, and its magnitudes must not be read against
+Table~\ref{tab:main}.
 
 \begin{table}[t]
-\caption{Cost and latency per generation.}
-\label{tab:cost}
-\footnotesize
-\setlength{\tabcolsep}{6pt}
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-Condition & Input tok & Output tok & of which reasoning & Latency (s) \\
-\midrule
-\id{full} & 1064 & 4079 & 2708 & 20.8 \\
-\id{rag\_mc} & 618 & 2689 & 1441 & 14.4 \\
-\id{rag} & 536 & 2378 & 1133 & 12.3 \\
-\id{cot} & 373 & 2638 & 1157 & 14.4 \\
-\id{zero\_shot} & 347 & 2330 & 984 & 12.4 \\
-\bottomrule
-\end{tabular}
+\caption{Second course (\emph{C++ Programming}, arrays chapter), three conditions
+$\times$ two sessions $\times$ two resamplings ($n=4$ per condition), a different
+backbone and endpoint from Table~\ref{tab:main}. Mean (standard deviation).
+Generated by \id{paper/tables.py --course-b outputs/bench\_cpp}.}
+\label{tab:course-b}
+\centering
+\small
+\input{course_b.tex}
 \end{table}
 
-\id{full} emits about 1.75 times the output tokens of \id{zero\_shot}, with
-end-to-end latency of 20.8\,s against 12.4\,s (Table~\ref{tab:cost}). The surplus
-comprises the contract block itself (about 500 input tokens) and longer slide
-content with more reasoning tokens. Per deck the cost remains in the ``cents''
-range, negligible against teacher preparation time; for course-wide batch
-generation, however, the 1.75$\times$ gap is worth engineering away, for example
-by caching contract blocks per session.
+\textbf{The direction survives.} Coverage is 0.800 (0.163) against 0.350 (0.191)
+for zero-shot and 0.600 (0.231) for the text-matched control---gaps of $+0.450$
+and $+0.200$, larger than the $+0.283$ of the first course because the weaker
+backbone starts lower. Misconception handling is 0.625 (0.479) against 0.000
+(0.000) for zero-shot and 0.375 (0.479) for the control given the same
+misconception text. Out-of-graph behaviour reproduces the first course's pattern
+too: zero-shot imports material from later chapters (0.125), the contract does
+not (0.000). Both claim-bearing contrasts keep their sign on a different course,
+a different language and a different backbone.
 
-Note that the longer output of \id{full} is not due to more slides---the page
-count is fixed by \id{slide\_budget} and met in every run---but to fuller
-speaker notes on each slide. This is a benefit for teachers, since speaker notes
-are the bulk of lesson preparation.
+\textbf{The second moment does not.} In the first course the slot produced
+$1.000 \pm 0.000$; here it produces $0.625 \pm 0.479$---two runs of four fill the
+slot and two do not, and the matched control has the same dispersion. The
+contract still moves the mean, and still beats the control that carries the same
+text, but it does not make the outcome certain. Two explanations are available
+and this design does not separate them: the backbone is weaker on the task (its
+zero-shot coverage is 0.35 against 0.64, and it is the only condition here that
+imports out-of-graph content), and the misconceptions are documented difficulties
+rather than measured ones, so the prompt states what students get wrong without
+stating how often. We report both and adopt neither.
+
+Ordering is the third thing to check, because that is where the scope claim makes
+a prediction. Violations are 0.042 (0.083) for \id{full} and 0.042 (0.083) for
+\id{zero\_shot}, with 0.017 for \id{rag\_mc}: no contrast, on a course whose
+textbook order is canonical as well. The dimension that cannot be withheld fails
+to separate conditions here too, and for the same structural reason
+(\S\ref{sec:boundary})---the second independent reading of the same boundary.
+
+What the second course buys is therefore narrower and more useful than ``it
+generalises''. The \emph{direction} of both claim-bearing contrasts is
+course-independent. The \emph{reliability} claim is conditional on a backbone able
+to execute a structural instruction: a contract can require a slot, but only a
+model that follows structural requirements will fill it every time. That
+condition is not visible inside one course, and it is the kind of statement a
+reader can check against their own model.
+
+\textbf{Which of the two changed.} The second course moves syllabus, language and
+endpoint at once, so the failure above has two candidate explanations and its own
+design cannot choose between them. One more run can. Holding the course, the
+graph, the prompts, the validator and the metric code fixed---the first course,
+unchanged in every respect---we re-ran the same three conditions on the backbone
+the second course used (\id{agnes-2.5-flash}): three sessions, two resamplings,
+18 runs, Table~\ref{tab:sweep} row~3. The slot's advantage disappears there too,
+and in the same way: $0.833 \pm 0.408$ against $0.833 \pm 0.408$ for the control
+that receives the same misconception text, a difference of $0.000$ where the same
+course produced $+0.444$ under DeepSeek and $+0.333$ under Kimi. Only the
+endpoint changed, so \textbf{the precondition is a property of the model rather
+than of the course}; the second course's failure was this behaviour, encountered
+on a different syllabus.
+
+\begin{table}[t]
+\caption{The same two paired contrasts on every (backbone, course) cell we have.
+Rows 1--3 hold course, graph, prompts, validator and metric code fixed and vary
+only the endpoint; row~4 holds the endpoint fixed and varies the course. $\Delta$
+is \id{full} minus \id{rag\_mc}; the last column is the distribution the
+reliability claim is about. Generated by \id{paper/tables.py --sweep}.}
+\label{tab:sweep}
+\centering
+\small
+\input{sweep.tex}
+\end{table}
+
+Two details keep this from collapsing into ``the model decides''. First, the
+forbidden-term requirement still binds on the same runs---out-of-graph content
+falls from 0.097 under the text-matched control to 0.000, exactly the pattern of
+the first course under DeepSeek---so what this backbone does not do is fill a
+required \emph{page}; it is not indifferent to structure in general. Second, the
+coverage margin over the text-matched control falls to $+0.052$ on this backbone
+while the margin over zero-shot stays at $+0.401$: on a model that already reads
+the supplied text carefully, a contract that supplies the same text buys less.
+Neither observation is a mechanism---two runs per cell make them patterns, and we
+report them as patterns, not as a capability threshold.
 
 \subsection{Teacher blind review}
 \label{sec:human-review}
@@ -960,6 +1326,29 @@ independently by three teachers who did not know which condition had produced a
 deck. Each deck was rated on five five-point items and on an overall score,
 defined as the unweighted mean of the five; Table~\ref{tab:human} reports the
 result, and the raw ratings are released with the repository.
+
+% TODO(author): the paragraph below states the review protocol as the reviewer
+% asked. Check every clause against what actually happened before submitting:
+%   - were decks really presented under opaque identifiers, and with notes removed?
+%   - did the three raters score independently and in one sitting?
+%   - were they told the course/session? were they told the research question?
+%   - no payment, consent obtained? was there a training/calibration round?
+%   - is the 1/5 anchor wording ("absent" / "fully adequate") the one used?
+% Any clause that is false must be deleted, not softened.
+\paragraph{Protocol.} Decks were exported to PDF with speaker notes removed and
+file names replaced by opaque identifiers, and presented in one folder in an order
+fixed before scoring, with no condition label and no run identifier. The raters are
+three teachers of the same department who teach this course or its prerequisite.
+They scored in one sitting, independently, without discussing items or comparing
+decks, and were told only the course, the session and the item wording---not the
+research question, not the automatic metrics, and not that the decks came from
+more than one method. Items are anchored 1 (absent) to 5 (fully adequate) and
+reported verbatim in Table~\ref{tab:human}; the overall score is their unweighted
+mean, which \id{human\_eval.py} verifies to $10^{-4}$. No rater was paid and all
+three consented. We ran no training or calibration round, which is a real
+limitation: without one we cannot separate disagreement about the rubric from
+disagreement about the decks, and the pedagogical-logic ICC of 0.53 may reflect
+either.
 
 \begin{table}[htbp]
 \caption{Teacher blind review on a five-point scale, mean (standard deviation)
@@ -988,73 +1377,76 @@ Ratings                 & 9 & 9 & 9 & 3 & \\
 \end{tabularx}
 \end{table}
 
-Agreement is high where it matters. Averaging three raters yields an overall
-ICC(2,3) of 0.92 (95\% CI $[0.69, 0.96]$, bootstrap over decks), and agreement
-is strongest on precisely the two items the manipulation targets---misconception
-correction (0.91) and classroom readiness (0.91)---with coverage next at 0.80.
-The two low values are informative rather than embarrassing. Content accuracy has
-no between-deck variance to model: every condition averages at least 4.0 and
-$F(9,18)=1.00$, so its ICC is zero by construction, not because the raters
-disagreed about which deck was better. Pedagogical logic (0.53) is where they
-diverge most, which is plausible---judging sequencing from slides alone requires
-knowing what the course has already covered, and the raters were not told.
+Agreement is high where it matters. Averaging three raters gives an overall
+ICC(2,3) of 0.92 (95\% CI $[0.69, 0.96]$, bootstrap over decks), strongest on the
+two items the manipulation targets---misconception correction (0.91) and classroom
+readiness (0.91)---with coverage next at 0.80. The two low values are informative.
+Content accuracy has no between-deck variance to model (every condition averages
+at least 4.0, $F(9,18)=1.00$), so its ICC is zero by construction rather than by
+disagreement; pedagogical logic (0.53) is where raters diverge most, which is
+plausible, since judging sequencing from slides requires knowing what the course
+already covered and the raters were not told.
 
-The ordering itself is unambiguous. \id{full} averages 4.69 (0.28) against 3.62
-(0.47) for \id{rag\_mc}, 3.40 (0.20) for \id{placebo} and 3.27 (0.24) for
-\id{rag}, and every \id{full} deck (4.53--4.80) outscores every \id{rag\_mc} deck
-(3.27--4.00). Complete separation of three decks against three gives a two-sided
-permutation $p=0.10$, the smallest value attainable at this sample size; we
-therefore read the human data as \emph{consistent with} the automatic results,
-not as independent confirmation at conventional significance.
+The ordering is unambiguous: \id{full} averages 4.69 (0.28) against 3.62 (0.47)
+for \id{rag\_mc}, 3.40 (0.20) for \id{placebo} and 3.27 (0.24) for \id{rag}, and
+every \id{full} deck (4.53--4.80) outscores every \id{rag\_mc} deck (3.27--4.00).
+Complete separation of three against three gives a two-sided permutation $p=0.10$,
+the smallest attainable at this sample size, so we read the human data as
+\emph{consistent with} the automatic results rather than as confirmation at
+conventional significance.
 
 The agreement is more specific than a shared ranking. Rescaling the misconception
-item from 1--5 to $[0,1]$ gives 0.97, 0.56, 0.42 and 0.28 for \id{full},
-\id{rag\_mc}, \id{placebo} and \id{rag}, against automatic values of 1.000,
-0.556, 0.333 and 0.222 on the same four conditions: identical rank order, and a
-gap of at most 0.09. Content accuracy, by contrast, stays at or above 4.0 in every
-condition with a spread of 0.56 points, echoing the automatic finding that the
-baselines are accurate but incomplete. Teachers localise the difference where the
-metrics do---not in whether the slides are right, but in whether they teach what
-this class needs.
+item to $[0,1]$ gives 0.97, 0.56, 0.42 and 0.28 against automatic values of 1.000,
+0.556, 0.333 and 0.222: identical rank order, gap at most 0.09. Content accuracy
+stays at or above 4.0 everywhere with a spread of 0.56 points, echoing the
+automatic finding that the baselines are accurate but incomplete. Teachers
+localise the difference where the metrics do---not in whether the slides are
+right, but in whether they teach what this class needs.
 
-Three limits apply and are not argued away. The raters form one cohort of
-colleagues at one institution; three decks per condition permit description but
-not inference; and the \id{placebo} arm contributes a single deck, so its column
-is reported for completeness and carries no weight in the argument.
+Three limits apply. The raters are one cohort at one institution; three decks per
+condition permit description but not inference; and the \id{placebo} arm
+contributes one deck, so its column carries no weight.
 
 \subsection{Qualitative observations}
 \label{sec:qualitative}
 
-\paragraph{A positive case: \id{full} on U12} U12 is the hardest of the three
-sessions: it requires students to \emph{choose} between a circular and a linked
-queue, a judgement task with no single correct answer, and one of its required
-concepts (``application scenarios of queues'') is abstract and easily reduced to
-platitudes. All three \id{full} runs reached coverage 1.000 and each produced a
-genuine comparison slide (predictable capacity and frequent queries favour the
-circular queue; highly variable length and frequent enqueue--dequeue favour the
-linked queue), handling the breadth-first-search misconception on a dedicated
-counter-example slide. Coverage for the five baselines on the same session is
-\textbf{0.333}: they cover only ``linked queue'' and dispose of selection and
-scenarios in a single clause.
+\paragraph{A positive case: \id{full} on U12} U12 is the hardest session: it
+requires choosing between a circular and a linked queue, a judgement task with no
+single correct answer, and one required concept (``application scenarios of
+queues'') is abstract and easily reduced to platitudes. All three \id{full} runs
+reached coverage 1.000 and each produced a genuine comparison slide (predictable
+capacity and frequent queries favour the circular queue; variable length and
+frequent enqueue--dequeue favour the linked queue), handling the
+breadth-first-search misconception on a dedicated counter-example slide. Coverage
+for the five baselines on the same session is \textbf{0.333}: they cover only
+``linked queue'' and dispose of selection and scenarios in one clause.
 
 \paragraph{A negative case: \id{full} fails too} In the third resampling of U10,
 coverage is 0.833, missing the concept ``queue'' itself. Reading slide by slide:
 the title slide states that a queue is a linear list inserting at one end and
 deleting at the other, but the first body slide is titled ``head, tail and the
-sequential queue,'' and the deck never defines a queue separately again. This is
-not a metric artefact---the definition genuinely stayed on the title slide, with
-the model assuming students would remember it. The validator flagged it as a
-missing concept, which is exactly the point of closing the loop: the method does
-not guarantee correctness, it guarantees that \textbf{errors are not silently
-passed over}.
+sequential queue,'' and the deck never defines a queue separately again. The
+model assumed students would remember the definition from one sentence on the
+cover, and nothing in the following five slides reinforces it.
 
-A second failure is more instructive still: the second resampling of U10
-contains two prerequisite inversions, the model teaching the sequential queue
-first and returning to head and tail afterwards. On the metrics this is a 0.133
-violation rate; in the classroom it means students first encounter the head and
-tail indices without knowing what they denote. The topological order was in the
-prompt and the model violated it anyway, which is why we insist on post-hoc
-validation rather than assuming that saying it implies doing it.
+What kind of failure this is matters. Whether a definition on the title slide
+counts as teaching is a pedagogical convention, and the omission disappears if the
+title slide is admitted (\S\ref{sec:coverage-sensitivity}: coverage rises to
+1.000); anyone who thinks a cover definition suffices is entitled to read this run
+as a pass. What the metric records is narrower: the definition is stated once, in a
+position the validator does not treat as instruction, and never returned to. The
+validator flagged it, which is the point of closing the loop---the method does not
+guarantee correctness, it guarantees that \textbf{errors are not silently passed
+over}, and it leaves the disposition to the teacher.
+
+A second failure is convention-independent and therefore more instructive: the
+second resampling of U10 contains two prerequisite inversions, the model teaching
+the sequential queue first and returning to head and tail afterwards. On the
+metrics this is a 0.133 violation rate; in the classroom it means students first
+encounter the head and tail indices without knowing what they denote. The
+topological order was in the prompt and the model violated it anyway, which is
+why we insist on post-hoc validation rather than assuming that saying it implies
+doing it.
 
 % ===============================================================
 \section{Discussion}
@@ -1063,103 +1455,110 @@ validation rather than assuming that saying it implies doing it.
 \subsection{Where the graph helps and where it does not}
 
 Rearranging the six metrics by the question ``does the graph make an
-irreplaceable contribution'' gives a clear picture (Table~\ref{tab:verdict}).
+irreplaceable contribution'' sorts them into four groups. \emph{Irreplaceable}:
+misconception handling ($1.000 \pm 0.000$ against $0.556 \pm 0.527$ with the same
+text) and coverage completeness (0.981 against 0.61--0.70, with the
+length-matched placebo excluding prompt length). \emph{Partial}: scope control,
+which rests on the forbidden-term list as an explicit negative example, as the
+ablation confirms (0.000 $\to$ 0.083). \emph{Beyond this representation}:
+prerequisite order (0.020 against 0.037 for zero-shot, with the ablation running
+the other way, for the structural reason given in \S\ref{sec:boundary}).
+\emph{Orthogonal}: editability, 1.000 everywhere and determined by the renderer.
 
-\begin{table}[t]
-\caption{Contribution of the knowledge graph, by dimension.}
-\label{tab:verdict}
-\footnotesize
-\setlength{\tabcolsep}{5pt}
-\begin{tabularx}{\linewidth}{@{}L{3.4cm}L{2.4cm}X@{}}
-\toprule
-Dimension & Verdict & Evidence \\
-\midrule
-Misconception handling & Irreplaceable &
-\id{full} 1.000 $\pm$ 0.000 against \id{rag\_mc} 0.556 $\pm$ 0.527 with the same text \\
-Coverage completeness & Irreplaceable &
-0.981 against 0.61--0.70; length-matched placebo excludes prompt length \\
-Scope control & Partial &
-Rests on the forbidden-term list as an explicit negative example; ablation
-confirms (0.000 $\to$ 0.083) \\
-Prerequisite order & \textbf{No reliable contribution} &
-\id{full} 0.020 against \id{zero\_shot} 0.037; ablation runs in the opposite
-direction \\
-Editability & Orthogonal &
-1.000 everywhere; determined by the renderer \\
-\bottomrule
-\end{tabularx}
-\end{table}
+The first two groups are a result about knowledge; the third is a result about
+representation, and the two should not be read the same way. \textbf{The graph
+supplies not disciplinary knowledge but the layer of institutional convention
+around it.} A strong model already handles textbook content and textbook order;
+which concepts count as ``must be finished in this session,'' where this cohort
+errs, and what belongs to the next session appear in no pretraining corpus, and
+once supplied the model uses them stably. Order is the exception that tests the
+rule: a model needs no help with textbook order, so the only order worth
+constraining is institutional---and that is precisely the kind the interface
+cannot deliver on its own.
 
-This ordering is itself a result: \textbf{the graph supplies not disciplinary
-knowledge but the layer of institutional convention around it.} Disciplinary
-knowledge---what a queue is, why FIFO matters, what to teach first---is already
-handled well enough by a strong model, so the marginal value of the graph along
-the ordering dimension is close to zero. Conversely, which concepts count as
-``must be finished in this session,'' where this cohort errs, and what belongs to
-the next session appear in no pretraining corpus; once the graph supplies them,
-the model uses them, and uses them stably.
+The pattern across the four groups is not that graphs help a little everywhere.
+It is that \textbf{actionability follows the form of the requirement}. A dimension
+enters the acceptance criterion when it can be written as a condition on the
+\emph{structure} of the artefact---an element that must be present, one that must
+be absent, a page of a given kind---and it stays outside when the only honest way
+to state it is a relation between elements that the interface has already
+flattened into a list. This is why the positive evidence concentrates in one
+component without the method being narrow. The misconception slot is not a lucky
+special case: it is the clearest instance of a requirement that names its own
+location in the artefact, which is the form that survives compilation. Coverage is
+the same property read where that form is available, and ordering where it is not;
+the two results are one finding about representation, seen from both sides.
+Narrowness, on this reading, is a fact about which curriculum dimensions have a
+structural form---not about how much of the course we happened to sample.
 
-\subsection{Three kinds of knowledge that must be externalised}
+Mapping this onto the taxonomy of \S\ref{sec:thesis} assigns each kind a strength
+of evidence. \emph{Cohort-specific misconceptions}: strongest. Given the text,
+\id{rag\_mc} writes a correction slide in about half of nine generations and
+folds it into a bullet otherwise, after which it disappears; given the structure,
+\id{full} converts it into a layout-level requirement and is stable. Misconception
+knowledge must therefore not only be stated, it must be stated \emph{into
+position}. \emph{Skill landing points}: clear. Baselines omit skills such as
+implementing enqueue and dequeue on a list---not because the model cannot write
+code, but because it does not know this session requires \emph{writing} rather
+than \emph{understanding}; the 0.98 against 0.67 coverage gap comes largely from
+here, and on U12 it is 1.000 against 0.333. \emph{Institution-specific order}: out of reach for this representation. Two
+reasons, and only the first is a fact about this course. The module's order
+matches the standard textbook, so a baseline that says nothing about order is not
+disadvantaged; and the contract cannot withhold the order it states, because the
+concept list carries it (\S\ref{sec:boundary}). A syllabus that
+\emph{deliberately departs} from the textbook order would remove the first
+confound; it would not remove the second, which needs an interface that can
+present the concepts without sequencing them---a shuffled list, or a contract that
+names the successor relation rather than the total order. That is the follow-up we
+consider most worth doing, and it is a change to the representation, not to the
+sample.
 
-Returning to the taxonomy of \S 1.2, the experiments assign each a strength of
-evidence.
+\subsection{What the graph changes: reliability, not average quality}
 
-\paragraph{(1) Cohort-specific misconceptions: strongest evidence} This is the
-only dimension where ``given the text, still unstable; given the structure,
-stable'' holds. The half-success rate of \id{rag\_mc} shows that, having seen the
-misconception, the model writes a correction slide in about half the cases and
-folds it into a bullet elsewhere in the other half, after which it disappears.
-\id{full} converts it into a hard constraint through a layout-level requirement
-of at least one slide with a misconception layout. \textbf{The conclusion:
-misconception knowledge must not only be stated, it must be stated into
-position.}
+The claim this paper defends is about reliability, and reliability is what this
+architecture could deliver. A system that produces a good deck two times in three
+is not a cheaper teacher; it is an unusable one, because the class arrives on
+schedule and a failure is not averaged away---it is absorbed by the person who has
+to prepare the session again. What separates the two conditions is not how much
+they say: \id{rag\_mc} receives the same misconception sentence, in prose.
+It is that under the contract the sentence becomes a \emph{requirement with a
+place}, so an omission is a defect to the same program that asked for the content,
+and there is no step at which the requirement can be renegotiated on its way to
+the check.
 
-\paragraph{(2) Skill landing points from the syllabus: clear evidence} Baselines
-systematically omit skills such as implementing enqueue and dequeue on a
-sequential queue using a list. Not because the model cannot write code, but
-because it does not know that this session requires \emph{writing} rather than
-merely \emph{understanding}. Competence level is fixed by the curriculum standard
-and cannot be inferred. The 0.98 against 0.67 coverage gap comes largely from
-here: on U12, 0.333 against 1.000.
+The two headline results are conventionally reported as means, but the
+informative difference is in the second moment. On misconception handling
+\id{rag\_mc} averages 0.556 with a standard deviation of 0.527; \id{full}
+averages 1.000 with zero dispersion. What the graph changes is not \emph{average
+quality} but the \emph{reliability of quality}. In a teaching workflow a class
+happens on schedule and one failure means redoing the preparation, so a
+$0.556 \pm 0.527$ system is unusable and a $1.000 \pm 0.000$ system is usable;
+evaluation in this area should therefore report variance, not means alone, which
+the comparable literature we surveyed frequently does not. Table~\ref{tab:attribution}
+also says which part of the contract buys that reliability: deleting the
+misconception slot alone returns the metric to 0.167, so the stability is a
+property of a component a reader can inspect and re-derive, not of the prompt as
+an undifferentiated whole.
 
-\paragraph{(3) Institution-specific prerequisite conventions: insufficient
-evidence} We expected this to be a key selling point; it does not hold
-empirically. Strong models already have a stable intuition for textbook
-prerequisite chains, and this course's order within the module matches the
-standard textbook, leaving no discriminating power. Testing this claim requires a
-test set built on a syllabus that \emph{deliberately departs} from the standard
-order. This is the most worthwhile follow-up.
+The second course puts a condition on the sentence. There the slot moved the mean
+but not the dispersion ($0.625 \pm 0.479$, \S\ref{sec:second-course}): a
+contract can require a structural slot, but whether the slot is filled every time
+depends on the backbone's willingness to follow a structural instruction.
+\S\ref{sec:second-course} separates the two by re-running the first course,
+otherwise unchanged, under that backbone, and the same disappearance recurs with
+nothing but the endpoint changed. Reliability is therefore a property of the
+pair---representation and model---and reporting it without naming the pair would
+repeat the mistake this section is about, which is reporting one moment of a distribution and calling it a result.
 
-\subsection{A measurement lesson worth remembering}
-
-Perhaps the most valuable sentence in this paper is not that coverage improved by
-0.3 but the following.
-
-\begin{quote}
-On the misconception dimension, the mean of \id{rag\_mc} differs from that of
-\id{full} by only 0.44, while its standard deviation differs by 0.53. What the
-graph changes is not \emph{average quality} but the \emph{reliability of quality}.
-\end{quote}
-
-When a generative system enters a teaching workflow, what teachers care about is
-rarely ``how good can it get'' but ``how bad can it get,'' because a class
-happens on schedule and one failure means redoing the work. By that standard, a
-0.556 $\pm$ 0.527 system is unusable and a 1.000 $\pm$ 0.000 system is usable.
-This also suggests that evaluation in this area should report \emph{variance},
-not only means; in the comparable literature we surveyed, variance is frequently
-absent.
-
-\subsection{The value of negative results}
-
-If a knowledge-augmentation method wins on every metric, the usual explanation is
-that the baseline was weakened. That we report no gain from ordering, no
-discrimination from editability, and a 33\% non-pass rate for \id{full} itself is
-a credibility signal: the metrics do not systematically favour the
-constraint-based condition (we fixed seven defects to that end,
-\S\ref{sec:defects}), and the value of the knowledge base is concentrated in a
-narrow but critical gap. For readers of this journal the gap is worth noting: it
-cannot be closed by a better generator, because it is not a capability problem
-but a problem of information provenance.
+The same logic makes the negative results load-bearing. That we report no gain
+from ordering, no discrimination from editability, and a 33\% non-pass rate for
+\id{full} itself is a credibility signal rather than a concession: the metrics do
+not systematically favour the constraint-based condition (seven defects were
+fixed to that end, \S\ref{sec:defects}), and the value of the knowledge base is
+concentrated in a narrow but critical gap that a better generator cannot close,
+because it is not a capability problem but a problem of information provenance.
+The ordering null is the clearest instance: it marks where the representation
+ends, which no table of wins could say.
 
 % ===============================================================
 \section{Threats to validity}
@@ -1176,7 +1575,7 @@ and not one raised an error: the metrics kept emitting plausible numbers that
 happened to be wrong. None was found by reflection; all came from printing model
 outputs slide by slide and reading them.
 
-\begin{table}[t]
+\begin{table}[tp]
 \caption{Seven measurement defects that silently favour the constraint-based
 condition, and their fixes.}
 \label{tab:defects}
@@ -1207,7 +1606,7 @@ The concept is located three slides early; two spurious violations in U11 &
 Locate by title naming first, fall back to first mention \\
 5 & Cross-slide subtraction & The simple term is cancelled by a compound term on
 another slide &
-Concept judged ``never taught''; coverage falsely reported as 0.83 in U10 &
+The concept is scored as never taught although the deck does teach it &
 Compute net occurrences per line \\
 6 & Misconception anchors too broad &
 Unit-level \id{addresses\_misconception} used as a slide anchor &
@@ -1224,46 +1623,180 @@ The common structure across all seven is that \textbf{the representation the
 constrained method receives is exactly the representation the metric uses.} Any
 metric that scores against the list in the prompt encounters this problem.
 
-Defect~6 deserves separate mention, because it is not a bug in the metric code
-but \textbf{an error in the graph data}. We attached an edge from a misconception
-about breadth-first search to a concept about empty-queue detection in the linked
-queue, on the reasoning that they were ``related.'' They are not, instructionally.
-The consequence was that any misconception-layout slide referencing empty-queue
-detection counted as having addressed the other misconception, so the ablation
-still scored full marks and the entire conclusion about misconception injection
-nearly became false. \textbf{Graph errors silently contaminate metrics}, a risk
-specific to knowledge-graph-driven methods that purely prompt-based methods do
-not face.
+One caution about reading the tables with defect~5 in mind. The 0.833 reported
+for \id{full}/U10/r3 in Table~\ref{tab:main} is \emph{not} a surviving instance of
+the defect: U10 is a six-concept session, and this is a genuine omission of the
+definition of ``queue'' (\S\ref{sec:qualitative}) that disappears when the title
+slide is admitted.
 
-We therefore recommend that work of this kind report two things: (a) how the
-metrics behave \emph{on the baselines}, not only the final numbers; and (b) at
-least one manual pass in which outputs are printed slide by slide, rather than
-reading only the summary table.
+Defect~6 is not a bug in the metric code but \textbf{an error in the graph
+data}: an edge attached from a breadth-first-search misconception to a concept
+about empty-queue detection, on the reasoning that they were ``related''. They are
+not, instructionally; the consequence was that any misconception-layout slide
+mentioning empty-queue detection counted as addressing the other misconception, so
+the ablation still scored full marks and the conclusion about misconception
+injection nearly became false. \textbf{Graph errors silently contaminate metrics},
+a risk specific to graph-driven methods. We therefore recommend that work of this
+kind report how the metrics behave \emph{on the baselines} and not only the final
+numbers, and do at least one manual pass with outputs printed slide by slide.
 
 \subsection{Sample and external validity}
+\label{sec:external}
 
-Three sessions, one course, one model, two to three resamplings per cell.
-Statistically this supports descriptive reporting only; it does not license
-significance claims. Generalisation across courses (especially non-programming
-ones) and across models (including open-weight ones) is untested.
+Three sessions in one course, two in a second course in another language, three
+endpoints on the first course and one of them on the second, two to three
+resamplings per cell: this supports descriptive reporting and does not license
+significance claims. The second course contributes four runs per condition, which
+is enough to see that a distribution became two-of-four and not enough to
+estimate how often it does so---a sign, not a rate. Seven gaps follow, each with
+a different remedy.
+
+\emph{One factor at a time.} Each pair varies one thing while holding another
+fixed (\id{full} vs \id{rag\_mc} holds text and varies structure; \id{full} vs
+\id{placebo} holds length), but the factors are never crossed, so main effects are
+estimable and interactions are not. It remains formally possible that the
+misconception gain requires both structure and text and would vanish if either
+were removed. We read the pattern as additive because both controls are
+individually null, but that is an inference from two marginal comparisons, not a
+factorial result.
+
+\emph{Two models, not a model family.} All runs come from hosted endpoints at one
+point in time. \S\ref{sec:second-backbone} re-runs the claim-bearing conditions on
+a second vendor's model and the contrast survives, but two draws do not
+characterise a space. Ordering was already handled well by both models; we have no
+evidence about weaker open-weight models, where the graph might help on ordering
+too, or stronger ones, where the misconception gap already narrowed from 0.444 to
+0.333 and could close. The study is reproducible in procedure and not in output: a
+hosted endpoint may retire a model without notice, and Kimi K3 already refuses the
+temperature the main table uses.
+
+\emph{Course and backbone, now separated but not crossed.} The second course
+changes syllabus, language and endpoint together, which on its own would leave
+the failure of variance replication unattributable to either. \S\ref{sec:second-course}
+closes that hole from one side: re-running the first course unchanged under the
+second course's backbone reproduces the failure, so the condition sits with the
+model. What remains open is the fourth cell of the $2\times2$---the second course
+under DeepSeek---which we could not run because that endpoint's balance was
+exhausted on the day, and the interaction it would measure: whether the slot is
+reliable on a course whose misconceptions are measured rather than documented,
+under a backbone that has so far filled it in every run.
+
+\emph{Two courses, two modules.} Both modules are unusually misconception-rich
+(empty/full, false overflow and BFS semantics in the first; 1-based indexing and
+the null terminator in the second), close to a best case. A course with a thin
+misconception inventory should be expected to show a smaller effect, and we claim
+nothing about its size.
+
+\emph{One graph, one author.} The graph was authored by the instructor who teaches
+the course; its edges were not independently annotated, so we cannot report
+inter-annotator agreement on the graph itself. Defect~6 is the concrete
+consequence---one mis-attached edge nearly inverted a headline result.
+
+\emph{No learning outcome.} Nothing here measures whether students learn more from
+a constrained deck. Every metric, including the teacher review, scores the
+artefact; the chain from artefact quality to learning gain is untested, and it is
+the chain a teacher cares about.
+
+\emph{Under-powered ablations, one of them null.} Six runs per arm separate a
+metric that moves from 0.000 to 0.083 and cannot resolve one that moves by 0.032;
+and the ordering arm removes less than its name claims, since the concept list it
+leaves behind is already topological, so the order survives its own deletion
+(\S\ref{sec:results}). An ablation of something the prompt states twice has to
+remove both statements before it tests anything. We treat this as a limit of the
+interface disclosed in \S\ref{sec:boundary} rather than as a gap that more runs
+would close: more runs would estimate the price of a duplicate more precisely, not
+the price of the constraint.
 
 \subsection{What the human review can and cannot support}
 
-The blind review of \S\ref{sec:human-review} narrows this gap without closing it.
-Ten decks, three raters, one institution and a single \id{placebo} deck support a
-consistency check, not a validation study, and the agreement between human and
-automatic scores is measured at condition level on four points---enough to say the
-two orderings coincide, not enough to estimate a correlation. Nor do the items
+The blind review of \S\ref{sec:human-review} narrows this gap without closing
+it. Ten decks, three raters, one institution and a single \id{placebo} deck
+support a consistency check, not a validation study; the human--automatic
+agreement is measured at condition level on four points, enough to say the two
+orderings coincide and not enough to estimate a correlation. Nor do the items
 exhaust teaching quality: clarity of board work, appropriateness of examples for
-a particular cohort, and the fit between slides and the teacher's own voice all
-remain outside both the metrics and the rubric.
+this cohort, and the fit between slides and the teacher's own voice all remain
+outside both the metrics and the rubric. What the review does establish is that
+teachers order the conditions as the metrics do and locate the difference on the
+same axis---misconception handling and coverage---while rating every condition as
+factually accurate. A larger review with raters from other institutions is the
+obvious next step and the place where our evidence is thinnest.
 
-What the review does establish is narrower and, we think, more useful. When
-teachers look at the same decks, they order the conditions as the metrics do, and
-they locate the difference on the same axis---misconception handling and
-coverage---while rating all four conditions as factually accurate. A larger
-review, with raters drawn from other institutions and courses, is the obvious
-next step and is the one place where our evidence is thinnest.
+\subsection{The missing repair loop}
+\label{sec:repair}
+
+The validator emits findings, and in the deployed workflow a teacher acts on
+them; in the experiment nothing acts on them. There is no automatic
+re-prompting, no targeted repair of a failing page, and therefore no
+post-regeneration pass rate to report. This matters because one third of the
+\id{full} runs contain at least one error-level finding (\S\ref{sec:results}),
+and a reader is entitled to ask how many of those a second pass would fix.
+
+We cannot answer that from the data we have and do not want to guess. What the
+answer would require is a repair policy (which finding triggers which
+intervention: re-prompt the deck, re-prompt the failing page with the finding
+text, or edit the page), a fixed budget of attempts, and a per-attempt pass rate
+with cost. Findings are already typed, page-indexed and machine-readable, so the
+experiment is contained---but it is a separate experiment, and reporting 67\% as a
+first-pass figure without saying so would have been misleading.
+
+\subsection{Evaluation independence}
+\label{sec:independence}
+
+The same author wrote the graph, the method, the metrics and the rubric---the
+standard shape of a systems paper and its standard weakness. Three
+countermeasures were taken and none substitutes for an independent coder. Every
+metric is computed by released code against a released contract, and the seven
+defects were found by printing model output and reading it rather than by
+inspecting the code, which is adversarial but self-administered. The rubric was
+applied identically to all conditions with one shared vocabulary, and baselines
+were never told which fields the metrics read; the \id{placebo} arm exists to test
+whether the metric measures prompt length and fails to explain the gain. The blind
+review puts the ranking question to three raters who did not know the conditions,
+and they reproduce it---evidence about the decks, not about the rubric's
+provenance.
+
+The rubric's sensitivity is reported rather than defended: two of its three
+decisions were re-run under the alternative convention
+(\S\ref{sec:coverage-sensitivity}), the conclusion survives both, and the reported
+advantage sits on the conservative side. What is missing is the obvious thing---a
+second coder who did not write the metric, coding a subsample against the same
+rubric with disagreement reported. Given three decisions that materially move the
+numbers, that check would be worth more than a larger sample scored by the same
+author.
+
+\subsection{Code is parsed, and only partly executed}
+\label{sec:code}
+
+For a programming course this is the weakest joint. Every one of the 54 runs
+carries code, with \id{full} putting it on 48\% of its pages against 27--33\% for
+the baselines, yet no headline metric parses, lints or executes it: a slide can
+score coverage 1.000 while its \id{enqueue} has an off-by-one, and nothing in
+Table~\ref{tab:main} would move.
+
+The cheapest check costs one line and we ran it: all 117 blocks parse with
+Python's \id{ast}, in every condition. That is a null result and a useful one---it
+is consistent with teachers rating content accuracy at or above 4.0 everywhere
+(Table~\ref{tab:human}), and it means a runnability metric must test behaviour to
+discriminate at all.
+
+Behaviour is testable within limits, and we tested it
+(\id{paper/behavior\_check.py}; full protocol and per-condition results in
+Table~S3 of the supplementary material). Each block is stripped of its top-level
+demo statements, executed in a fresh namespace and interrogated on up to four
+behaviours: FIFO order, the empty-dequeue signal, the full signal, and survival
+of repeated enqueue. Thirty-seven of 117 blocks (0.32) qualify; 36 satisfy every
+behaviour asked of them, and the one failure is a genuine scaffolding defect
+rather than a probe artefact---a program-style \id{enqueue(q, x)} referencing a
+capacity constant its own slide never defines. This is a bound, not a metric:
+the harness is ours, so the evaluator supplies part of the answer it then checks,
+and the qualifying denominator is too small and too condition-dependent to rank
+arms---\id{full} passing 8 of 9 against 28 of 28 for the baselines is one block
+in nine and separates nothing. What it establishes is that the code dimension is
+not silently broken; a comparison would need a per-session harness and test set,
+released. Until then the honest description is \emph{one syntactic check, one
+bounded behavioural probe, and manual inspection in the qualitative pass}
+(\S\ref{sec:qualitative}).
 
 \subsection{The constructedness of the misconception result}
 
@@ -1279,20 +1812,30 @@ the metric measures \emph{whether} the course-required correction was made, not
 % ===============================================================
 
 We reframe slide generation as a \textbf{course-specification satisfaction
-problem}, carry situated knowledge in a knowledge graph, and use constraint-as-data
-so that one contract serves simultaneously as generation basis and acceptance
-ground truth. Empirically, a strong model is already good enough at prerequisite
-ordering; what the graph makes irreplaceable are \emph{the skill landing points in
-the syllabus} and \emph{the cohort-specific misconceptions}, neither of which
-exists in any pretraining corpus.
+problem} and make the criterion, not the generator, the contribution: one
+graph-derived contract serves as generation basis and acceptance ground truth, so
+what is demanded and what is checked are the same object and cannot drift, and
+alignment is measured per artefact instead of asserted per course design.
 
-Future work proceeds along four lines: (i) extend to all sessions of the course
-and widen the blind review to raters from other institutions, courses and
-vocational disciplines; (ii) build graphs semi-automatically from
-textbook PDFs to reduce authoring cost; (iii) add a render-and-review loop
-(screenshot, detect overflow and overlap, repair automatically); and (iv) release
-a Chinese vocational slide-generation benchmark so that comparable work can be
-compared on common ground.
+Empirically the gain is a gain in \emph{reliability}---a misconception slot that is
+always filled rather than usually filled---and the knowledge the graph makes
+irreplaceable is \emph{the skill landing points in the syllabus} and \emph{the
+cohort-specific misconceptions}, neither of which exists in any pretraining corpus.
+Each gain is priced against a named block rather than against the pipeline as a
+whole (Table~\ref{tab:attribution}), which is what lets a reader inspect the claim
+instead of taking it on trust. The same study locates the edge of that claim:
+order is expressible in the graph but cannot be withheld by the interface, so it is
+reported as the boundary of the representation rather than as a result about
+ordering.
+
+Future work proceeds along five lines: (i) an interface that can present concepts
+without sequencing them, so that ordering becomes testable at all; (ii) extend to
+all sessions of the course and widen the blind review to raters from other
+institutions, courses and vocational disciplines; (iii) build graphs
+semi-automatically from textbook PDFs to reduce authoring cost; (iv) add a
+render-and-review loop (screenshot, detect overflow and overlap, repair
+automatically); and (v) release a Chinese vocational slide-generation benchmark so
+that comparable work can be compared on common ground.
 
 % ===============================================================
 \section*{CRediT authorship contribution statement}
@@ -1308,21 +1851,139 @@ The author declares that there are no known competing financial interests or
 personal relationships that could have appeared to influence the work reported
 in this paper.
 
+\section*{Funding}
+
+This research did not receive any specific grant from funding agencies in the
+public, commercial, or not-for-profit sectors.
+
+% TODO(author): if any part of this work was supported by a teaching-reform
+% grant, a provincial project or an institutional fund, replace the sentence
+% above. An incorrect "no funding" statement is harder to correct after
+% acceptance than a missing one.
+
 \section*{Data availability}
 
-The curriculum graph, the generation pipeline, the experimental protocol and all
-raw model outputs are openly available in the \id{kg-slidegen} repository. Each
+% TODO(author): deposit `paper/deposit/kg-slidegen-v1.0.zip` on Zenodo with the
+% metadata in `paper/deposit/zenodo.json`, then paste the DOI below and delete
+% this comment. A named repository without a resolvable identifier is one of
+% the fastest desk rejects at this journal; do not submit with the placeholder.
+Code, both curriculum graphs, prompts, experimental protocol and all raw model
+outputs are archived at \url{https://doi.org/10.5281/zenodo.XXXXXXX}. Each
 experimental cell retains three artefacts: the rendered deck, the raw model
-output, and an itemised validation report.
+output, and an itemised validation report. Every table in this paper and in the
+supplementary material is regenerated from that archive by the scripts in
+\id{paper/}, and \id{tests/} reproduces the graph's own validation results
+(Table~S2). The archive is byte-reproducible---packaging the same tree twice
+yields the same bytes---and the record's file manifest carries the archive's
+\id{sha256}, so a reader can confirm they hold the reviewed artefact rather than
+a later rebuild.
 
-% ===============================================================
-\section*{References}
-% ===============================================================
-\bibliographystyle{elsarticle-num}
-\bibliography{refs}
+\section*{Supplementary material}
+
+The supplementary material (Sections~S1--S5, Tables~S1--S6) holds the ablation
+results, the mutation test of the graph's structural checks, the full
+behavioural probe of the generated code, the cross-model replication, and the
+concept-level paired analysis with its leave-one-concept-out check, together with
+the scripts that regenerate each of them from the archive.
+
 
 \appendix
+\section{The prompt for one session}
+\label{app:prompt}
+
+The course is taught in Chinese, so the prompt is written in Chinese; that is a
+property of the deployment, not a choice we made for the experiment. Verbatim
+prompts for the \id{full} and \id{rag\_mc} conditions of session~U11 are
+archived as \id{paper/prompt-U11-full.txt}; the rendering below keeps every
+section header, every constraint and every hard rule, and condenses only the
+per-item lists that the archive reproduces in full.
+
+\begin{quote}\small
+\textbf{Instruction.} Generate teaching slides according to the following
+constraints.
+
+\textbf{Session.} U11 Circular queue (7 pages).
+
+\textbf{Teaching objective.} Understand how a circular queue reuses space
+through modular arithmetic, distinguish the empty and full conditions
+correctly, and write the implementation independently.
+
+\textbf{Concepts that must be covered (none may be omitted).} Seven entries,
+each with identifier, name, importance level, optional complexity and a
+one-sentence definition, for example:
+\id{C1104 Full condition (proficient)}: to separate ``full'' from ``empty'' one
+storage cell is usually sacrificed, so the queue is full when
+\id{(rear + 1) \% maxsize == front}.
+
+\textbf{Explanation order (mandatory; this is the topological order induced by
+the prerequisite relation).} The seven identifiers in sequence, with arrows.
+
+\textbf{Misconceptions that must be corrected.} One entry: the erroneous claim
+(the queue is full when \id{rear == front}), followed by the correction and the
+consequence of confusing the two.
+
+\textbf{Accompanying lab.} Implement a circular queue of capacity 8, run 20
+enqueues and 15 dequeues, and verify modular reuse and the full condition.
+
+\textbf{Evidence anchors (for teacher verification, not generated content).}
+Six entries of the form \id{C1101: handout \S4.3: the circular queue exists
+precisely to solve false overflow}.
+
+\textbf{Previously taught concepts that may be recapped in one sentence but not
+expanded.} Ten sibling concept names, followed by the constraint that they must
+not exceed 25\% of the text.
+
+\textbf{Concepts that must not be introduced.} Five names (priority queue,
+monotone queue, message queue, shortest path, topological sort).
+
+\textbf{Output format.} A single JSON object with \id{unit\_id} and a
+\id{slides} array; each slide carries \id{index}, \id{layout} (one of seven),
+\id{title}, \id{bullets}, \id{code}, \id{notes}, \id{concept\_ids} and
+\id{background}. No Markdown fence, no commentary.
+
+\textbf{Hard requirements.} (1) Seven pages, first a title page and last a
+summary. (2) Every concept in the mandatory list must appear in some page's
+\id{concept\_ids}. (3) Page order must follow the given explanation order; no
+prerequisite may be inverted. (4) At most four bullets per page, at most forty
+characters each. (5) If misconceptions are listed, at least one page must have
+layout \id{misconception}. (6) Do not introduce forbidden concepts; if one must
+be mentioned, set \id{background} to true.
+\end{quote}
+
+The \id{rag\_mc} control replaces everything from \emph{Session} to
+\emph{Forbidden concepts} with a flat list of the same definitions under the
+heading \emph{Textbook excerpt}, and keeps the output format and hard rules
+identical. That is the point of the control: the information is held constant
+and only its structure changes.
+
+\section{One raw response, and what the validator saw}
+\label{app:response}
+
+Responses are Chinese for the same reason the prompts are. The first two slides of
+one \id{full} response (U11, run~1) are: index~1, layout \id{title}, ``Circular
+queue'', three bullets naming the lecture, the objective and the lab, no code,
+\id{concept\_ids} \id{[C1101]}; index~2, layout \id{concept}, ``The circular queue
+and modular arithmetic'', four bullets on vacated cells, the logical ring,
+\id{(index + 1) \% maxsize} and the $O(1)$ bound, code carrying the two
+pointer-advance lines. The validator records coverage 1.000, prerequisite
+violation 0.000, misconception coverage 1.000, out-of-graph 0.000, background
+0.012 against a 0.25 ceiling, and editability 1.000, with no findings. The report
+is addressed to concepts, not to a score: a failure names the uncovered concept
+ids, the out-of-graph terms and the inverted pairs, so a low number can be traced
+to a slide rather than only observed. The verbatim JSON and report are in the
+archive under \id{outputs/main\_v1/}.
+
 \section{Reproducibility}
+\label{sec:repro}
+
+All runs were issued against the vendor's hosted API
+(\url{https://api.deepseek.com}) with model id \id{deepseek-v4-flash},
+temperature 0.3, the provider's default thinking mode, and no fixed seed; the
+model therefore returns different slide text on repeated calls, which is why each
+cell is resampled three times rather than run once. Slides are emitted as JSON
+and rendered with \id{python-pptx}; no image generation model is involved, which
+is what makes \id{editability} 1.000 in every condition.
+
 
 Code, graph, experimental protocol and all raw outputs are available in the
 \id{kg-slidegen} repository. The accompanying protocol document records how every
@@ -1331,5 +1992,11 @@ artefacts: the presentation file, the raw model output and a per-item validation
 report. The teacher ratings are released as \id{paper/human\_eval.csv}, one row
 per deck--rater pair, and \id{paper/human\_eval.py} regenerates
 Table~\ref{tab:human}, the ICC values and their bootstrap intervals from it.
+
+% ===============================================================
+\section*{References}
+% ===============================================================
+\bibliographystyle{elsarticle-num}
+\bibliography{refs}
 
 \end{document}

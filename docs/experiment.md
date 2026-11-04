@@ -62,6 +62,12 @@
 规则文本同步删除是关键：如果只删数据块、留着「必须遵守给定顺序」这条规则，
 模型会去猜顺序，消融就不干净了。测试 `test_ablation_prompt_drops_exactly_one_block` 守住这点。
 
+**读法（正文 Table 5）**：消融不是第二组条件均值，而是归因——一次只删一个块、全量重测四个指标，
+一个块的价值就是「它本该管的那个指标」的位移：误区槽位 −0.833（顺带覆盖率 −0.056），
+禁列词表 +0.083 跑题率且其余不动，顺序块 −0.032 但属空操作（见下）。
+`python paper/tables.py --latex` 会从同一份 `results.csv` 生成 `paper/latex/attribution.tex`，
+旁效阈值 0.04，低于阈值的移动不列——那是抽样噪声，不是归因。
+
 ## 4. 指标口径
 
 | 指标 | 口径 | 已知偏差与处理 |
@@ -126,7 +132,183 @@ python paper/human_eval.py          # 描述统计 + ICC + 自助置信区间
 python paper/human_eval.py --latex  # 输出论文用的 LaTeX 表格
 ```
 
-## 7. 复现命令
+## 7. 度量约定与代码块的两项稳健性核查
+
+审稿人质疑「覆盖率只计正文页」会系统性惩罚把定义写在标题页的基线。这类质疑不能靠
+辩解回答，只能重算：
+
+```bash
+python paper/coverage_sensitivity.py            # 三种前置页约定 + 去掉别名匹配
+python paper/code_check.py                      # 逐块 ast.parse
+```
+
+| 约定 | `full` | `rag_mc` | `placebo` | `rag` | `zero_shot` | `cot` | 受影响的运行 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 只计正文页（论文口径） | 0.981 | 0.698 | 0.675 | 0.659 | 0.643 | 0.614 | — |
+| 保留 title 页 | 1.000 | 0.698 | 0.675 | 0.659 | 0.643 | 0.632 | 2 / 54 |
+| 全页计入 | 1.000 | 0.772 | 0.728 | 0.749 | 0.643 | 0.632 | 排序 ρ=0.94 |
+| 只匹配本名、不用别名 | 0.963 | 0.389 | 0.325 | 0.373 | 0.357 | 0.370 | 31 / 54 |
+
+结论：放开 title 页只动 2 次运行（U10/full/r3、U10/cot/r2），条件排序完全不变，
+`full − rag_mc` 从 +0.283 升到 +0.302；去掉别名匹配反而把基线打到 0.33–0.39、`full`
+只降到 0.963（差值 +0.574），说明别名匹配是在**收紧**结论，论文里的 +0.283 是下界。
+
+代码块：54 次运行共 117 块，全部 `ast.parse` 通过（6 个条件都是 1.00），判据饱和、
+无法区分条件；`full` 有 28 块（占其页面 48%），基线 16–19 块（27%–33%）。因此
+「能跑」必须做**行为级**测试才有区分度。`paper/behavior_check.py` 做了有界版本：
+去掉 `__main__` 演示段后在干净命名空间里按 4 类行为（FIFO、空、满、存活）跑，
+117 块中 37 块可测、36 块通过；论文 §7.6 把它明确写成**上界**而不是指标，
+`full` 的 8/9 与 28/28 不是证据。
+
+## 7b. 跨模型复核（第二骨干）
+
+同一套提示词、同一批讲次、同一套指标，换一个厂商的模型重跑，用来回答「结构化的效果
+是不是某一个模型提示词调优的产物」。这不是「哪个模型更强」的比较：
+
+| 项 | DeepSeek（主实验） | Kimi（复核） |
+| --- | --- | --- |
+| 模型 | `deepseek-v4-flash` | `kimi-k3` |
+| temperature | 0.3 | **1.0（厂商锁定，传 0.3 直接 400）** |
+| max_tokens | 16000 | 16000 |
+| 提示词 | 完全一致（`_build_prompt` 共用） | 完全一致 |
+| 格数 | 6 条件 × 3 讲次 × 3 次 = 54 | 同 |
+| 输出目录 | `outputs/main_v1` | `outputs/bench_kimi` |
+
+temperature 不同是这段复核最容易被质疑的地方，因此：
+`LLMConfig` 里由 `ProviderPreset.fixed_temperature` 显式写死，`results.csv` 每行都记
+`model` 与 `temperature`，单测 `test_vendor_pinned_temperature_is_applied` 钉住。
+两个骨干各自内部条件相同，因此**组内对比可比、组间绝对值不可比**——表格只用来问
+「`full − rag_mc` 的符号是否复现」，不做跨栏均值比较。
+
+```bash
+export MOONSHOT_API_KEY=sk-xxxx
+python -m kgslide.bench --provider kimi --units U10,U11,U12 \
+  --modes full,rag_mc,placebo,zero_shot --repeat 2 \
+  --out outputs/bench_kimi --skip-existing
+python paper/tables.py --cross outputs/bench_kimi   # 生成 paper/latex/cross_model.tex
+```
+
+**实际执行与结果（2026-11-03）**：账号并发上限为 1（并发 3 个进程互相 429），
+故改为**串行**；`rag` 与 `cot` 未在第二骨干上重跑（不承载结论，每格约 7 分钟），
+最终 4 条件 × 3 讲 × 2 次 = 24 格，其中 `U12/zero_shot#2` 因账号额度耗尽缺失，
+按缺口如实记录（`n=5`），未补造。
+
+| 指标 | DeepSeek V4 | Kimi K3 |
+| --- | --- | --- |
+| 误区覆盖 `full → rag_mc` | 1.000 → 0.556（−0.444） | 1.000 → 0.667（−0.333） |
+| 覆盖 `full → rag_mc` | 0.981 → 0.698（−0.283） | 1.000 → 0.734（−0.266） |
+| `full` 的误区覆盖标准差 | 0.000（9 次全 1.000） | 0.000（6 次全 1.000） |
+| `rag_mc` 的误区覆盖标准差 | 0.527 | 0.516 |
+| 通过率 `full` vs `rag_mc` | 67% vs 22% | 67% vs 17% |
+
+结论写法（已进论文 §5.5）：**符号在两个骨干上复现，效应量缩小**（0.444 → 0.333），
+且在 U11 上 Kimi 的四个条件全部 1.000——该讲次在第二骨干上不贡献对比。
+方差行为比均值更稳定复现，这正是论文「可靠性而非平均质量」论点的直接支撑。
+
+## 7c. 第二门课（C++ 语言 · 第 4 章 数组）
+
+### 为什么要有
+
+第一稿的全部证据来自一门课（Python 数据结构，三讲次）。审稿人对「单课程 + 单骨干 +
+核心约束维度之一（顺序）为 null」这个组合的警惕是合理的：它无法区分「契约有效」与
+「这位老师的这门课恰好如此」。第二门课的作用不是把样本做大，而是**换一个知识域、
+换一门编程语言、换一个骨干**，看两个 claim-bearing 对照的方向是否还在。
+
+### 图从哪来（与第一门课的差异，必须写在正文里）
+
+`data/build_cpp_m4.py` 从 `第4章 数组.docx`（24 动漫制作技术 4 班，第 2 周第 5 次，
+4 学时）生成 `data/kg_cpp_m4.json`：26 节点 / 51 边，`validate()` 零 issue。
+
+差异有一处，正文已明写：**第一门课的误区有考试错误率支撑，第二门课的误区来自教案
+自己的「教学重难点」与「教学反思」原文，是教师记录的教学难点，不是测量出来的频率。**
+三个误区节点：MC41（下标从 1 开始）、MC42（字符数组不必管 `'\0'`）、MC43（数组传参
+是值传递）——都是从教案原文抽的，不是编的。
+
+另一个必须注意的工程细节：`UnitConstraints.language` 会把课程语言注入 prompt 的 JSON
+spec（`json_spec(code_lang)`）。不注入的话，C++ 课会被要求输出 Python 代码，而且是
+**静默混杂**——不报错，只是代码块语言错。
+
+### 设计
+
+2 讲次（U41 一维数组、U42 字符数组与传参）× 3 条件（`full`、`rag_mc`、`zero_shot`）
+× 2 次重采样 = 12 格。骨干是 `agnes-2.5-flash`（`https://apihub.agnes-ai.com/v1`，
+temperature 0.3），换骨干是因为当天主 key 余额不足（DeepSeek 402、Moonshot 429），
+这个替换本身是**课程与骨干的联合替换**，正文照实说了，且明确 magnitudes 不与主表对读。
+
+### 结果
+
+| 指标 | `full` | `rag_mc` | `zero_shot` |
+| --- | --- | --- | --- |
+| 覆盖 | 0.800 (0.163) | 0.600 (0.231) | 0.350 (0.191) |
+| 图外内容 | 0.000 (0.000) | 0.000 (0.000) | 0.125 (0.250) |
+| 顺序违例 | 0.042 (0.083) | 0.017 (0.033) | 0.042 (0.083) |
+| 误区覆盖 | 0.625 (0.479) | 0.375 (0.479) | 0.000 (0.000) |
+
+三条读法：
+
+1. **方向复现**。覆盖 +0.450（对 zero-shot）/ +0.200（对同文本对照）；误区 +0.625 /
+   +0.250；图外内容复现第一门课的模式（zero-shot 引入后续章节内容，契约不引）。
+   这两个 claim-bearing 对照在另一门课、另一种语言、另一个骨干上同号。
+2. **可靠性不复现**。第一门课误区槽是 1.000 ± 0.000，这里是 0.625 ± 0.479——四次里
+   两次填了两次没填，而同文本对照的离散度一样大。所以 reliability 不是契约的固有
+   属性，而是 **representation × backbone 的联合属性**。这句话写进了 §6.2，并因此把
+   原来那句无条件的「契约让槽每次都被填」改成了带条件的版本。
+3. **顺序仍是边界**。`full` 0.042 = `zero_shot` 0.042，`rag_mc` 0.017：没有对比。
+   这是 §1.5 边界预言的第二次独立读数——一门教材顺序同样权威的课上，这个维度依然
+   分不开条件。
+
+两条解释都记下来、都不采纳（设计分不开它们）：骨干在任务上更弱（zero-shot 覆盖
+0.35 对第一门课的 0.64，且是唯一引入图外内容的条件），以及误区是记录难点而非测量频率
+（prompt 只说「学生常错」，不说「错多少」）。
+
+## 7d. 分离实验：把「课变了」与「骨干变了」拆开
+
+### 为什么必须补
+
+7c 的第二门课同时换了课程、语言、骨干、端点。结果是「误区槽的方差没有复现」，
+但这个设计**无法指出**原因在课还是在模型——审稿人一定会问，而且「两个因素一起变」
+通常会被判为复现设计不干净，而不是诚实的边界报告。
+
+### 设计
+
+把第一门课**原封不动**（同一份图 `kg_pyds_m4.json`、同一份 prompt、同一个
+validator、同一份指标代码）换到第二门课的骨干 `agnes-2.5-flash` 上：
+
+```bash
+PYTHONPATH=src python -m kgslide.bench --provider agnes   --kg data/kg_pyds_m4.json --units U10,U11,U12   --modes full,rag_mc,zero_shot --repeat 2 --out outputs/bench_py_agnes
+```
+
+18 格，约 8 分钟。只有端点变了。
+
+### 结果
+
+| 骨干 | 课程 | n(full) | Δ覆盖（full−rag_mc） | Δ误区 | full 的误区 |
+| --- | --- | :-: | :-: | :-: | :-: |
+| DeepSeek V4 | Python | 9 | +0.283 | +0.444 | 1.000 (0.000) |
+| Kimi K3 | Python | 6 | +0.266 | +0.333 | 1.000 (0.000) |
+| agnes-2.5-flash | Python | 6 | +0.052 | **+0.000** | **0.833 (0.408)** |
+| agnes-2.5-flash | C++ | 4 | +0.200 | +0.250 | 0.625 (0.479) |
+
+前三行课程、图、prompt、validator、指标代码全部固定，只有端点变。第三行的误区槽
+优势**归零**，且 full 的离散度从 0.000 变成 0.408——和第二门课上看到的是同一个现象。
+所以：**前置条件在模型一侧，不在课程一侧。** 第二门课的失败不是那门课的特殊性，
+是这个骨干的行为在另一份大纲上又被观察了一次。
+
+两个不能省略的细节：
+
+1. **禁列词表在同一个骨干上仍然生效**：跑题 0.097（rag_mc）→ 0.000（full），与第一门课
+   在 DeepSeek 上的模式一致。所以这个骨干不是「不服从结构」，而是**不填指定类型的页**。
+   「模型决定一切」是过度概括。
+2. **对同文本对照的覆盖优势在这行掉到 +0.052**（对 zero_shot 仍有 +0.401）。也就是说，
+   在这个骨干上，把同样的误区文本平铺给模型，效果已接近契约。这是方法的一个真实
+   边界：契约补的是模型没有的能力，模型自己读得够仔细时，结构在「覆盖」上买不到多少。
+
+两格 r1 触发了一个真实 bug：模型把某个 slide 写成了裸字符串，渲染器 `.get()` 直接崩，
+整批 18 格连同 CSV 全丢。已修：`renderer.render` 把非 dict 的 slide 降级成一页标题，
+`validator.evaluate` 入口统一归一化，`bench` 的渲染/评分也包进 try/except（一格坏不再
+拖垮整表）。
+
+## 8. 复现命令
 
 ```bash
 export DEEPSEEK_API_KEY=sk-xxxx
@@ -148,6 +330,26 @@ python -m kgslide.bench --units U10,U11,U12 \
 # 关闭思考模式做稳健性检查
 python -m kgslide.bench --units U10,U11,U12 \
   --modes full,zero_shot --repeat 2 --thinking disabled --out outputs/bench_nothink
+
+# 跨模型复核（第二骨干，注意 temperature 由厂商锁定为 1.0）
+python -m kgslide.bench --provider kimi --units U10,U11,U12 \
+  --modes full,rag_mc,rag,placebo,cot,zero_shot --repeat 3 --out outputs/bench_kimi
+
+# 第二门课：先建图，再跑 12 格（需要 AGNES_API_KEY）
+python data/build_cpp_m4.py
+PYTHONPATH=src python -m kgslide.bench --provider agnes \
+  --kg data/kg_cpp_m4.json --units U41,U42 \
+  --modes full,rag_mc,zero_shot --repeat 2 --out outputs/bench_cpp
+
+# 第二门课的表（论文 Table 6）
+python paper/tables.py --course-b outputs/bench_cpp
+
+# 骨干×课程扫描表（论文 Table 7）
+python paper/tables.py --sweep "DeepSeek V4|Python|outputs/main_v1;Kimi K3|Python|outputs/bench_kimi;agnes-2.5-flash|Python|outputs/bench_py_agnes;agnes-2.5-flash|C++|outputs/bench_cpp"
+
+# 概念级配对（论文 §5.4、补充材料 S5；不调用 API）
+python paper/concept_pairs.py            # 打印各基线配对表
+python paper/concept_pairs.py --latex    # 写 paper/latex/concept_pairs.tex
 ```
 
 每个单元格会留下三份文件：`.pptx`（成品）、`.json`（模型原始输出）、

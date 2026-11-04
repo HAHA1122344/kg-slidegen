@@ -1,8 +1,13 @@
 """LLM access layer with a deterministic offline mock.
 
-Two providers are supported:
+Three providers are supported, all behind the same OpenAI-compatible surface:
 
-* ``deepseek`` -- OpenAI-compatible endpoint at ``https://api.deepseek.com``.
+* ``deepseek`` -- ``https://api.deepseek.com``, the backbone used for the main
+                  comparison, the ablations and the stylometric checks.
+* ``kimi``     -- ``https://api.moonshot.cn/v1``, a second model family used
+                  only for the cross-model check: if a structural effect also
+                  appears under a different vendor's prompt tuning, it cannot
+                  be an artefact of one model's idiosyncrasies.
 * ``mock``     -- no network, returns content derived from the constraints so
                   that the whole pipeline (generate -> render -> validate) can be
                   exercised without an API key or a budget.
@@ -15,14 +20,51 @@ import os
 import re
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from .constraints import UnitConstraints
 
+
+def load_dotenv(path: Path | None = None) -> None:
+    """Load ``KEY=VALUE`` pairs from ``.env`` into the environment.
+
+    ``.env.example`` has always told the user to copy it to ``.env``, but
+    nothing read the file, so a freshly cloned repo failed with "环境变量未设置"
+    even after the key was filled in.  Done here rather than in a dependency:
+    the format needed is three lines of ``str.partition``.
+
+    Existing environment variables win, so an explicit ``export`` (or a CI
+    secret) is never silently overridden by a stale local file.
+    """
+    env_path = path or Path.cwd() / ".env"
+    if not env_path.exists():
+        return
+    for raw in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
 SYSTEM_PROMPT = """你是一位高职院校计算机专业教师，正在制作课件。
 输出必须是合法 JSON，不要包裹在 Markdown 代码块中，不要输出任何解释性文字。"""
 
-JSON_SPEC = """## 输出格式（Output a single valid JSON object）
+def json_spec(code_lang: str = "Python") -> str:
+    """Output contract, with the code language of the course substituted in.
+
+    The first course is a Python one and the spec was written for it; a second
+    course in C++ would otherwise be asked for Python snippets, which is a
+    silent cross-course confound rather than a formatting detail.
+    """
+    # ``str.format`` cannot be used: the spec is full of literal JSON braces.
+    return _JSON_SPEC.replace("{code_lang}", code_lang)
+
+
+_JSON_SPEC = """## 输出格式（Output a single valid JSON object）
 {
   "unit_id": "...",
   "slides": [
@@ -31,7 +73,7 @@ JSON_SPEC = """## 输出格式（Output a single valid JSON object）
       "layout": "title|objectives|concept|comparison|code|misconception|summary",
       "title": "页面标题，不超过 20 字",
       "bullets": ["要点1", "要点2", "要点3"],
-      "code": "可选的 Python 代码片段，没有则留空字符串",
+      "code": "可选的 {code_lang} 代码片段，没有则留空字符串",
       "notes": "讲稿备注，2-3 句",
       "concept_ids": ["该页讲解的概念 ID"],
       "background": false
@@ -96,12 +138,13 @@ MODES = BASELINE_MODES + ABLATION_MODES
 def _build_prompt(c: UnitConstraints, mode: str) -> str:
     """Compose the user prompt for one experimental condition."""
     course = c.course_name or "Python 数据结构"
+    spec = json_spec(getattr(c, "language", "Python") or "Python")
     head = f"请为高职《{course}》课程第 {c.unit_order} 讲「{c.unit_name}」制作一份课件。"
 
     if mode == "full":
         return (
             f"请根据以下约束生成课件。\n\n{c.to_prompt_block()}\n\n"
-            f"{JSON_SPEC}\n\n{RULES_CONSTRAINED.format(slide_budget=c.slide_budget)}"
+            f"{spec}\n\n{RULES_CONSTRAINED.format(slide_budget=c.slide_budget)}"
         )
 
     ablations = {
@@ -117,17 +160,17 @@ def _build_prompt(c: UnitConstraints, mode: str) -> str:
         rules = _drop_rule(RULES_CONSTRAINED, mode)
         return (
             f"请根据以下约束生成课件。\n\n{block}\n\n"
-            f"{JSON_SPEC}\n\n{rules.format(slide_budget=c.slide_budget)}"
+            f"{spec}\n\n{rules.format(slide_budget=c.slide_budget)}"
         )
 
     if mode == "zero_shot":
-        return f"{head}\n\n{JSON_SPEC}\n\n{RULES_BASELINE.format(slide_budget=c.slide_budget)}"
+        return f"{head}\n\n{spec}\n\n{RULES_BASELINE.format(slide_budget=c.slide_budget)}"
     if mode == "rag":
         fragments = "\n".join(
             f"- {n['name']}：{n['definition']}" for n in c.required + c.optional
         )
         return (
-            f"{head}\n\n## 教材片段\n{fragments}\n\n{JSON_SPEC}\n\n"
+            f"{head}\n\n## 教材片段\n{fragments}\n\n{spec}\n\n"
             f"{RULES_BASELINE.format(slide_budget=c.slide_budget)}"
         )
     if mode == "rag_mc":
@@ -147,11 +190,11 @@ def _build_prompt(c: UnitConstraints, mode: str) -> str:
         )
         return (
             f"{head}\n\n## 教材片段\n{fragments}\n\n## 学生常见错误\n{extra}\n\n"
-            f"{JSON_SPEC}\n\n{RULES_BASELINE.format(slide_budget=c.slide_budget)}"
+            f"{spec}\n\n{RULES_BASELINE.format(slide_budget=c.slide_budget)}"
         )
     if mode == "cot":
         return (
-            f"{head}\n\n{JSON_SPEC}\n\n"
+            f"{head}\n\n{spec}\n\n"
             f"{RULES_BASELINE.format(slide_budget=c.slide_budget)}\n"
             "4. 先在每页 notes 中说明该页在整讲中的定位与前后衔接，再写页面内容。"
         )
@@ -159,7 +202,7 @@ def _build_prompt(c: UnitConstraints, mode: str) -> str:
         # Same token budget as `full`, zero course-specific structure.  If the
         # constrained condition still wins here, the gain is knowledge, not
         # prompt length.
-        base = f"{head}\n\n{JSON_SPEC}\n\n{RULES_BASELINE.format(slide_budget=c.slide_budget)}"
+        base = f"{head}\n\n{spec}\n\n{RULES_BASELINE.format(slide_budget=c.slide_budget)}"
         target = len(_build_prompt(c, "full"))
         return _pad_to(base, target, PLACEBO_GUIDANCE)
     raise ValueError(f"unknown mode: {mode}（可选 {', '.join(MODES)}）")
@@ -180,27 +223,114 @@ def _drop_rule(rules: str, mode: str) -> str:
     return "\n".join(kept)
 
 
+@dataclass(frozen=True)
+class ProviderPreset:
+    """Connection defaults for one OpenAI-compatible vendor."""
+
+    base_url: str
+    api_key_env: str
+    default_model: str
+    # DeepSeek accepts a top-level ``thinking`` request field; other vendors
+    # reject unknown fields, so it is sent only where it is understood.
+    sends_thinking_field: bool = False
+    # Some vendors pin sampling for their reasoning models.  Kimi K3 rejects any
+    # temperature other than 1.0 with a 400, so the cross-model run is recorded
+    # at 1.0 rather than silently failing or quietly staying at 0.3.
+    fixed_temperature: float | None = None
+
+
+PROVIDER_PRESETS: dict[str, ProviderPreset] = {
+    "deepseek": ProviderPreset(
+        base_url="https://api.deepseek.com",
+        api_key_env="DEEPSEEK_API_KEY",
+        default_model="deepseek-v4-flash",
+        sends_thinking_field=True,
+    ),
+    # Second backbone for the cross-model check: same OpenAI-compatible
+    # surface, different model family, so a structural effect cannot be an
+    # artefact of one vendor's prompt tuning.
+    "kimi": ProviderPreset(
+        base_url="https://api.moonshot.cn/v1",
+        api_key_env="MOONSHOT_API_KEY",
+        default_model="kimi-k3",
+        fixed_temperature=1.0,
+    ),
+    # Third endpoint, used only for the second-course replication: the official
+    # DeepSeek key was out of balance on the day of the run, and a course
+    # replication that changes the course must hold the *design* fixed rather
+    # than wait.  Recorded in results.csv like any other backbone, and never
+    # merged with the main table.
+    "agnes": ProviderPreset(
+        base_url="https://apihub.agnes-ai.com/v1",
+        api_key_env="AGNES_API_KEY",
+        default_model="agnes-2.5-flash",
+    ),
+    "mock": ProviderPreset(base_url="", api_key_env="", default_model="mock"),
+}
+
+
 @dataclass
 class LLMConfig:
     provider: str = "deepseek"
     # Official DeepSeek API model ids (as of 2026-11).
     # deepseek-chat / deepseek-reasoner were deprecated on 2026-07-24 and now
     # only survive as compatibility aliases for v4-flash thinking modes.
-    model: str = "deepseek-v4-flash"
-    base_url: str = "https://api.deepseek.com"
-    api_key_env: str = "DEEPSEEK_API_KEY"
+    #
+    # Empty strings mean "take the preset for this provider", so switching
+    # vendors cannot silently inherit the previous vendor's model id or key.
+    model: str = ""
+    base_url: str = ""
+    api_key_env: str = ""
     temperature: float = 0.3
     max_tokens: int = 16000
     max_retries: int = 2
+    # Vendor rate limits, not model errors: a 54-cell sweep on a low-tier
+    # account returns "please try again after 1 seconds" often enough that
+    # aborting the sweep on the first 429 wastes the run.  Retried with
+    # exponential backoff and never counted as an attempt at the JSON level.
+    max_rate_limit_retries: int = 5
     # "default" keeps the model's built-in thinking pass; "disabled" turns it
     # off.  Measurements on 2026-11 show deepseek-v4-flash emits reasoning
     # tokens by default, which would silently confound a chain-of-thought
     # baseline -- so the setting is recorded per run instead of assumed.
     thinking: str = "default"
+    # Flipped off per instance when the endpoint rejects response_format; the
+    # prompt already asks for bare JSON, so this is a compatibility fallback
+    # rather than a change of experimental condition.
+    json_mode: bool = True
+
+    def __post_init__(self) -> None:
+        preset = PROVIDER_PRESETS.get(self.provider)
+        if preset is None:
+            raise LLMError(
+                f"未知 provider: {self.provider}（可选 {', '.join(PROVIDER_PRESETS)}）"
+            )
+        if not self.model:
+            self.model = preset.default_model
+        if not self.base_url:
+            self.base_url = preset.base_url
+        if not self.api_key_env:
+            self.api_key_env = preset.api_key_env
+        if preset.fixed_temperature is not None:
+            self.temperature = preset.fixed_temperature
 
 
 class LLMError(RuntimeError):
     """Raised when the model returns something unusable."""
+
+
+def _is_rate_limited(exc: BaseException) -> bool:
+    """True if ``exc`` is the vendor asking us to slow down."""
+    if getattr(exc, "status_code", None) == 429:
+        return True
+    text = str(exc).lower()
+    return "rate limit" in text or "429" in text or "too many requests" in text
+
+
+def _suggested_wait(exc: BaseException, default: float) -> float:
+    """Honour "please try again after N seconds" when the vendor says it."""
+    match = re.search(r"after (\d+(?:\.\d+)?) seconds", str(exc))
+    return max(float(match.group(1)), 1.0) if match else default
 
 
 def _strip_code_fence(text: str) -> str:
@@ -260,6 +390,7 @@ class LLMClient:
         # token cost and latency alongside the quality metrics.
         self.last_usage: dict[str, Any] = {}
         if not self.mock:
+            load_dotenv()
             api_key = os.environ.get(self.config.api_key_env, "")
             if not api_key:
                 raise LLMError(
@@ -314,21 +445,15 @@ class LLMClient:
         history = list(messages)
         base = list(messages)
         last_error = "模型返回空内容"
+        preset = PROVIDER_PRESETS[self.config.provider]
         extra_body = (
             {"thinking": {"type": "disabled"}}
-            if self.config.thinking == "disabled"
+            if self.config.thinking == "disabled" and preset.sends_thinking_field
             else None
         )
 
         for attempt in range(self.config.max_retries + 1):
-            response = self._client.chat.completions.create(
-                model=self.config.model,
-                messages=history,
-                temperature=self.config.temperature,
-                max_tokens=self.config.max_tokens,
-                response_format={"type": "json_object"},
-                extra_body=extra_body,
-            )
+            response = self._create(history, extra_body)
             usage = getattr(response, "usage", None)
             if usage is not None:
                 details = getattr(usage, "completion_tokens_details", None)
@@ -363,6 +488,56 @@ class LLMClient:
             ]
 
         raise LLMError(last_error)
+
+    def _create(self, messages: list[dict[str, str]], extra_body: dict | None):
+        """One completion call, with a compatibility fallback for JSON mode.
+
+        Some OpenAI-compatible endpoints (and proxies in front of them) reject
+        ``response_format`` outright with a 400.  The prompt already demands a
+        bare JSON object, so dropping the flag changes the transport, not the
+        experimental condition; the fallback is remembered so it costs one
+        rejected request per run instead of one per cell.
+        """
+        assert self._client is not None
+        kwargs: dict[str, Any] = {
+            "model": self.config.model,
+            "messages": messages,
+            "temperature": self.config.temperature,
+            "max_tokens": self.config.max_tokens,
+        }
+        if extra_body:
+            kwargs["extra_body"] = extra_body
+        if self.config.json_mode:
+            try:
+                return self._retry(
+                    lambda: self._client.chat.completions.create(
+                        response_format={"type": "json_object"}, **kwargs
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001 - vendor-specific 400
+                if "response_format" not in str(exc).lower():
+                    raise
+                self.config.json_mode = False
+        return self._retry(lambda: self._client.chat.completions.create(**kwargs))
+
+    def _retry(self, call):
+        """Run ``call``, backing off while the vendor says we are too fast.
+
+        Kimi's low tier answers with ``429 rate_limit_reached_error`` and a
+        suggested delay; treating that as a failure would truncate a sweep
+        halfway and leave a results table with holes.
+        """
+        delay = 2.0
+        for attempt in range(self.config.max_rate_limit_retries + 1):
+            try:
+                return call()
+            except Exception as exc:  # noqa: BLE001 - vendor-specific status
+                if not _is_rate_limited(exc) or attempt == self.config.max_rate_limit_retries:
+                    raise
+                wait = _suggested_wait(exc, default=delay)
+                print(f"    rate limited, waiting {wait:.1f}s", flush=True)
+                time.sleep(wait)
+                delay = min(delay * 2, 60.0)
 
     @staticmethod
     def _loads(raw: str) -> dict[str, Any]:

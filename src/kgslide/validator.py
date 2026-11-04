@@ -214,6 +214,11 @@ def _covers_misconception(
 
 
 def _slide_text(slide: dict[str, Any]) -> str:
+    # A payload can arrive with a bare string where a slide object belongs; the
+    # renderer turns it into a one-line page, and the scorer must read it the
+    # same way rather than raising four frames deep in a generator expression.
+    if not isinstance(slide, dict):
+        slide = {"title": str(slide)}
     parts: list[str] = []
     for key in TEXT_FIELDS:
         value = slide.get(key, "")
@@ -348,7 +353,14 @@ def evaluate(
     native_ratio: float = 1.0,
 ) -> Report:
     """Compute the five metrics and collect findings."""
-    slides: list[dict[str, Any]] = payload.get("slides", [])
+    raw_slides = payload.get("slides", [])
+    # Normalise once, here: a payload can arrive with a bare string where a
+    # slide object belongs, and every downstream helper indexes into a mapping.
+    # The renderer makes the same substitution, so the score describes the deck
+    # that was actually written.
+    slides: list[dict[str, Any]] = [
+        s if isinstance(s, dict) else {"title": str(s)} for s in raw_slides
+    ]
     report = Report()
 
     required = constraints.required

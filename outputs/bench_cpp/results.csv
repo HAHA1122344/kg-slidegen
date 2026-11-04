@@ -1,0 +1,13 @@
+unit,mode,repeat,provider,model,temperature,pages,passed,coverage_rate,oog_rate,background_rate,prerequisite_violation,misconception_coverage,editability,page_budget_ratio,prompt_tokens,completion_tokens,reasoning_tokens,latency_s
+U41,full,1,agnes,agnes-2.5-flash,0.3,6,False,0.8,0.0,0.01,0.0,0.5,1.0,1.0,1713,1672,517,37.83
+U41,full,2,agnes,agnes-2.5-flash,0.3,6,True,1.0,0.0,0.0081,0.0,1.0,1.0,1.0,1713,1736,559,16.12
+U41,rag_mc,1,agnes,agnes-2.5-flash,0.3,6,False,0.8,0.0,0.0,0.0,0.0,1.0,1.0,1005,1394,162,14.12
+U41,rag_mc,2,agnes,agnes-2.5-flash,0.3,6,False,0.8,0.0,0.0,0.0667,0.5,1.0,1.0,1005,3532,2471,39.77
+U41,zero_shot,1,agnes,agnes-2.5-flash,0.3,6,False,0.6,0.0,0.0,0.0,0.0,1.0,1.0,597,1433,169,127.4
+U41,zero_shot,2,agnes,agnes-2.5-flash,0.3,6,False,0.4,0.0,0.0,0.1667,0.0,1.0,1.0,597,1194,154,41.26
+U42,full,1,agnes,agnes-2.5-flash,0.3,3,False,0.6,0.0,0.0,0.0,0.0,1.0,0.5,1448,908,366,6.81
+U42,full,2,agnes,agnes-2.5-flash,0.3,6,False,0.8,0.0,0.0,0.1667,1.0,1.0,1.0,1448,1591,310,107.41
+U42,rag_mc,1,agnes,agnes-2.5-flash,0.3,6,False,0.4,0.0,0.0,0.0,1.0,1.0,1.0,877,1680,101,14.62
+U42,rag_mc,2,agnes,agnes-2.5-flash,0.3,6,False,0.4,0.0,0.0,0.0,0.0,1.0,1.0,877,1469,106,10.08
+U42,zero_shot,1,agnes,agnes-2.5-flash,0.3,6,False,0.2,0.0,0.0,0.0,0.0,1.0,1.0,598,1575,304,18.33
+U42,zero_shot,2,agnes,agnes-2.5-flash,0.3,6,False,0.2,0.5,0.0,0.0,0.0,1.0,1.0,694,1173,110,133.87
