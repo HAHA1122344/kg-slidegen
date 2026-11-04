@@ -25,6 +25,7 @@ import base64
 import json
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -48,6 +49,7 @@ class Api:
         self.base = f"https://api.github.com/repos/{repo}"
         self.dry_run = dry_run
         self.calls = 0
+        self.retries = 0
         self._token = token()
 
     def __call__(self, method: str, path: str, payload: dict | None = None) -> dict:
@@ -55,27 +57,45 @@ class Api:
             self.calls += 1
             return {"sha": "0" * 40}
         body = json.dumps(payload).encode() if payload is not None else None
-        request = urllib.request.Request(
-            self.base + path,
-            method=method,
-            data=body,
-            headers={
-                "Authorization": f"Bearer {self._token}",
-                "Accept": "application/vnd.github+json",
-                "Content-Type": "application/json",
-                "User-Agent": "kg-slidegen-import",
-            },
-        )
-        for attempt in range(3):
+
+        # Everything is retried, not only 5xx: behind the proxy on this machine a
+        # CONNECT to api.github.com intermittently answers 502, drops the TLS
+        # session mid-read (UNEXPECTED_EOF) or stalls past the timeout, and a
+        # 1.4 MB blob upload can come back as a 400 "malformed request" that
+        # succeeds unchanged on the next attempt.  A blob upload is idempotent by
+        # construction -- the response sha is derived from the bytes -- so
+        # retrying it cannot duplicate anything.
+        attempts = 7
+        for attempt in range(attempts):
+            request = urllib.request.Request(
+                self.base + path,
+                method=method,
+                data=body,
+                headers={
+                    "Authorization": f"Bearer {self._token}",
+                    "Accept": "application/vnd.github+json",
+                    "Content-Type": "application/json",
+                    "User-Agent": "kg-slidegen-import",
+                },
+            )
+            last = attempt == attempts - 1
             try:
-                with urllib.request.urlopen(request, timeout=90) as response:
+                with urllib.request.urlopen(request, timeout=180) as response:
                     self.calls += 1
                     return json.load(response)
             except urllib.error.HTTPError as exc:
                 detail = exc.read().decode("utf-8", "replace")[:400]
-                if exc.code in (500, 502, 503) and attempt < 2:
-                    continue
-                raise SystemExit(f"{method} {path} -> {exc.code}: {detail}")
+                # 4xx other than 429 are our own fault and will not heal.
+                if exc.code not in (400, 408, 429, 500, 502, 503, 504) or last:
+                    raise SystemExit(f"{method} {path} -> {exc.code}: {detail}")
+                reason = f"HTTP {exc.code}: {detail[:120]}"
+            except (urllib.error.URLError, TimeoutError, OSError) as exc:
+                if last:
+                    raise SystemExit(f"{method} {path} -> {exc}")
+                reason = str(exc)
+            self.retries += 1
+            time.sleep(min(2 ** attempt, 30))
+            print(f"    retry {attempt + 1}/{attempts - 1} {method} {path}: {reason}", flush=True)
         raise SystemExit("unreachable")
 
 
@@ -149,12 +169,20 @@ def main() -> int:
     parser.add_argument("--repo", required=True, help="owner/name")
     parser.add_argument("--branch", default="main")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--jobs", type=int, default=6, help="parallel blob uploads")
+    parser.add_argument("--jobs", type=int, default=3,
+                        help="parallel blob uploads (lower it when the proxy stalls)")
     parser.add_argument(
         "--force",
         action="store_true",
         help="overwrite the branch even if it has commits (needed after bootstrapping "
              "an empty repository, where git-data endpoints answer 409 until one exists)",
+    )
+    parser.add_argument(
+        "--since",
+        metavar="SHA",
+        help="a commit already imported that the remote still has; blobs reachable "
+             "from it are assumed present and are not re-uploaded.  Blob shas are "
+             "content-addressed, so a skipped blob's remote sha is its local one.",
     )
     args = parser.parse_args()
 
@@ -182,9 +210,27 @@ def main() -> int:
         for _mode, obj in entries.values():
             blobs.setdefault(obj, "")
 
+    # With --since, everything already on the remote is taken as present.  This
+    # is what makes a second import cheap: this history is 189 blobs and about
+    # 7 MB, nearly all of it unchanged, and each unchanged PDF is a 1.4 MB POST
+    # through the flaky proxy.
+    if args.since:
+        # The whole ancestry, not just the tip tree: earlier versions of a file
+        # are distinct blobs, and they are on the remote too.
+        present: set[str] = set()
+        for sha in git_text("rev-list", args.since).split():
+            present.update(obj for _mode, obj in tree_entries(sha).values())
+        for obj in list(blobs):
+            if obj in present:
+                blobs[obj] = obj
+        print(f"{len(present & set(blobs))} blobs already at {args.since[:8]}, "
+              f"{sum(1 for v in blobs.values() if not v)} to upload")
+
     def upload(obj: str) -> tuple[str, str]:
         if api.dry_run:
             return obj, obj
+        if blobs[obj]:
+            return obj, blobs[obj]  # skipped by --since
         content = git("cat-file", "blob", obj)
         result = api(
             "POST",
