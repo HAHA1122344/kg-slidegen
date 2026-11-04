@@ -70,22 +70,23 @@ Graph Constraints for Slide Generation in Two Vocational-Education Courses}
 Evaluating generated teaching material raises a question benchmarks do not:
 does the artefact satisfy its course specification? We make it
 computable. Course-level knowledge---what a session must cover, what this cohort
-mislearns, what must not appear yet---is compiled from a curriculum graph into
-an executable contract that doubles as the acceptance criterion, so requirement
+mislearns, what must not appear yet---is compiled into an executable contract
+that doubles as the acceptance criterion, so requirement
 and check cannot drift.
 
 We study the queue module of a vocational \emph{Python Data Structures} course
 across three backbones, three ablations and a second course in another language.
 The change is reliability, not average quality: misconception handling reaches
-1.000 with zero dispersion against 0.556 $\pm$ 0.527 for a text-matched control,
+1.000 $\pm$ 0.000 against 0.556 $\pm$ 0.527 for a text-matched control,
 surviving session clustering. Coverage rises from 0.61--0.70 to 0.98 where the
 backbone follows structural instructions; a length-matched placebo excludes
 prompt length, though a three-cluster interval includes zero. Ablation prices
-each block: removing the misconception slot takes it to 0.167, the
-forbidden list buys 0.083 of out-of-graph control.
+each block---misconception slot 0.889, forbidden list 0.083 of out-of-graph
+control---and the slot's factors interact rather than add: the contract makes
+its text land.
 
-The second course keeps the sign of that contrast but not its reliability, and
-its coverage gain over that control shrinks. Re-running the first course
+The second course keeps the sign but not the reliability; its coverage gain over
+that control shrinks. Re-running the first course
 under that backbone alone removes the advantage, placing the condition on
 the model, not the syllabus: a contract can require a slot; only a compliant
 backbone fills it every time. Ordering is where the representation
@@ -243,9 +244,9 @@ before and after generation.
   of dispersion is the result, because a preparation workflow cannot absorb a coin
   flip; coverage improves by about 0.3 with the length explanation excluded by the
   placebo. The ablation then prices each block separately
-  (Table~\ref{tab:attribution}): $0.833$ of misconception coverage for the slot,
+  (Table~\ref{tab:attribution}): $0.889$ of misconception coverage for the slot,
   $0.083$ of out-of-graph control for the forbidden list, and one documented side
-  effect, the slot's $0.056$ of coverage.
+  effect, the slot's $0.037$ of coverage.
   \textbf{Seven} measurement defects that systematically favour
   constraint-based methods are documented together with their fixes
   (\S\ref{sec:defects}). Two courses bound what can be generalised, and
@@ -1149,18 +1150,18 @@ negative example, as the ablation confirms.
 \paragraph{(5) Attribution: each knowledge component buys the metric it governs}
 Table~\ref{tab:attribution} deletes one block at a time and re-measures every
 metric, so the ablation reads as an attribution rather than as a second set of
-condition means. The misconception slot is worth $0.833$ of misconception
-coverage on its own, and its removal costs $0.056$ of coverage as well, because
+condition means. The misconception slot is worth $0.889$ of misconception
+coverage on its own, and its removal costs $0.037$ of coverage as well, because
 corrective content that names the concept and its failure mode organises the key
 points by the way. The forbidden-term list is worth $0.083$ of out-of-graph
 control and moves nothing else---a clean single-responsibility attribution. The
 ordering block moves its own metric and no other, which is the exception already
 discussed: the deleted line duplicates an order the prompt still carries, and the
-$0.032$ it costs is one run out of six (U11, resampling~1, four inversions among
-twenty-one concept pairs, 0.191, amortised over the batch). \textbf{The positive
+$0.026$ it costs is two of the nine runs, both on U11 (0.191 and 0.048, amortised
+over the batch). \textbf{The positive
 gains in this paper are attributable to named components rather than to the
 pipeline as a whole: each block moves the metric it governs and leaves the others
-at their floor or ceiling, with one spillover---the slot also carries $0.056$ of
+at their floor or ceiling, with one spillover---the slot also carries $0.037$ of
 coverage---and the one arm that moves nothing is the arm whose manipulation leaves
 its target in place.}
 
@@ -1190,6 +1191,59 @@ tokens, more than \id{full}, with only 111 reasoning tokens. Per deck the cost s
 range, negligible against preparation time, but for course-wide batch generation
 the 1.75$\times$ gap is worth engineering away, for example by caching contract
 blocks per session.
+
+\subsection{Crossing the factors: the slot needs the text \emph{and} the contract}
+\label{sec:factorial}
+
+The conditions in Table~\ref{tab:main} vary one thing at a time, which prices
+each block but cannot say whether a block's effect depends on another's. The
+misconception result is the case where that question has an obvious answer
+available: the control that receives the same misconception text without the
+contract (\id{rag\_mc}) already reaches 0.556, so the slot's 1.000 could be the
+contract delivering a text the model cannot otherwise use, or the text alone, or
+both. Crossing the two factors separates them, and the four cells needed are four
+conditions we had already run: \id{full} and \id{no\_misconception} on the
+structure side, \id{rag\_mc} and \id{rag} on the text side
+(Table~\ref{tab:factorial}).
+
+\begin{table}[t]
+\caption{The 2$\times$2 behind the misconception result: misconception coverage,
+mean (standard deviation) over nine runs (three sessions $\times$ three
+resamplings) per cell. ``Structure'' is the contract---concept list, ordering,
+forbidden terms---plus the instruction to dedicate a page to the misconception;
+``text'' is the misconception statement and its correction. Generated by
+\id{paper/factorial.py}.}
+\label{tab:factorial}
+\centering
+\small
+\input{factorial.tex}
+\end{table}
+
+The cell means give a main effect of $+0.167$ for structure and $+0.611$ for the
+text, and an interaction of $+0.556$. The interaction is easiest to read as two
+simple effects of the same text: with the contract in place the misconception
+material is worth $+0.889$ ($1.000$ against $0.111$), and without it $+0.334$
+($0.556$ against $0.222$). The contract on its own is worth $-0.111$---one run
+out of nine, and not a difference to build on. Were the two additive, the joint
+cell would sit at $0.445$; it sits at $1.000$. \textbf{The contract is not
+delivering the text; it is making the text land.} Neither factor alone is close
+to the joint result, so the slot's reliability cannot be attributed to the
+information it carries---which is the objection \id{rag\_mc} was built to raise,
+answered by crossing rather than by argument.
+
+The inference is deliberately weak. With three sessions the unit of analysis is
+the session, and the per-session interaction is positive in all three
+($+0.333$, $+0.667$, $+0.667$), but an exact sign-flip test over three units can
+return no smaller two-sided $p$ than $2/8 = 0.25$, and it returns exactly that:
+the pattern is consistent and the design cannot certify it. Two further
+limits are worth stating. The structured arm differs from the unstructured one in
+the layout instruction as well as the text, so the factor is the
+\emph{requirement}---text plus ``dedicate a page to it''---not the text alone; and
+\id{no\_misconception} comes from the ablation batch rather than the main one,
+which is why Table~\ref{tab:attribution} now reports that batch's \id{full} arm
+beside it: the two batches agree to three decimals on this metric
+($1.000 \pm 0.000$ in both), so a between-batch difference is not what produces
+the interaction.
 
 \subsection{A second backbone replicates the contrast}
 \label{sec:second-backbone}
@@ -1562,7 +1616,7 @@ $0.556 \pm 0.527$ system is unusable and a $1.000 \pm 0.000$ system is usable;
 evaluation in this area should therefore report variance, not means alone, which
 the comparable literature we surveyed frequently does not. Table~\ref{tab:attribution}
 also says which part of the contract buys that reliability: deleting the
-misconception slot alone returns the metric to 0.167, so the stability is a
+misconception slot alone returns the metric to 0.111, so the stability is a
 property of a component a reader can inspect and re-derive, not of the prompt as
 an undifferentiated whole.
 
@@ -1688,12 +1742,15 @@ a different remedy.
 
 \emph{One factor at a time.} Each pair varies one thing while holding another
 fixed (\id{full} vs \id{rag\_mc} holds text and varies structure; \id{full} vs
-\id{placebo} holds length), but the factors are never crossed, so main effects are
-estimable and interactions are not. It remains formally possible that the
-misconception gain requires both structure and text and would vanish if either
-were removed. We read the pattern as additive because both controls are
-individually null, but that is an inference from two marginal comparisons, not a
-factorial result.
+\id{placebo} holds length). Only the misconception result is crossed, in
+\S\ref{sec:factorial}, and there the two factors turn out not to be additive at
+all: the interaction is $+0.556$, so the marginal reading we would otherwise have
+given---that both controls are individually null and the effects add---is wrong
+for that component. For every other block no interaction is estimated, and the
+same caution applies to those as before. It also remains true that structure is
+not one thing: the structured arm changes the concept list, the ordering, the
+forbidden terms and the layout instruction together, so a ``structure'' main
+effect is a summary of that bundle rather than a property of any one part.
 
 \emph{Two models, not a model family.} All runs come from hosted endpoints at one
 point in time. \S\ref{sec:second-backbone} re-runs the claim-bearing conditions on
@@ -1733,7 +1790,7 @@ artefact; the chain from artefact quality to learning gain is untested, and it i
 the chain a teacher cares about.
 
 \emph{Under-powered ablations, one of them null.} Six runs per arm separate a
-metric that moves from 0.000 to 0.083 and cannot resolve one that moves by 0.032;
+metric that moves from 0.000 to 0.083 and cannot resolve one that moves by 0.026;
 and the ordering arm removes less than its name claims, since the concept list it
 leaves behind is already topological, so the order survives its own deletion
 (\S\ref{sec:results}). An ablation of something the prompt states twice has to

@@ -304,6 +304,7 @@ kg-slidegen/
 │   ├── human_eval.csv        # raw teacher blind-review scores (10 decks × 3 raters)
 │   ├── human_eval.py         # blind-review analysis: descriptives, ICC(2,3), bootstrap CIs
 │   ├── repair_loop.py        # re-prompts the runs that failed acceptance, and counts again
+│   ├── factorial.py          # the 2x2 behind the misconception slot (no API calls)
 │   └── figures/              # framework, graph_contract, graphical_abstract
 ├── tests/                    # 44 tests, seven of them one per measurement defect
 ├── config/default.yaml
@@ -355,6 +356,7 @@ python paper/tables.py --cross outputs/bench_kimi   # cross-model table (writes 
 python paper/tables.py --course-b outputs/bench_cpp # second-course table (writes paper/latex/course_b.tex)
 python paper/tables.py --sweep "DeepSeek V4|Python|outputs/main_v1;Kimi K3|Python|outputs/bench_kimi;agnes-2.5-flash|Python|outputs/bench_py_agnes;agnes-2.5-flash|C++|outputs/bench_cpp"  # backbone × course sweep
 python paper/concept_pairs.py --latex  # concept-level pairing (writes paper/latex/concept_pairs.tex, prints the S6 leave-one-out)
+python paper/factorial.py --latex      # the 2x2: cell means, both main effects, the interaction, exact sign-flip p
 python paper/code_check.py             # ast.parse every code block (criteria saturated: 117/117 pass)
 python paper/behavior_check.py         # behaviour probes: 37/117 blocks testable, all 36 executed behaviours pass
 python paper/graph_checks.py           # mutation tests for the graph checks: one defect per error code, 12/12 caught

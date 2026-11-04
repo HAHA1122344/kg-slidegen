@@ -37,14 +37,97 @@
 | cot | 373 | 2638 | 1157 | 14.4 |
 | zero_shot | 347 | 2330 | 984 | 12.4 |
 
+```latex
+\begin{table}[t]
+\centering
+\caption{Main results}
+\label{tab:main}
+\begin{tabular}{lcccccccc}
+\toprule
+Condition & Coverage ↑ & Off-graph ↓ & Background ↓ & Order viol. ↓ & Misconception ↑ & Editable ↑ & Pass rate & Output tok \\
+\midrule
+full (ours) & 0.981 (0.056) & 0.000 (0.000) & 0.027 (0.016) & 0.020 (0.045) & 1.000 (0.000) & 1.000 (0.000) & 67% & 4079 \\
+rag_mc & 0.698 (0.295) & 0.111 (0.220) & 0.027 (0.016) & 0.007 (0.022) & 0.556 (0.527) & 1.000 (0.000) & 22% & 2689 \\
+rag & 0.659 (0.248) & 0.111 (0.220) & 0.032 (0.014) & 0.030 (0.089) & 0.222 (0.441) & 1.000 (0.000) & 0% & 2378 \\
+placebo (length-matched) & 0.675 (0.266) & 0.167 (0.250) & 0.040 (0.018) & 0.096 (0.131) & 0.333 (0.500) & 1.000 (0.000) & 0% & 1444 \\
+cot & 0.614 (0.185) & 0.019 (0.056) & 0.040 (0.016) & 0.089 (0.183) & 0.389 (0.486) & 1.000 (0.000) & 0% & 2638 \\
+zero_shot & 0.643 (0.248) & 0.019 (0.056) & 0.040 (0.011) & 0.037 (0.089) & 0.222 (0.441) & 1.000 (0.000) & 0% & 2330 \\
+\bottomrule
+\end{tabular}
+\end{table}
+```
+
 **Table 2  Ablations (one part of the graph removed at a time)**
 
 | Condition | n | Coverage ↑ | Off-graph ↓ | Background ↓ | Order viol. ↓ | Misconception ↑ | Editable ↑ | Pass rate | Output tok |
 | --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| **full (ours)** | 6 | 1.000 (0.000) | 0.000 (0.000) | 0.023 (0.028) | 0.032 (0.078) | 1.000 (0.000) | 1.000 (0.000) | 83% | — |
-| − ordering | 6 | 1.000 (0.000) | 0.000 (0.000) | 0.027 (0.029) | 0.000 (0.000) | 1.000 (0.000) | 1.000 (0.000) | 100% | — |
-| − misconception | 6 | 0.944 (0.086) | 0.000 (0.000) | 0.023 (0.028) | 0.040 (0.064) | 0.167 (0.408) | 1.000 (0.000) | 50% | — |
-| − forbidden list | 6 | 1.000 (0.000) | 0.083 (0.129) | 0.032 (0.031) | 0.000 (0.000) | 1.000 (0.000) | 1.000 (0.000) | 100% | — |
+| **full (ours)** | 9 | 0.981 (0.056) | 0.000 (0.000) | 0.024 (0.024) | 0.026 (0.063) | 1.000 (0.000) | 1.000 (0.000) | 67% | 1036 |
+| − ordering | 9 | 1.000 (0.000) | 0.000 (0.000) | 0.028 (0.029) | 0.000 (0.000) | 1.000 (0.000) | 1.000 (0.000) | 100% | 790 |
+| − misconception | 9 | 0.944 (0.083) | 0.000 (0.000) | 0.024 (0.026) | 0.043 (0.065) | 0.111 (0.333) | 1.000 (0.000) | 44% | 842 |
+| − forbidden list | 9 | 1.000 (0.000) | 0.083 (0.125) | 0.031 (0.025) | 0.000 (0.000) | 1.000 (0.000) | 1.000 (0.000) | 100% | 1092 |
+
+```latex
+\begin{table}[t]
+\centering
+\caption{Ablation}
+\label{tab:ablation}
+\begin{tabular}{lcccccccc}
+\toprule
+Condition & Coverage ↑ & Off-graph ↓ & Background ↓ & Order viol. ↓ & Misconception ↑ & Editable ↑ & Pass rate & Output tok \\
+\midrule
+full (ours) & 0.981 (0.056) & 0.000 (0.000) & 0.024 (0.024) & 0.026 (0.063) & 1.000 (0.000) & 1.000 (0.000) & 67% & 1036 \\
+− ordering & 1.000 (0.000) & 0.000 (0.000) & 0.028 (0.029) & 0.000 (0.000) & 1.000 (0.000) & 1.000 (0.000) & 100% & 790 \\
+− misconception & 0.944 (0.083) & 0.000 (0.000) & 0.024 (0.026) & 0.043 (0.065) & 0.111 (0.333) & 1.000 (0.000) & 44% & 842 \\
+− forbidden list & 1.000 (0.000) & 0.083 (0.125) & 0.031 (0.025) & 0.000 (0.000) & 1.000 (0.000) & 1.000 (0.000) & 100% & 1092 \\
+\bottomrule
+\end{tabular}
+\end{table}
+```
+
+```latex
+\begin{tabular}{@{}l l cc r@{}}
+\toprule
+Block removed & Metric & \id{full} & Without & $\Delta$ \\
+\midrule
+Misconception slot & Misconception $\uparrow$ & 1.000 (0.000) & 0.111 (0.333) & $-0.889$ \\
+Misconception slot & Coverage $\uparrow$ (side) & 0.981 (0.056) & 0.944 (0.083) & $-0.037$ \\
+Forbidden list & Out-of-graph $\downarrow$ & 0.000 (0.000) & 0.083 (0.125) & $+0.083$ \\
+Ordering block & Order viol. $\downarrow$ & 0.026 (0.063) & 0.000 (0.000) & $-0.026$ \\
+\bottomrule
+\end{tabular}
+```
+
+
+**Table 3  Second course (C++ arrays)**
+
+| Condition | n | Coverage ↑ | Off-graph ↓ | Background ↓ | Order viol. ↓ | Misconception ↑ | Editable ↑ | Pass rate | Output tok |
+| --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| **full (ours)** | 4 | 0.800 (0.163) | 0.000 (0.000) | 0.005 (0.005) | 0.042 (0.083) | 0.625 (0.479) | 1.000 (0.000) | 25% | 1477 |
+| rag_mc | 4 | 0.600 (0.231) | 0.000 (0.000) | 0.000 (0.000) | 0.017 (0.033) | 0.375 (0.479) | 1.000 (0.000) | 0% | 2019 |
+| zero_shot | 4 | 0.350 (0.191) | 0.125 (0.250) | 0.000 (0.000) | 0.042 (0.083) | 0.000 (0.000) | 1.000 (0.000) | 0% | 1344 |
+
+
+**Cross-model replication**
+
+| Condition | Backbone | n | Coverage ↑ | Off-graph ↓ | Order viol. ↓ | Misconception ↑ | Pass rate |
+| --- | --- | :-: | :-: | :-: | :-: | :-: | :-: |
+| **full (ours)** | DeepSeek V4 | 9 | 0.981 (0.056) | 0.000 (0.000) | 0.020 (0.045) | 1.000 (0.000) | 67% |
+| rag_mc | DeepSeek V4 | 9 | 0.698 (0.295) | 0.111 (0.220) | 0.007 (0.022) | 0.556 (0.527) | 22% |
+| rag | DeepSeek V4 | 9 | 0.659 (0.248) | 0.111 (0.220) | 0.030 (0.089) | 0.222 (0.441) | 0% |
+| placebo (length-matched) | DeepSeek V4 | 9 | 0.675 (0.266) | 0.167 (0.250) | 0.096 (0.131) | 0.333 (0.500) | 0% |
+| cot | DeepSeek V4 | 9 | 0.614 (0.185) | 0.019 (0.056) | 0.089 (0.183) | 0.389 (0.486) | 0% |
+| zero_shot | DeepSeek V4 | 9 | 0.643 (0.248) | 0.019 (0.056) | 0.037 (0.089) | 0.222 (0.441) | 0% |
+| **full (ours)** | Kimi K3 | 6 | 1.000 (0.000) | 0.000 (0.000) | 0.016 (0.025) | 1.000 (0.000) | 67% |
+| rag_mc | Kimi K3 | 6 | 0.734 (0.229) | 0.056 (0.136) | 0.033 (0.082) | 0.667 (0.516) | 17% |
+| placebo (length-matched) | Kimi K3 | 6 | 0.659 (0.188) | 0.056 (0.136) | 0.028 (0.068) | 0.333 (0.516) | 0% |
+| zero_shot | Kimi K3 | 5 | 0.543 (0.270) | 0.000 (0.000) | 0.000 (0.000) | 0.400 (0.548) | 0% |
+
+**Key contrast: full − rag_mc (misconception coverage / coverage)**
+
+| Backbone | Δ misconception | Δ coverage |
+| --- | :-: | :-: |
+| DeepSeek V4 | +0.444 | +0.283 |
+| Kimi K3 | +0.333 | +0.266 |
 
 
 **Backbone × course: the two paired differences**

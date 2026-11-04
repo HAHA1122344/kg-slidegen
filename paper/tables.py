@@ -261,7 +261,7 @@ def cross_model_latex(
     return "\n".join(lines)
 
 
-def attribution_latex(rows: list[dict], floor: float = 0.04) -> str:
+def attribution_latex(rows: list[dict], floor: float = 0.03) -> str:
     """One row per (removed block, metric that moves), for Table 5.
 
     The ablation is read as an attribution problem rather than as a second set
@@ -271,10 +271,11 @@ def attribution_latex(rows: list[dict], floor: float = 0.04) -> str:
     is why the misconception slot contributes two rows -- it also organises the
     key points, and hiding that would overstate the cleanliness of the method.
 
-    ``floor`` is set above 0.032 on purpose.  A single run of the six-run
-    ``full`` arm carries one order violation, so every arm of this batch reads
-    0.000 on that metric; printing that as a side effect of the forbidden-term
-    list would attribute a sampling accident to a block.
+    ``floor`` is 0.03.  It has to sit above the amplitude of a sampling
+    accident -- a single violating run contributes 1/9 of its own rate to the
+    batch mean -- and below the slot's real spillover onto coverage, which is
+    0.037 once both arms carry nine runs.  At nine runs per arm the forbidden
+    list's secondary movement is 0.026 and stays out; the slot's does not.
     """
     buckets = grouped(rows)
     if "full" not in buckets:

@@ -439,6 +439,62 @@ budget cannot rest on "it will converge"; it has to be set by cost. Table 4 keep
 first-pass figure; 9/9 is a bounded, costed repair outcome on nine decks, not the method's pass
 rate.
 
+## 8b. Crossing the misconception factors
+
+The six contrasts vary one thing at a time, so they price each block but cannot say whether a
+block's effect depends on another's. For the misconception slot that question has an answer
+already paid for: the same misconception text reaches 0.556 without the contract, so a slot at
+1.000 could be the contract delivering the text, the text alone, or both.
+
+The four cells needed are the four conditions already run, which is why `paper/factorial.py`
+calls no API. It reads `report.md` next to each stored payload rather than re-scoring the JSON:
+re-running the metric code would let later metric changes rewrite numbers that were reported
+under an earlier definition.
+
+| Cell | Condition | Source directory | n |
+| --- | --- | --- | :-: |
+| S+T | `full` | `outputs/main_v1` | 9 |
+| S | `no_misconception` | `outputs/bench_ablation` | 9 |
+| T | `rag_mc` | `outputs/main_v1` | 9 |
+| 0 | `rag` | `outputs/main_v1` | 9 |
+
+**Result.** Main effect of structure +0.167, of text +0.611; interaction +0.556. The interaction
+is the finding, and it is easier to read as two simple effects of the same text: +0.889 with the
+contract (1.000 against 0.111) and +0.334 without it (0.556 against 0.222). The contract alone
+is −0.111, which is one run out of nine. Additive factors would put the joint cell at 0.445; it
+sits at 1.000.
+
+**Inference, deliberately weak.** The unit of analysis is the session, not the run. Per-session
+interactions are +0.333, +0.667, +0.667 — all positive, all three sessions. An exact sign-flip
+test over three units enumerates 2³ = 8 sign patterns, so the smallest two-sided p the design
+can return is 2/8 = 0.25, and it returns exactly 0.25. The direction is consistent; the design
+cannot certify it, and nothing in the paper reports it as significant. The cluster bootstrap
+interval on the interaction (resampling sessions with replacement, 20 000 draws) is
+[+0.333, +0.667], which is an interval over three clusters and should be read as such.
+
+**What the factor is.** The structured arm differs from the unstructured one in the layout
+instruction as well as the text, so the factor is the *requirement* — text plus "dedicate a page
+to it" — not the text alone. And `no_misconception` comes from the ablation batch, which is why
+`Table 5` in the paper reports that batch's `full` arm beside it: the two batches agree to three
+decimals on this metric (1.000 ± 0.000 in both), so a between-batch difference is not what
+produces the interaction.
+
+**The ablation batch was topped up to n = 9** for this section. At n = 6 the S cell and the
+attribution table would have quoted different sample sizes for the same condition. After the
+top-up the attribution table is internally consistent:
+
+| Block removed | Metric | `full` | without | Δ |
+| --- | --- | :-: | :-: | :-: |
+| Misconception slot | Misconception ↑ | 1.000 (0.000) | 0.111 (0.333) | −0.889 |
+| Misconception slot | Coverage ↑ (side effect) | 0.981 (0.056) | 0.944 (0.083) | −0.037 |
+| Forbidden list | Out-of-graph ↓ | 0.000 (0.000) | 0.083 (0.125) | +0.083 |
+| Ordering block | Order violations ↓ | 0.026 (0.063) | 0.000 (0.000) | −0.026 |
+
+`tables.attribution_latex` takes a `floor` below which a difference is not printed. It is 0.03,
+not 0.04: 0.04 would swallow the slot's real 0.037 spillover into coverage, while 0.03 sits above
+the sampling noise in this batch (about 0.026) and still keeps the forbidden list's 0.026 out of
+the table. The floor has to be justified by the batch's noise, not chosen to make a row appear.
+
 ## 9. Reproduction commands
 
 ```bash
@@ -482,6 +538,10 @@ python paper/tables.py --sweep "DeepSeek V4|Python|outputs/main_v1;Kimi K3|Pytho
 # concept-level pairing (§5.4, supplementary S5; no API calls)
 python paper/concept_pairs.py            # print the per-baseline pairing tables
 python paper/concept_pairs.py --latex    # write paper/latex/concept_pairs.tex
+
+# the 2x2 behind the misconception result (§8b; no API calls -- reads stored reports)
+python paper/factorial.py                # cell means, main effects, interaction, sign-flip p
+python paper/factorial.py --latex        # write paper/latex/factorial.tex
 
 # repair loop (§8): re-prompts the failing runs of one condition, then counts again
 PYTHONPATH=src python paper/repair_loop.py --source outputs/bench_py_agnes \
