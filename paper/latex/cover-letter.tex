@@ -36,58 +36,57 @@ Vocational-Education Courses''}
 Dear Editors,
 
 On behalf of all authors, I am submitting the manuscript above for consideration
-as a research article in \emph{Knowledge-Based Systems}.
+as a research article in \emph{Knowledge-Based Systems}. It is a
+knowledge-representation paper before it is a generation paper: the object is not
+a better slide generator but \emph{how curriculum knowledge must be represented
+in order to be actionable by a machine}, and how a machine can then check that
+the requirement it stated was met. Mapped onto the journal's four expectations:
 
-\textbf{Where the paper sits in the journal's scope.} The journal's stated topics
-include \emph{knowledge presentation and engineering}, and its objectives ask for
-work that balances theory with practical study and develops knowledge-based
-models, methods and tools with applications in education. This manuscript is a
-knowledge-representation paper before it is a generation paper, and it makes two
-claims of different kinds. An \emph{effect} claim: a graph-compiled contract
-improves generated decks along named dimensions. A \emph{scope} claim: which
-dimensions of a syllabus can be compiled into requirements that are simultaneously
-generation constraints and acceptance criteria is a measurable property of the
-representation rather than a matter of taste---and that boundary depends jointly
-on the representation and on the backbone's willingness to execute a structural
-instruction. The second is the claim we expect to outlive the course, and it is why
-the generator is swapped for other models.
+\textbf{(1) A knowledge-driven contribution.} Course-level knowledge---the
+concepts a session must cover, the misconception this cohort keeps committing,
+what must not be introduced yet---is held in a curriculum knowledge graph and
+compiled, before generation, into an executable \emph{session contract}. The
+contract is the knowledge representation under test: presence, absence and a
+corrective slot become hard constraints; order is expressible in the graph but
+cannot be withheld by the interface, and we report that as the boundary of the
+representation rather than as a result about ordering.
 
-\textbf{The knowledge-engineering claim.} Course-level knowledge---the concepts a
-session must cover, the misconception this cohort keeps committing, what must not
-be introduced yet---is represented as a curriculum knowledge graph and compiled,
-before generation, into an executable contract that then serves as the acceptance
-criterion, so requirement and check are one data object and cannot drift. This
-differs from retrieval: a retrieved passage decides what the model \emph{reads},
-whereas a compiled contract decides what the output \emph{owes}, and an unmet
-obligation is a defect by construction. Section~1.5 gives the representational
-argument: presence, absence and a corrective slot admit hard constraints; order is
-expressible in the graph but cannot be withheld by the interface.
+\textbf{(2) Methodological novelty.} Constraint-as-data: \texttt{UnitConstraints}
+is read twice, once to build the prompt and once to score the finished deck, so
+what is demanded and what is checked are one object and cannot drift. This differs
+from retrieval---a retrieved passage decides what the model \emph{reads}, a
+compiled contract decides what the output \emph{owes}---and it is testable: the
+design is what let us find seven measurement defects in our own pipeline, each
+silently favouring the constrained condition, all documented with their fixes.
 
-\textbf{What the evidence supports.} The central comparison is not ``text present
-vs absent'' but a $2\times2$ over the \emph{same} passage. Holding the
-misconception statement fixed, the study crosses whether the contract carries a
-slot for it: $1.000$ with structure and text, $0.111$ with structure alone,
+\textbf{(3) Isolation of knowledge components.} The central comparison is not
+``text present vs absent'' but a $2\times2$ over the \emph{same} passage.
+Holding the misconception statement fixed, we cross whether the contract carries
+a slot for it: $1.000$ with structure and text, $0.111$ with structure alone,
 $0.556$ with text alone, $0.222$ with neither. The interaction is $+0.556$---the
-same passage is worth $+0.889$ inside the contract and $+0.334$ outside it---which
-is the paper's claim in one line: the contract does not deliver the text, it makes
-the text land. That is the isolation of a knowledge component the journal asks
-for, and it is offered as a descriptive mechanism claim, not a significance claim:
-with three sessions an exact sign-flip test cannot return a two-sided $p$ below
-$0.25$, and the four cells are conditions run for other purposes rather than a
-crossing randomised inside one batch.
+same passage is worth $+0.889$ inside the contract and $+0.334$ outside it. One
+line: the contract does not deliver the text, it makes the text land. A
+three-arm ablation then prices each block separately: the forbidden-term list
+buys $0.083$ of out-of-graph control and moves nothing else, and the slot prices
+at $0.889$ of misconception coverage.
 
-Around it: a six-condition experiment in one higher-vocational course (54 runs),
-three one-factor ablations (27 runs), a length-matched placebo, a blind review by
-three teachers, the claim-bearing conditions replicated on two further models and
-on a second course in another language, a run that holds the course fixed while
-changing only the endpoint, and a bounded repair loop that takes the main grid from
-6/9 to 9/9 in three calls while the weakest backbone moves only from 4/6 to 5/6.
-The ablation attributes each remaining gain to a named block: the
-forbidden-term list buys 0.083 of out-of-graph control and moves nothing else, and
-the ordering row is reported as a null manipulation rather than as a price.
-Seven measurement defects that had favoured
-constraint-based methods are documented with their fixes; the paper states plainly
-that it is a two-course case study with no learning-outcome measurement.
+\textbf{(4) A real deployment context.} Two higher-vocational courses in two
+languages (Python data structures; C++ arrays), six conditions (54 runs), three
+ablations (27 runs), a length-matched placebo, a blind review by three teachers
+of the course (ICC(2,3)~$=0.92$, ordering agreement with the automatic metrics),
+the claim-bearing conditions replicated on two further models, and a bounded
+repair loop that takes the main grid from $6/9$ to $9/9$ in three calls while the
+weakest backbone moves only from $4/6$ to $5/6$.
+
+\textbf{Sample boundaries, stated up front.} The scope claim is analytic: which
+syllabus dimensions compile into a criterion is a property of the representation
+and does not rest on the sample size. The effect claim is bounded and reported as
+such---descriptive intervals, a $2\times2$ assembled post hoc from conditions run
+for other purposes and split across two batches, and a five-cell sweep with four
+runs per cell that separates course from backbone \emph{in sign, not in size}.
+With three sessions an exact sign-flip test cannot return a two-sided $p$ below
+$0.25$; we say so in the paper and do not dress the result as a significance
+claim. Nothing here measures learning outcomes.
 
 \textbf{Reproducibility.} Code, both curriculum graphs, prompts, the protocol and
 all raw outputs are archived in a public repository (Zenodo DOI:
@@ -97,9 +96,9 @@ proprietary or licensed textbook content is redistributed.
 
 \textbf{Declarations.} The manuscript is original, is not under consideration
 elsewhere, and all four authors have approved the version submitted and agree to
-its submission here. No competing interests; no specific grant from funding agencies in the public,
-commercial or not-for-profit sectors. The course data are aggregate classroom
-statistics; no student-level record is included.
+its submission here. No competing interests; no specific grant from funding
+agencies in the public, commercial or not-for-profit sectors. The course data are
+aggregate classroom statistics; no student-level record is included.
 
 I would be glad to provide any further information the editors require.
 
