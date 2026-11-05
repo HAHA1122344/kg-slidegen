@@ -148,8 +148,8 @@ failures recur.
 
 \begin{itemize}
   \item The objective says students must \emph{implement} enqueue and dequeue on
-  a sequential queue using a Python list. The deck never shows \textbf{how to
-  write it}: it covers the definition, the false-overflow problem and the
+  a sequential queue using a Python list. The deck never shows how to
+  write it: it covers the definition, the false-overflow problem and the
   circular queue as the remedy---everything except the step the syllabus
   requires students to perform.
   \item The session carries a misconception that more than 60\% of this cohort
@@ -178,7 +178,7 @@ are not additive: the contract is what makes the text land.
 \label{sec:thesis}
 
 The bottleneck has shifted from \emph{knowledge acquisition} to the
-\textbf{representation and application of course-level knowledge}. A general
+representation and application of course-level knowledge. A general
 model holds disciplinary knowledge (what a queue is, why FIFO matters); slide
 production needs \emph{situated} knowledge, of three kinds. It is
 \emph{cohort-specific}---this year's students confuse the empty and full
@@ -188,7 +188,7 @@ merges ``linked queue'' and ``introducing BFS'' into one session, a scheduling
 decision that varies by institution; and \emph{landing-point specific}---this
 course requires ``can write the code'', not ``can state the concept'', which the
 curriculum standard sets and the textbook does not. None can be obtained from a
-larger model or a better prompt; all must be \textbf{supplied from outside}. The question is in
+larger model or a better prompt; all must be supplied from outside. The question is in
 what form, such that the model can follow it \emph{and} the system can
 afterwards check whether it did.
 
@@ -208,7 +208,7 @@ throughout, and where a result belongs to the first we say so.
 \subsection{Our answer}
 \label{sec:answer}
 
-A \textbf{knowledge graph}, because it satisfies four requirements at once. It is
+A knowledge graph, because it satisfies four requirements at once. It is
 \emph{expressive} enough for heterogeneous entities (misconceptions, skills,
 competence levels); \id{prerequisites\_for} is a directed edge, so a topological
 sort \emph{is} a legal teaching order; one session's subgraph \emph{compiles}
@@ -238,7 +238,7 @@ before and after generation.
   difference from ``one schema for the prompt and one for the validator'' is
   testable: co-located schemas let a checker defect pass invisibly, whereas a
   single data structure read twice gives a mistake one place to live and the
-  ablation a price to report. We found \textbf{seven} measurement defects in our
+  ablation a price to report. We found seven measurement defects in our
   own pipeline, each written independently of the contract and each silently
   favouring the constrained condition (\S\ref{sec:defects}).
 
@@ -320,8 +320,8 @@ wins---a property of the experiment presented as a property of the method.
 
 \subsection{Why this belongs in \emph{Knowledge-Based Systems}}
 
-The object of this paper is not ``a better slide generator'' but \textbf{how
-knowledge must be represented in order to be actionable by a machine}. Three recent
+The object of this paper is not ``a better slide generator'' but how
+knowledge must be represented in order to be actionable by a machine. Three recent
 papers in this journal set the context: Dai et al.~\cite{dai2025kg} show that the
 \emph{presentation format} of a graph changes what a model comprehends, Huang et
 al.~\cite{huang2025longtail} show that triples and passages are not interchangeable
@@ -372,8 +372,8 @@ builds a multimodal graph over open courseware, and Ma et
 al.~\cite{ma2026ledlcm} apply knowledge-enhanced LLMs to course
 recommendation. The centre of gravity in that literature is \emph{building}
 graphs; ours is \emph{using} them. We reuse the K12-KGraph skeleton rather than
-replace it, but a vocational graph must additionally carry \textbf{competence
-level} (mandatory versus optional) and \textbf{typical misconceptions}
+replace it, but a vocational graph must additionally carry competence
+level (mandatory versus optional) and typical misconceptions
 (corrective content); K12-KGraph has an importance attribute it does not use to
 constrain generation, and no misconceptions at all. The retrieval side divides
 differently: GraphRAG~\cite{edge2024graphrag} and the wider RAG
@@ -556,8 +556,8 @@ the formal statement of ``demand and check share one source.''
 Fig.~\ref{fig:framework} shows the pipeline: graph $\to$ contract compilation
 $\to$ generation $\to$ rendering $\to$ validation against the same contract. One
 loop exists---pages that fail validation may be regenerated---and its boundary is
-fixed: \textbf{the loop may change slides, but never the graph and never the
-contract}. Whether to regenerate is a teacher's decision. Were validation output
+fixed: the loop may change slides, but never the graph and never the
+contract. Whether to regenerate is a teacher's decision. Were validation output
 allowed to reshape the contract, acceptance would degrade into an objective
 (\S\ref{sec:defects}).
 
@@ -608,7 +608,7 @@ Two edge types are added:
   \S\ref{sec:code}; it is not otherwise a scoring dimension.
   \item \id{addresses\_misconception}: Unit, Lab or Concept $\to$ Misconception,
   annotated with a strategy (counter-example, code demonstration, boundary test).
-  This edge decides \textbf{which session is responsible} for correcting a given
+  This edge decides which session is responsible for correcting a given
   misconception, preventing both duplication across sessions and orphaned
   misconceptions.
 \end{itemize}
@@ -645,7 +645,7 @@ than whether the file is well formed:
   \item \textbf{No orphan misconception.} An orphan can never enter any contract,
   and the 0.556 reported for the control conditions would then be a property of
   the graph rather than of generation.
-  \item \textbf{\id{implements} is well typed and grounded}: the edge must point at
+  \item \id{implements} is well typed and grounded: the edge must point at
   an executable artefact, and its source must be taught in at least one session.
 \end{itemize}
 
@@ -879,20 +879,20 @@ Metric & Definition & Direction \\
 \end{table}
 
 Three definitional decisions determine the conclusions and therefore require
-explicit justification: (1)~\textbf{coverage counts body slides only}---title,
+explicit justification: (1)~coverage counts body slides only---title,
 objectives and summary slides list every concept by definition, so counting
 them as ``taught'' lets a table of contents score full marks; every condition
 emits all three pages, so the exclusion is symmetric, but it is a
 \emph{convention}, not a fact about teaching, and
 \S\ref{sec:coverage-sensitivity} reports what happens when it is relaxed;
-(2)~\textbf{coverage matches on name and aliases}---otherwise \id{full}, which
+(2)~coverage matches on name and aliases---otherwise \id{full}, which
 copies source names, enjoys a structural advantage (\S\ref{sec:defects});
-(3)~\textbf{order is judged by first textual position}---the model's
+(3)~order is judged by first textual position---the model's
 \id{concept\_ids} are self-reported, the three baselines were never told the
 field exists, and scoring on self-reports means a completely empty answer
 receives a zero violation rate.
 
-\paragraph{Is the preview-page convention doing the work?}
+\paragraph{Whether the preview-page convention is doing the work}
 \label{sec:coverage-sensitivity}
 The first decision is the one a reader should distrust, so we recomputed coverage
 for all 54 main runs under two relaxations of it (Supplementary
@@ -975,8 +975,8 @@ outscores a randomly drawn \id{rag\_mc} deck with probability 0.80.
 That interval resamples runs and so treats nine correlated draws as independent.
 Resampling whole sessions---three clusters, all $27$ resamples enumerated---widens
 it to $[-0.056, +0.667]$, and the per-session contrast shows why: $+0.238$ on U11,
-$+0.667$ on U12, $-0.056$ on U10. \textbf{The coverage advantage is carried by two
-of three sessions and is absent in the third.} We give both intervals---the
+$+0.667$ on U12, $-0.056$ on U10. The coverage advantage is carried by two
+of three sessions and is absent in the third. We give both intervals---the
 run-level one because it is what nine runs per condition support, the clustered one
 because it is the honest uncertainty---and the claim surviving both is narrower
 than ``coverage rises from 0.61 to 0.98''
@@ -1010,14 +1010,14 @@ succeeds fully in about half of nine generations and misses entirely in the rest
 \id{full} reaches 1.000 with degenerate interval $[1.000, 1.000]$ and zero
 dispersion; the difference is $+0.444$ $[+0.111, +0.778]$. Unlike coverage, this
 survives clustering---$+0.333$ on U10, $+0.333$ on U11, $+0.667$ on U12, so the
-cluster interval $[+0.333, +0.667]$ excludes zero. \textbf{Of the two headline
-results, the misconception one is the one that holds up.}
+cluster interval $[+0.333, +0.667]$ excludes zero. Of the two headline
+results, the misconception one is the one that holds up.
 
 What it supports is narrower than ``the graph teaches better''. \id{full} differs
 from \id{rag\_mc} in several ways at once---ordering block, forbidden list, layout
-rules, and a page of a particular kind. The defensible reading is that \textbf{a
+rules, and a page of a particular kind. The defensible reading is that a
 contract specifying where corrective content must appear gets it to appear
-reliably, whereas the same content as flat prose does not}; whether the active
+reliably, whereas the same content as flat prose does not; whether the active
 ingredient is the dedicated page, the surrounding structural demands, or the
 mention of a required slot is not identified by this design
 (\S\ref{sec:external}).
@@ -1032,10 +1032,10 @@ topological order---the same order the deleted block restates---so
 \id{no\_order} still tells the model what comes first, and nine runs of a
 duplicate cannot price the original. This is the dimension
 \S\ref{sec:boundary} marked in advance, and the result matches the prediction:
-\textbf{ordering is neither refuted nor confirmed---it is the dimension on
+ordering is neither refuted nor confirmed---it is the dimension on
 which this representation stops being able to separate the requirement from the
 content that satisfies it, and we classify it as a boundary rather than price
-it as an effect.}
+it as an effect.
 
 \paragraph{(4) Out-of-graph: \id{rag} and \id{rag\_mc} are worse than
 zero-shot} Both reach 0.111 and the placebo 0.167, whereas \id{zero\_shot} sits at
@@ -1056,15 +1056,15 @@ of out-of-graph control and moves nothing else---a clean
 single-responsibility attribution. The ordering block moves its own metric and
 no other, which is the exception already discussed. Read literally, its row
 says that deleting the block improves order ($0.026$ against $0.000$), and
-that is the reading to refuse: \textbf{the row does not price the ordering
-constraint}, because the deleted line duplicates an order the prompt still
+that is the reading to refuse: the row does not price the ordering
+constraint, because the deleted line duplicates an order the prompt still
 carries, so the manipulation removes nothing---and the $-0.026$ is not the
 block being harmful but two of the nine runs violating order, both on U11.
-\textbf{The positive gains in this paper are attributable to named components
+The positive gains in this paper are attributable to named components
 rather than to the pipeline as a whole: each block moves the metric it governs
 and leaves the others at their floor or ceiling, with one spillover---the slot
 also carries $0.037$ of coverage---and the one arm that moves nothing is the
-arm whose manipulation leaves its target in place.}
+arm whose manipulation leaves its target in place.
 
 \begin{table}[t]
 \caption{Attribution by ablation: each block is deleted alone and all four
@@ -1146,8 +1146,8 @@ simple effects of the same text: with the contract in place the misconception
 material is worth $+0.889$ ($1.000$ against $0.111$), and without it $+0.334$
 ($0.556$ against $0.222$). The contract on its own is worth $-0.111$---one run
 out of nine, and not a difference to build on. Were the two additive, the joint
-cell would sit at $0.445$; it sits at $1.000$. \textbf{The contract is not
-delivering the text; it is making the text land.} Neither factor alone is close
+cell would sit at $0.445$; it sits at $1.000$. The contract is not
+delivering the text; it is making the text land. Neither factor alone is close
 to the joint result, so the slot's reliability cannot be attributed to the
 information it carries---which is the objection \id{rag\_mc} was built to raise,
 answered by crossing rather than by argument.
@@ -1166,9 +1166,9 @@ ablation batch while the other three come from the main one, which is why
 Table~\ref{tab:attribution} reports that batch's \id{full} arm beside it. The two
 batches agree to three decimals on this metric ($1.000 \pm 0.000$ in both), so a
 between-batch difference is not what produces the interaction---but agreement on
-one arm is not a common batch. \textbf{Running the four cells together is the
+one arm is not a common batch. Running the four cells together is the
 clean version of this design, and it is not what we did; what the table supports
-is a mechanism, not a significance claim.}
+is a mechanism, not a significance claim.
 
 \subsection{A second backbone replicates the contrast}
 \label{sec:second-backbone}
@@ -1188,9 +1188,9 @@ $-0.444$ on DeepSeek) and to 0.333 for the length-matched placebo; coverage fall
 from 1.000 to 0.734 ($-0.266$, against $-0.283$). More telling than either mean is
 the variance: \id{full} returns 1.000 in every run under both models, while
 \id{rag\_mc}'s standard deviation is 0.516 on Kimi against 0.527 on DeepSeek.
-\textbf{What replicates is not an effect size but a property: a contract that
+What replicates is not an effect size but a property: a contract that
 names the slot fills it every time, and the same text without a slot fills it two
-times in three.}
+times in three.
 
 Two things do not replicate, and they bound the claim. The gain is smaller on the
 second model ($0.333$ against $0.444$), which is what a stronger model should
@@ -1198,13 +1198,12 @@ produce if the contract compensates for a weakness rather than teaching somethin
 the model cannot do; and on U11 every condition scored 1.000 on Kimi, zero-shot
 included, so the session that carries the effect under one model carries none
 under the other. Six runs also leave the pass-rate gap (67\% against 17\%)
-without a usable interval. \textbf{The replication rules out a single vendor's
+without a usable interval. The replication rules out a single vendor's
 artefact and supports nothing about model families; one more model would not
-change that.}
+change that.
 
 
-\subsection{A second course: the direction replicates, the reliability belongs
-to the model}
+\subsection{A second course: the direction replicates, the reliability tracks the backbone}
 \label{sec:second-course}
 
 Every result so far comes from one course, so the natural objection is that the
@@ -1217,7 +1216,7 @@ Two sessions, three conditions (\id{full}, \id{rag\_mc}, \id{zero\_shot}) and
 two resamplings: twelve runs. Two things differ from the main study, and both
 are stated rather than smoothed over: the backbone is a different model on a
 different endpoint (\id{agnes-2.5-flash}, temperature 0.3), chosen because the
-primary key was out of balance on the day of the run; and the course's
+account's primary API key had exhausted its quota when the runs were issued; and the course's
 misconceptions come from the lesson plan's difficulty list and reflection
 section rather than from exam error statistics---instructor-documented
 difficulties, not measured frequencies. The replication therefore tests course
@@ -1235,7 +1234,7 @@ Generated by \id{paper/tables.py -{}-course-b outputs/bench\_cpp}.}
 \input{course_b.tex}
 \end{table}
 
-\textbf{The direction survives.} Coverage is 0.800 (0.163) against 0.350 (0.191)
+The direction survives. Coverage is 0.800 (0.163) against 0.350 (0.191)
 for zero-shot and 0.600 (0.231) for the text-matched control---gaps of $+0.450$
 and $+0.200$, larger than the $+0.283$ of the first course because the weaker
 backbone starts lower. Misconception handling is 0.625 (0.479) against 0.000
@@ -1245,7 +1244,7 @@ pattern too: zero-shot imports material from later chapters (0.125), the
 contract does not (0.000). Both claim-bearing contrasts keep their sign on a
 different course, a different language and a different backbone.
 
-\textbf{The second moment does not.} In the first course the slot produced
+The second moment does not. In the first course the slot produced
 $1.000 \pm 0.000$; here it produces $0.625 \pm 0.479$---two runs of four fill
 the slot and two do not, and the matched control has the same dispersion. The
 contract still moves the mean, and still beats the control that carries the
@@ -1260,8 +1259,8 @@ The mirror cell separates them, and not in the direction the first explanation
 predicts. On this course under DeepSeek the slot reaches $0.875 \pm 0.250$ in
 four runs: better than under \id{agnes-2.5-flash}, and still not certain, where
 the same endpoint returns $1.000 \pm 0.000$ in nine runs out of nine on the
-first course. \textbf{The residual variance travels with the syllabus, not only
-with the model:} a compliant backbone fills the slot on the course whose
+first course. The residual variance travels with the syllabus, not only
+with the model: a compliant backbone fills the slot on the course whose
 misconception counts the graph records, and fills it in most runs rather than
 all on the course where those counts are assumed. That is a narrower condition
 than ``a good model suffices'', and a more useful one, because a course's
@@ -1279,7 +1278,7 @@ course whose misconceptions are counted rather than assumed. Neither condition
 is visible inside one course, and both are the kind of statement a reader can
 check against their own model and their own syllabus.
 
-\textbf{Which of the two changed.} The second course moves syllabus, language
+Which of the two changed. The second course moves syllabus, language
 and endpoint at once, so the failure above has two candidate explanations and
 its own design cannot choose between them. Holding the first course unchanged
 in every respect, we re-ran the same three conditions on
@@ -1288,8 +1287,8 @@ Table~\ref{tab:sweep} row~3. The slot's advantage disappears there too, and in
 the same way: $0.833 \pm 0.408$ against $0.833 \pm 0.408$ for the control that
 receives the same misconception text, a difference of $0.000$ where the same
 course produced $+0.444$ under DeepSeek and $+0.333$ under Kimi. Only the
-endpoint changed, so \textbf{the precondition tracks the model rather than the
-course}; the second course's failure was most plausibly this behaviour,
+endpoint changed, so the precondition tracks the model rather than the
+course; the second course's failure was most plausibly this behaviour,
 encountered on a different syllabus. That sentence is the strongest inference
 in the paper and should not be read as more than it is:
 Table~\ref{tab:sweep} is five cells with two resamplings each---four runs per
@@ -1362,7 +1361,7 @@ and the raw ratings are released with the repository.
 %   - no payment, consent obtained? was there a training/calibration round?
 %   - is the 1/5 anchor wording ("absent" / "fully adequate") the one used?
 % Any clause that is false must be deleted, not softened.
-\paragraph{Protocol.} Decks were exported to PDF with speaker notes removed and
+\paragraph{Protocol} Decks were exported to PDF with speaker notes removed and
 file names replaced by opaque identifiers, presented in one folder in an order
 fixed before scoring, with no condition label and no run identifier. The raters
 are three teachers of the same department who teach this course or its
@@ -1437,7 +1436,7 @@ three decks per condition permit description but not inference; and the
 Two cases anchor the numbers; the full readings are in the supplementary
 material. In the hardest session (U12), all three \id{full} runs reach coverage
 1.000 and each produces a genuine comparison slide, where the five baselines on
-the same session average \textbf{0.333}. And \id{full} fails too: one U10 run
+the same session average 0.333. And \id{full} fails too: one U10 run
 never defines ``queue'' beyond one sentence on the title slide---a
 convention-dependent miss that \S\ref{sec:coverage-sensitivity} prices and anyone
 who admits cover definitions may read as a pass---while a second U10 run contains
@@ -1459,20 +1458,20 @@ coverage completeness (0.981 against 0.61--0.70, the length-matched placebo
 excluding prompt length). \emph{Partial}: scope control, resting on the
 forbidden-term list as an explicit negative example (ablation $0.000 \to
 0.083$). \emph{Beyond this representation}: prerequisite order (0.020 against
-0.037 for zero-shot, the ablation running the other way,
-\S\ref{sec:boundary}). \emph{Orthogonal}: editability, 1.000 everywhere and
+0.037 for zero-shot, the ablation running the other way, for the reason
+given in \S\ref{sec:boundary}). \emph{Orthogonal}: editability, 1.000 everywhere and
 determined by the renderer.
 
 The first two groups are a result about knowledge; the third is a result about
-representation. \textbf{The graph supplies not disciplinary knowledge but the
-layer of institutional convention around it.} A strong model already handles
+representation. The graph supplies not disciplinary knowledge but the
+layer of institutional convention around it. A strong model already handles
 textbook content and textbook order; which concepts count as ``must be finished
 in this session,'' where this cohort errs, and what belongs to the next session
 appear in no pretraining corpus, and once supplied the model uses them stably.
 Order is the exception that tests the rule: the only order worth constraining
 is institutional, and that is precisely the kind the interface cannot deliver.
 
-The pattern is that \textbf{actionability follows the form of the requirement}:
+The pattern is that actionability follows the form of the requirement:
 a dimension enters the criterion when it can be written as a condition on the
 \emph{structure} of the artefact---an element that must be present, one that
 must be absent, a page of a given kind---and stays outside when the only honest
@@ -1541,12 +1540,12 @@ the representation ends, which no table of wins could say.
 \label{sec:defects}
 
 This is the most important methodological caution in the paper. During the study
-we discovered and corrected \textbf{seven} measurement defects; each made the
+we discovered and corrected seven measurement defects; each made the
 \id{full} condition win without cause, not one raised an error, and none was
 found by reflection---all came from printing model outputs slide by slide and
-reading them. The common structure across all seven is that \textbf{the
+reading them. The common structure across all seven is that the
 representation the constrained method receives is exactly the representation the
-metric uses}: verbatim coverage matching, order scored from self-reported IDs,
+metric uses: verbatim coverage matching, order scored from self-reported IDs,
 preview slides counted as body, a forward reference treated as teaching,
 cross-slide subtraction, over-broad misconception anchors, and an out-of-graph
 test that punished a different ID namespace. Each is now pinned by a regression
@@ -1556,12 +1555,12 @@ and Supplementary Section~S9 lists symptom, consequence and fix for all seven.
 Two readings matter in the main text. The 0.833 for \id{full}/U10/r3 in
 Table~\ref{tab:main} is \emph{not} a surviving instance of the fifth defect but a
 genuine omission of the definition of ``queue'' (\S\ref{sec:qualitative}). And
-the sixth was not a bug in metric code but \textbf{an error in the graph
-data}: one mis-attached ``related'' edge made any misconception-layout slide
+the sixth was not a bug in metric code but an error in the graph
+data: one mis-attached ``related'' edge made any misconception-layout slide
 mentioning empty-queue detection count as addressing a different misconception,
 the ablation still scored full marks, and the conclusion about misconception
-injection nearly became false. \textbf{Graph errors silently contaminate
-metrics}---a risk specific to graph-driven methods, where the knowledge base is
+injection nearly became false. Graph errors silently contaminate
+metrics---a risk specific to graph-driven methods, where the knowledge base is
 both the object of study and part of the measuring instrument; we therefore
 recommend reporting how the metrics behave \emph{on the baselines} and doing at
 least one manual pass with outputs printed slide by slide.
@@ -1574,7 +1573,7 @@ endpoints on the first course and one of them on the second, two to three
 resamplings per cell: this supports descriptive reporting and does not license
 significance claims. The second course contributes four runs per
 condition---enough to see that a distribution became two-of-four, not enough to
-estimate how often it does so: a sign, not a rate. Seven gaps follow.
+estimate how often it does so: a sign, not a rate. Eight gaps follow.
 
 \emph{Power, stated as arithmetic rather than assumed.} A two-sided sign-flip
 test over sessions cannot return a $p$ below $2(1/2)^k$ with $k$ sessions: three
@@ -1671,9 +1670,9 @@ lacked, an inverted pair was fixed by splitting a merged page. On
 \id{agnes-2.5-flash} the same policy moved $4/6$ to $5/6$ and left the ordering
 failure unrepaired after three attempts ($0.048\to0.048\to0.381$)---three attempts
 produced three decks with no convergence, so a repair budget has to be set by
-cost, not by the expectation of convergence. \textbf{The loop closes every failure
+cost, not by the expectation of convergence. The loop closes every failure
 on the backbone that fills a required slot and one of two on the backbone that does
-not}, which is the paper's precondition seen a third time; $9/9$ is therefore
+not, which is the paper's precondition seen a third time; $9/9$ is therefore
 reported as a bounded, costed repair on nine decks, not as the pass rate of the
 method.
 
@@ -1730,8 +1729,8 @@ the metric measures \emph{whether} the course-required correction was made, not
 \section{Conclusion and future work}
 % ===============================================================
 
-We reframe slide generation as a \textbf{course-specification satisfaction
-problem} and make the criterion, not the generator, the contribution: one
+We reframe slide generation as a course-specification satisfaction
+problem and make the criterion, not the generator, the contribution: one
 graph-derived contract serves as generation basis and acceptance ground truth, so
 what is demanded and what is checked are the same object and cannot drift, and
 alignment is measured per artefact instead of asserted per course design.
@@ -1802,7 +1801,7 @@ public, commercial, or not-for-profit sectors.
 % reader cannot check. Do not reintroduce a placeholder DOI.
 Code, both curriculum graphs, prompts, experimental protocol and all raw model
 outputs are archived in the public repository
-\url{https://github.com/HAHA1122344/kg-slidegen}, at the tag \id{v1.3}, which is
+\url{https://github.com/HAHA1122344/kg-slidegen}, at the tag \id{v1.4}, which is
 frozen for review and carries the full development history behind it. Each
 experimental cell retains three artefacts: the rendered deck, the raw model
 output, and an itemised validation report. Every table in this paper and in the
