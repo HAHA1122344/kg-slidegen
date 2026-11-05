@@ -572,3 +572,24 @@ PYTHONPATH=src python paper/repair_loop.py --source outputs/bench_py_agnes \
 Every cell leaves three files behind: `.pptx` (the artefact), `.json` (the raw model output)
 and `.report.md` (item-by-item findings). Any number in the paper can be traced back through
 these three files.
+
+## Independent second coder (the check §7.5 says is missing)
+
+The metric code and the contract were written by the same person, so agreement
+between the automatic score and a human reading is not by itself evidence that the
+metric is neutral. The missing check is a coder who did not write either:
+
+```bash
+python paper/independent_coding/make_packet.py     # 12 decks, opaque IDs, blank sheet
+# send packet/decks/, packet/rubric_blank.csv and packet/README.md; keep packet/key.csv
+python paper/independent_coding/agreement.py coderA.csv coderB.csv
+```
+
+`make_packet.py` draws a stratified subsample of the main grid (two decks per
+condition), renames them `D01…D12`, and writes a rubric sheet with the item anchors
+the original review used, so the two codings are comparable. `agreement.py` prints
+exact agreement, agreement within one point, quadratic-weighted kappa, ICC(2,1) and
+ICC(2,3) per item, and Krippendorff's alpha (ordinal) over the pooled items; it has
+a `--selftest` that pins the degenerate cases (perfect agreement → 1, no variance →
+undefined). Nothing is written back into the manuscript: the numbers are pasted in
+by hand after inspection.

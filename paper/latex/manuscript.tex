@@ -1116,6 +1116,24 @@ deviation) over resamplings.}
 
 
 
+\paragraph{(6) The code dimension: checked, not ranked} Every one of the 54 runs
+carries code---\id{full} on 48\% of its pages against 27--33\% for the
+baselines---and no headline metric reads it, so we report a secondary check
+rather than a score. All 117 blocks parse with Python's \id{ast} in every
+condition; a behavioural probe that strips top-level demo statements and
+interrogates up to four behaviours (FIFO order, the empty-dequeue signal, the
+full signal, survival of repeated enqueue) admits 37 blocks, of which 36 pass,
+the single failure being a genuine scaffolding defect---a program-style
+\id{enqueue(q, x)} referencing a capacity constant its own slide never defines.
+Parsing cleanly everywhere is consistent with teachers rating content accuracy
+at or above 4.0 in every condition (Table~\ref{tab:human}), and it means a
+runnability metric must test behaviour to discriminate at all.
+The probe is a bound rather than a metric: the harness is ours, so the evaluator
+supplies part of the answer it then checks, and 8 of 9 against 28 of 28
+separates nothing. We publish it because a criterion for a programming course
+that cannot see a broken \id{enqueue} is the honest limit of this evaluation,
+not because it ranks the arms (\S\ref{sec:code}; Table~S3).
+
 \id{full} consumes 1064 input and 4079 output tokens (2708 of them reasoning)
 at 20.8\,s end to end, against 347, 2330, 984 and 12.4\,s for \id{zero\_shot}:
 about 1.75 times the output, the surplus being the contract block (roughly 500
@@ -1308,6 +1326,14 @@ in the paper and should not be read as more than it is:
 Table~\ref{tab:sweep} is five cells with two resamplings each---four runs per
 condition---compared descriptively; nothing here is an interaction test, and a
 three-cluster interval on any of those differences would include zero.
+
+\emph{Why not the full crossing.} A course $\times$ backbone $2\times2$ would
+need a third course graph authored from another syllabus before the first API
+call; the compute for such a grid costs less than a dollar, so the binding
+constraint is authoring, not inference. That is why the design grows one cell at
+a time, why the fifth cell answers the attribution question in sign rather than
+in size, and why estimating the reliability condition---rather than ordering
+it---is the first item of future work we would fund.
 
 The fifth cell is the one that was missing, and it points the same way.
 Holding the endpoint fixed and changing the course, the contrast does not
@@ -1632,6 +1658,16 @@ significance claims. The second course contributes four runs per
 condition---enough to see that a distribution became two-of-four, not enough to
 estimate how often it does so: a sign, not a rate. Seven gaps follow.
 
+\emph{Power, stated as arithmetic rather than assumed.} A two-sided sign-flip
+test over sessions cannot return a $p$ below $2(1/2)^k$ with $k$ sessions: three
+sessions give a floor of $0.25$, and the floor falls below $0.05$ only at six.
+With nine runs nested in three sessions the design can therefore detect only a
+difference large enough to hold in every session; a smaller one is not
+``not significant'' but unmeasurable, and reporting a $p$ value from it would
+restate the arithmetic above rather than add evidence. This is why the intervals
+in \S\ref{sec:results} are descriptive and why a revision that added asterisks
+would weaken the paper rather than strengthen it.
+
 \emph{One factor at a time.} Each pair varies one thing while holding another
 fixed. Only the misconception result is crossed, in \S\ref{sec:factorial}, and
 there the two factors turn out not to be additive at all: the interaction is
@@ -1776,34 +1812,22 @@ reported advantage sits on the conservative side. What is missing is the
 obvious thing---a second coder who did not write the metric, coding a subsample
 against the same rubric with disagreement reported. Given three decisions that
 materially move the numbers, that check would be worth more than a larger
-sample scored by the same author.
+sample scored by the same author. To make it cost a coder-day rather than a new
+study, the released artefact carries the packet: a stratified subsample of the
+main grid under opaque identifiers, the rubric with its anchors, and the script
+that reports weighted kappa, ICC and Krippendorff's alpha once a second coder
+returns the sheet (\id{paper/independent\_coding/}).
 
 \subsection{Code is parsed, and only partly executed}
 \label{sec:code}
 
-For a programming course this is the weakest joint. Every one of the 54 runs
-carries code, with \id{full} putting it on 48\% of its pages against 27--33\%
-for the baselines, yet no headline metric parses, lints or executes it: a slide
-can score coverage 1.000 while its \id{enqueue} has an off-by-one, and nothing
-in Table~\ref{tab:main} would move. The cheapest check costs one line and we
-ran it: all 117 blocks parse with Python's \id{ast}, in every condition---a
-null result and a useful one, consistent with teachers rating content accuracy
-at or above 4.0 everywhere (Table~\ref{tab:human}), and it means a runnability
-metric must test behaviour to discriminate at all.
-
-Behaviour is testable within limits, and we tested it
-(\id{paper/behavior\_check.py}; full protocol and per-condition results in
-Table~S3 of the supplementary material). Each block is stripped of its
-top-level demo statements, executed in a fresh namespace and interrogated on up
-to four behaviours: FIFO order, the empty-dequeue signal, the full signal, and
-survival of repeated enqueue. Thirty-seven of 117 blocks (0.32) qualify; 36
-satisfy every behaviour asked of them, and the one failure is a genuine
-scaffolding defect---a program-style \id{enqueue(q, x)} referencing a capacity
-constant its own slide never defines. This is a bound, not a metric: the
-harness is ours, so the evaluator supplies part of the answer it then checks,
-and the qualifying denominator is too small and too condition-dependent to rank
-arms---\id{full} passing 8 of 9 against 28 of 28 for the baselines is one block
-in nine and separates nothing. What it establishes is that the code dimension
+For a programming course this is the weakest joint, and it is a limit of the
+criterion rather than of the pipeline: the acceptance test is textual, so a deck
+can score coverage 1.000 while its \id{enqueue} has an off-by-one and nothing in
+Table~\ref{tab:main} moves. The runnability check of \S\ref{sec:results}(6) is
+the most we can claim for it---one syntactic pass over all 117 blocks, one
+bounded behavioural probe whose qualifying denominator is too small and too
+condition-dependent to rank arms. What it establishes is that the code dimension
 is not silently broken; a comparison would need a per-session harness and test
 set, released. Until then the honest description is \emph{one syntactic check,
 one bounded behavioural probe, and manual inspection in the qualitative pass}
@@ -1839,14 +1863,17 @@ order is expressible in the graph but cannot be withheld by the interface, so it
 reported as the boundary of the representation rather than as a result about
 ordering.
 
-Future work proceeds along five lines: (i) an interface that can present concepts
-without sequencing them, so that ordering becomes testable at all; (ii) extend to
-all sessions of the course and widen the blind review to raters from other
-institutions, courses and vocational disciplines; (iii) build graphs
-semi-automatically from textbook PDFs to reduce authoring cost; (iv) add a
-render-and-review loop (screenshot, detect overflow and overlap, repair
-automatically); and (v) release a Chinese vocational slide-generation benchmark so
-that comparable work can be compared on common ground.
+Future work proceeds along six lines: (i) an interface that can present concepts
+without sequencing them, so that ordering becomes testable at all; (ii) a
+course $\times$ backbone grid with a third course graph, so that the reliability
+condition is estimated rather than ordered (\S\ref{sec:second-course});
+(iii) extend to all sessions of the course and widen the blind review to raters
+from other institutions, courses and vocational disciplines, with a second coder
+who did not write the metrics; (iv) build graphs semi-automatically from
+textbook PDFs to reduce authoring cost; (v) add a render-and-review loop
+(screenshot, detect overflow and overlap, repair automatically); and (vi) release
+a Chinese vocational slide-generation benchmark so that comparable work can be
+compared on common ground.
 
 % ===============================================================
 \section*{CRediT authorship contribution statement}
@@ -1891,7 +1918,7 @@ public, commercial, or not-for-profit sectors.
 % reader cannot check. Do not reintroduce a placeholder DOI.
 Code, both curriculum graphs, prompts, experimental protocol and all raw model
 outputs are archived in the public repository
-\url{https://github.com/HAHA1122344/kg-slidegen}, at the tag \id{v1.1}, which is
+\url{https://github.com/HAHA1122344/kg-slidegen}, at the tag \id{v1.2}, which is
 frozen for review and carries the full development history behind it. Each
 experimental cell retains three artefacts: the rendered deck, the raw model
 output, and an itemised validation report. Every table in this paper and in the

@@ -1,5 +1,5 @@
 # Checksum of the packaged tree referenced by the Data-availability section.
 # Verify with: shasum -a 256 -c paper/deposit/SHA256SUMS
-# The archive is rebuilt from the repository tag v1.1 by paper/make_deposit.py;
+# The archive is rebuilt from the repository tag v1.2 by paper/make_deposit.py;
 # building it twice from the same tree yields these same bytes.
-f9bb99b7b8d7e46f02cd6b2decfee67133faa7891bdd4942706111070aae0046  kg-slidegen-v1.0.zip
+5cf04266dbd89434f7203d45669a5cdd68b5521047c71241c1eb0d86dc969cd5  kg-slidegen-v1.0.zip

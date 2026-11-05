@@ -47,3 +47,6 @@ paper/revision-notes.md
 
 # pytest temporary directories
 .pytest_tmp/
+
+# Blind coding packet: generated on demand by make_packet.py, not shipped in git
+paper/independent_coding/packet/

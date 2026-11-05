@@ -42,6 +42,7 @@ INCLUDE_GLOBS = [
     ("paper", "*.py"),
     ("paper", "*.md"),
     ("paper", "*.csv"),
+    ("paper/independent_coding", "*.py"),
     ("paper/latex", "*.tex"),
     ("paper/latex", "*.bib"),
     ("docs", "*"),
