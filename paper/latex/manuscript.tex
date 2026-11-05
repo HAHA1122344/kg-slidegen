@@ -1881,24 +1881,22 @@ public, commercial, or not-for-profit sectors.
 
 \section*{Data availability}
 
-% TODO(author): deposit `paper/deposit/kg-slidegen-v1.0.zip` on Zenodo with the
-% metadata in `paper/deposit/zenodo.json`, then paste the DOI below and delete
-% this comment. A named repository without a resolvable identifier is one of
-% the fastest desk rejects at this journal; do not submit with the placeholder.
+% TODO(author): if a DOI is obtained before submission, replace the repository
+% sentence below with the DOI. Until then the repository tag is the citable
+% identifier: it resolves, it pins one tree, and it does not promise anything the
+% reader cannot check. Do not reintroduce a placeholder DOI.
 Code, both curriculum graphs, prompts, experimental protocol and all raw model
-outputs are archived at \url{https://doi.org/10.5281/zenodo.XXXXXXX}. The same
-material, together with its development history and the scripts that regenerate
-every table and figure in this paper, is public at
-\url{https://github.com/HAHA1122344/kg-slidegen}; the archive is a packaged
-snapshot of that repository for citation, not a separate copy. Each
+outputs are archived in the public repository
+\url{https://github.com/HAHA1122344/kg-slidegen}, at the tag \id{v1.0}, which is
+frozen for review and carries the full development history behind it. Each
 experimental cell retains three artefacts: the rendered deck, the raw model
 output, and an itemised validation report. Every table in this paper and in the
-supplementary material is regenerated from that archive by the scripts in
-\id{paper/}, and \id{tests/} reproduces the graph's own validation results
-(Table~S2). The archive is byte-reproducible---packaging the same tree twice
-yields the same bytes---and the record's file manifest carries the archive's
-\id{sha256}, so a reader can confirm they hold the reviewed artefact rather than
-a later rebuild.
+supplementary material is regenerated from that tree by the scripts in
+\id{paper/} without calling any model, and \id{tests/} reproduces the graph's own
+validation results (Table~S2). The same tree is additionally packaged as a single
+archive, and its \id{sha256} is committed in \id{paper/deposit/SHA256SUMS}:
+packaging the tree twice yields the same bytes, so a reader can confirm that what
+they hold is the reviewed artefact rather than a later rebuild.
 
 \section*{Supplementary material}
 

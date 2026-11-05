@@ -36,8 +36,10 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Submission archive: built by paper/make_deposit.py and published with Zenodo, not tracked
-paper/deposit/
+# Submission archive: built by paper/make_deposit.py, not tracked. The checksum
+# manifest is tracked because the Data-availability section points at it.
+paper/deposit/*
+!paper/deposit/SHA256SUMS
 
 # Internal review and revision notes: working documents, not published with the code
 paper/KBS-预评审-20261102.md
