@@ -15,6 +15,7 @@
 \usepackage{array}
 \usepackage{ragged2e}
 \usepackage{enumitem}
+\usepackage{setspace}
 \usepackage{caption}
 \usepackage{lineno}
 \usepackage{url}
@@ -48,6 +49,9 @@
 
 \begin{document}
 
+% The title page is front matter: keep it single-spaced even in the 1.5-spaced
+% review build, otherwise the abstract and the keywords straddle the page break.
+\makeatletter\renewcommand{\baselinestretch}{1}\selectfont\makeatother
 \begin{frontmatter}
 
 \title{The Model Knows the Textbook but Not Your Class: Curriculum Knowledge
@@ -90,37 +94,36 @@ Malaysia},
 \cortext[cor1]{Corresponding author.}
 
 \begin{abstract}
-Evaluating generated teaching material raises a question benchmarks do not:
-does it satisfy its course specification? We make that computable.
-Course-level knowledge---what a session must cover, what this cohort mislearns,
-what must not appear yet---is compiled into a contract that is also the
-acceptance criterion, so requirement and check cannot drift. We ask whether the
-form of this representation, not the information it carries, changes how reliably
-a model uses it.
+% Front matter is set single-spaced even in the 1.5-spaced review build: at 12pt
+% the abstract otherwise runs over the page break and its last lines land above
+% the Introduction heading, with the keywords stranded on the next page.
+\begin{singlespace}\small
+Evaluating generated teaching material raises a question benchmarks do not: does
+it satisfy its course specification? We make that computable. Course-level
+knowledge---what a session must cover, what this cohort mislearns, what must not
+appear yet---is compiled into a contract that is also the acceptance criterion,
+so requirement and check cannot drift. We ask whether the form of this
+representation, not the information it carries, changes how reliably a model
+uses it.
 
-We study one queue module across three backbones, three ablations and a second
-course in another language. The same misconception text, given as flat passages,
-is covered in five runs of nine ($0.556 \pm 0.527$); inside the contract's slot,
-in all nine ($1.000 \pm 0.000$). Coverage rises from 0.61--0.70 to 0.98 where the
-backbone follows structural instructions; a length-matched placebo excludes
-prompt length, though a three-cluster interval includes zero. Ablation prices
-each block---misconception slot 0.889, forbidden list 0.083 of out-of-graph
-control---and the slot's factors interact rather than add: the contract makes its
-text land.
-
-The second course keeps the sign but not the reliability; its coverage gain
-shrinks. Re-running the first course under that backbone alone
-removes the advantage: a contract can require a slot; only a compliant backbone
-fills it every time. Ordering is expressible in the graph but not withholdable by
-the interface; its null ablation is a boundary, not a failure. Seven measurement
-defects favouring the constrained condition are documented; a blind review
-matches the automatic ranking (ICC(2,3)~0.92).
-
+Across one queue module, three backbones and a second course, the same
+misconception text as flat passages is covered in five of nine runs
+($0.556 \pm 0.527$); inside the contract's slot, in all nine
+($1.000 \pm 0.000$). Coverage rises from 0.61--0.70 to 0.98 where the backbone
+follows structural instructions, and a length-matched placebo excludes prompt
+length. The misconception slot prices at 0.889, the forbidden list at 0.083, and
+the factors interact rather than add. Reliability is conditional on the
+backbone; ordering stays a boundary, not a result. Seven measurement defects and
+a blind review matching the automatic ranking (ICC(2,3)~0.92) complete the
+account.
+\end{singlespace}
 \end{abstract}
 
 \begin{keyword}
-curriculum knowledge graph \sep constrained generation \sep slide automation
-\sep misconception modelling \sep educational knowledge engineering
+\begin{singlespace}\small
+curriculum knowledge graph \sep constrained generation \sep misconception
+modelling \sep educational knowledge engineering
+\end{singlespace}
 \end{keyword}
 
 % No preliminary pages: the manuscript opens on the title page.
@@ -128,6 +131,7 @@ curriculum knowledge graph \sep constrained generation \sep slide automation
 % not repeated here, so page 1 is text and nothing precedes it.
 
 \end{frontmatter}
+\makeatletter\renewcommand{\baselinestretch}{\@blstr}\selectfont\makeatother
 
 \linenumbers
 
@@ -1887,7 +1891,7 @@ public, commercial, or not-for-profit sectors.
 % reader cannot check. Do not reintroduce a placeholder DOI.
 Code, both curriculum graphs, prompts, experimental protocol and all raw model
 outputs are archived in the public repository
-\url{https://github.com/HAHA1122344/kg-slidegen}, at the tag \id{v1.0}, which is
+\url{https://github.com/HAHA1122344/kg-slidegen}, at the tag \id{v1.1}, which is
 frozen for review and carries the full development history behind it. Each
 experimental cell retains three artefacts: the rendered deck, the raw model
 output, and an itemised validation report. Every table in this paper and in the
