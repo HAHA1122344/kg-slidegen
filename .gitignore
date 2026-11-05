@@ -57,3 +57,6 @@ paper/independent_coding/packet/
 paper/arxiv/build/
 paper/arxiv/*.zip
 paper/arxiv/*.pdf
+
+# Upload staging area: rebuilt by paper/latex/build.sh from the same sources.
+paper/submission/

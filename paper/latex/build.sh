@@ -62,5 +62,28 @@ printf '%-10s ' cover-letter
   | sed 's/.*(//' | tail -1 | sed 's/$/s/'; echo
 rm -f cover-letter.log
 
+# ---- 6. declaration of competing interests (separate upload item) --------
+pass declaration
+printf '%-10s ' declaration
+( grep -o 'Output written on .*pdf ([0-9]* page' declaration.log || true ) \
+  | sed 's/.*(//' | tail -1 | sed 's/$/s/'; echo
+rm -f declaration.aux declaration.log
+
+# ---- 7. stage the three upload items Editorial Manager asks for ----------
+# The compact single-spaced PDF is the default manuscript upload; the
+# line-numbered review build is staged beside it in case the editor asks.
+mkdir -p ../submission
+cp manuscript-preprint.pdf ../submission/manuscript.pdf
+cp manuscript.pdf          ../submission/manuscript-with-line-numbers.pdf
+cp cover-letter.pdf        ../submission/cover-letter.pdf
+cp declaration.pdf         ../submission/declaration-of-competing-interests.pdf
+# Editorial Manager's own tool emits Word, so offer the same text as .docx;
+# pandoc is optional, and the PDF above is the file that gets uploaded.
+if command -v pandoc >/dev/null 2>&1; then
+  pandoc declaration.md -o ../submission/declaration-of-competing-interests.docx
+fi
+echo "staged $(ls ../submission | wc -l | tr -d ' ') upload items in paper/submission"
+
 echo
-ls -lh manuscript.pdf manuscript-preprint.pdf supplementary.pdf highlights.pdf cover-letter.pdf
+ls -lh manuscript.pdf manuscript-preprint.pdf supplementary.pdf highlights.pdf \
+       cover-letter.pdf declaration.pdf
