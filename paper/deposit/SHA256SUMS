@@ -2,4 +2,4 @@
 # Verify with:  cd paper/deposit && shasum -a 256 -c SHA256SUMS
 # The archive is rebuilt from the repository tag v1.3 by paper/make_deposit.py;
 # building it twice from the same tree yields these same bytes.
-7875adcc673bb86754e4d3f102fdf324e88c67e5fe2d5596412c2500ac652f71  kg-slidegen-v1.0.zip
+31c892e4a0c139992323e031767809641eb704a53887d1695a25aa347c558205  kg-slidegen-v1.0.zip
