@@ -50,3 +50,10 @@ paper/revision-notes.md
 
 # Blind coding packet: generated on demand by make_packet.py, not shipped in git
 paper/independent_coding/packet/
+
+# arXiv submission package: built by paper/make_arxiv.py from the same source as
+# the journal build. The staged tree and the archive are regenerated, not tracked;
+# the script and the metadata sheet are, so the package is one command away.
+paper/arxiv/build/
+paper/arxiv/*.zip
+paper/arxiv/*.pdf

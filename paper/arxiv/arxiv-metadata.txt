@@ -1,0 +1,30 @@
+arXiv submission sheet — kg-slidegen-arxiv-v1.4.zip
+
+Title
+    The Model Knows the Textbook but Not Your Class: Curriculum Knowledge Graph Constraints for Slide Generation in Two Vocational-Education Courses
+
+Authors
+    Suxing Liu, Byungwon Min, Zhijian Zheng, Jiahao Wang
+
+Primary category
+    cs.CL (Computation and Language)
+
+Cross-lists
+    cs.AI (Artificial Intelligence), cs.CY (Computers and Society)
+
+Comments
+    Main text 44 pages (preprint layout), 9 tables, 2 figures. Supplementary
+    material with 12 sections is included as an ancillary PDF (anc/supplementary.pdf).
+    Submitted to Knowledge-Based Systems.
+
+Abstract
+    % Front matter is set single-spaced even in the 1.5-spaced review build: at 12pt % the abstract otherwise runs over the page break and its last lines land above % the Introduction heading, with the keywords stranded on the next page. singlespace Evaluating generated teaching material raises a question benchmarks do not: does it satisfy its course specification? We make that computable. Course-level knowledge---what a session must cover, what this cohort mislearns, what must not appear yet---is compiled into a contract that is also the acceptance criterion, so requirement and check cannot drift. We ask whether the form of this representation, not the information it carries, changes how reliably a model uses it. Across one queue module, three backbones and a second course, the same misconception text as flat passages is covered in five of nine runs ($0.556 0.527$); inside the contract's slot, in all nine ($1.000 0.000$). Coverage rises from 0.61--0.70 to 0.98 where the backbone follows structural instructions, and a length-matched placebo excludes prompt length. The misconception slot prices at 0.889, the forbidden list at 0.083, and the factors interact rather than add. Reliability is conditional on the backbone; ordering stays a boundary, not a result. Seven measurement defects and a blind review matching the automatic ranking (ICC(2,3)0.92) complete the account. singlespace
+
+Upload
+    Upload kg-slidegen-arxiv-v1.4.zip as the source package. arXiv compiles manuscript.tex with
+    pdflatex; elsarticle.cls and elsarticle-num.bst are bundled, and manuscript.bbl
+    is included so the bibliography resolves even if bibtex is skipped.
+
+Licence
+    Choose the licence before uploading; the default (arXiv non-exclusive) lets
+    the journal version proceed without a waiver.
