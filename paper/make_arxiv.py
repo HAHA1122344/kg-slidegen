@@ -188,9 +188,23 @@ def metadata(build: Path) -> Path:
     abstract = re.search(
         r"\\begin\{abstract\}(.*?)\\end\{abstract\}", tex, re.S
     ).group(1)
-    abstract = re.sub(r"\\[a-zA-Z]+\*?(\[[^\]]*\])?", "", abstract)
-    abstract = re.sub(r"[{}~]", "", abstract)
-    abstract = " ".join(abstract.split())
+    # comments first: the front-matter block carries an explanatory comment that
+    # would otherwise be lifted into the metadata sheet
+    abstract = "\n".join(
+        ln for ln in abstract.split("\n") if not ln.lstrip().startswith("%")
+    )
+    # a handful of constructs have to survive as characters, not be stripped
+    for tex_cmd, char in [
+        (r"\pm", "\u00b1"), (r"\times", "\u00d7"), (r"\to", "\u2192"),
+        (r"\%", "%"), (r"\,", " "), (r"~", " "),
+    ]:
+        abstract = abstract.replace(tex_cmd, char)
+    # em dash before en dash, or the triple hyphen loses a character on the way
+    abstract = abstract.replace("---", "\u2014").replace("--", "\u2013")
+    abstract = re.sub(r"\\begin\{singlespace\}|\\end\{singlespace\}", " ", abstract)
+    abstract = re.sub(r"\\[a-zA-Z]+\*?(\[[^\]]*\])?", " ", abstract)
+    abstract = re.sub(r"[{}$]", "", abstract)
+    abstract = re.sub(r"\s+", " ", abstract).strip()
 
     body = f"""arXiv submission sheet — {ZIP_NAME}
 
